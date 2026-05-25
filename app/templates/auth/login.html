@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Login — UniCycle{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Log In</h2>
+    <form method="POST" action="{{ url_for('auth.login') }}" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form__group">
+            <label for="email">University Email</label>
+            <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required>
+        </div>
+        <div class="form__group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">Log In</button>
+    </form>
+    <p class="auth-container__footer">
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a>
+    </p>
+</div>
+{% endblock %}

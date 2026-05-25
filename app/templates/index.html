@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}UniCycle — Campus Marketplace{% endblock %}
+
+{% block content %}
+<div id="marketplace-app">
+
+    <!-- ─── Welcome Banner (logged-out users only) ─── -->
+    {% if not current_user.is_authenticated %}
+    <section class="welcome-banner" aria-label="Welcome message">
+        <div class="welcome-banner__content">
+            <h1 class="welcome-banner__title">
+                Give your stuff a <span class="highlight">second life</span>
+            </h1>
+            <p class="welcome-banner__subtitle">
+                The campus marketplace where students buy, sell, and donate — keeping items out of landfill.
+            </p>
+            <div class="welcome-banner__actions">
+                <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Get Started</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn--outline">Log In</a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ─── Search & Filters Bar ─── -->
+    <section class="marketplace-controls" aria-label="Search and filter items">
+        <form method="GET" action="{{ url_for('index') }}" class="search-bar" role="search" aria-label="Search items">
+            {% if active_category %}
+            <input type="hidden" name="category" value="{{ active_category }}">
+            {% endif %}
+            <span class="material-symbols-outlined search-bar__icon" aria-hidden="true">search</span>
+            <input
+                type="search"
+                name="q"
+                id="search-input"
+                class="search-bar__input"
+                placeholder="Search items…"
+                value="{{ search_query }}"
+                aria-label="Search items by title"
+            >
+            {% if search_query %}
+            <a href="{{ url_for('index', category=active_category) }}" class="search-bar__clear" aria-label="Clear search">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </a>
+            {% endif %}
+        </form>
+
+        <nav class="category-pills" aria-label="Filter by category">
+            <a href="{{ url_for('index', q=search_query) }}"
+               class="pill {% if not active_category %}pill--active{% endif %}"
+               aria-current="{% if not active_category %}true{% else %}false{% endif %}">
+                All
+            </a>
+            {% for cat in categories %}
+            <a href="{{ url_for('index', category=cat, q=search_query) }}"
+               class="pill {% if active_category == cat %}pill--active{% endif %}"
+               aria-current="{% if active_category == cat %}true{% else %}false{% endif %}">
+                {{ cat }}
+            </a>
+            {% endfor %}
+        </nav>
+    </section>
+
+    <!-- ─── Items Grid ─── -->
+    {% if items %}
+    <section class="items-grid" aria-label="Listed items">
+        {% for item in items %}
+        <article class="item-card {% if item.is_sold %}item-card--sold{% endif %}" aria-label="{{ item.title }}">
+            <!-- Clickable card link -->
+            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="item-card__link" aria-label="View {{ item.title }}">
+                <div class="item-card__image-wrap">
+                    {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                         alt="Photo of {{ item.title }}"
+                         class="item-card__image"
+                         loading="lazy">
+                    {% else %}
+                    <div class="item-card__image-placeholder" aria-hidden="true">
+                        <span class="material-symbols-outlined">image</span>
+                    </div>
+                    {% endif %}
+                    <div class="item-card__badges-wrap">
+                        <span class="item-card__badge">{{ item.category }}</span>
+                        <span class="item-card__points-overlay" aria-label="{{ item.kg_saved or 0 }} kg saved">
+                            <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                            {{ item.kg_saved or 0 }} kg
+                        </span>
+                    </div>
+                    {% if item.is_sold %}
+                    <span class="item-card__sold-badge">Sold</span>
+                    {% endif %}
+                </div>
+                <div class="item-card__body">
+                    <h3 class="item-card__title">{{ item.title }}</h3>
+                    <p class="item-card__meta">
+                        <span class="item-card__condition">{{ item.condition }}</span>
+                        &middot;
+                        {% if item.is_free %}
+                            <span class="item-card__price item-card__price--free">Free</span>
+                        {% else %}
+                            <span class="item-card__price">&pound;{{ "%.2f"|format(item.price) }}</span>
+                        {% endif %}
+                    </p>
+                    <div class="item-card__footer">
+                        <span class="item-card__seller">{{ item.seller.name or 'User' }}</span>
+                    </div>
+                </div>
+            </a>
+        </article>
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="empty-state" aria-label="No items found">
+        <span class="material-symbols-outlined empty-state__icon" aria-hidden="true">inventory_2</span>
+        {% if search_query or active_category %}
+            <p>No items match your search.</p>
+            <a href="{{ url_for('index') }}" class="btn btn--outline">Clear Filters</a>
+        {% else %}
+            <p>No items listed yet. Be the first to give something a second life!</p>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('items.list_item') }}" class="btn btn--primary">
+                    <span class="material-symbols-outlined btn__icon" aria-hidden="true">add</span>
+                    List an Item
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Sign Up to List</a>
+            {% endif %}
+        {% endif %}
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — UniCycle{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- ─── Stats Header ─── -->
+    <div class="dashboard__header">
+        <div class="dashboard__avatar">{{ current_user.name[0] }}</div>
+        <div class="dashboard__user-info">
+            <h1>{{ current_user.name }}</h1>
+            <p class="dashboard__email">{{ current_user.email }}</p>
+        </div>
+        <div class="dashboard__stats">
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">eco</span>
+                <div>
+                    <span class="stat-card__value">{{ "%.1f"|format(current_user.kg_saved_total) }}</span>
+                    <span class="stat-card__label">kg Saved</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">storefront</span>
+                <div>
+                    <span class="stat-card__value">{{ my_listings | length }}</span>
+                    <span class="stat-card__label">Listings</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">shopping_bag</span>
+                <div>
+                    <span class="stat-card__value">{{ my_purchases | length }}</span>
+                    <span class="stat-card__label">Purchases</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Pending Handshakes ─── -->
+    {% set pending_as_seller = my_listings | selectattr('buyer_id') | rejectattr('is_sold') | list %}
+    {% set pending_as_buyer = my_purchases | rejectattr('is_sold') | list %}
+    {% set pending_items = pending_as_seller + pending_as_buyer %}
+    {% if pending_items %}
+    <section class="dashboard__section dashboard__section--pending">
+        <h2>
+            <span class="material-symbols-outlined heading-icon" aria-hidden="true">handshake</span>
+            Pending Handshakes
+        </h2>
+        <div class="dashboard__list">
+            {% for item in pending_items %}
+            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="dash-item dash-item--pending">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
+                <div class="dash-item__info">
+                    <strong class="dash-item__title">{{ item.title }}</strong>
+                    <span class="dash-item__meta">
+                        {{ item.category }} &middot;
+                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                    </span>
+                </div>
+                <span class="status-badge status-badge--pending">⏳ Awaiting PIN</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ─── My Listings ─── -->
+    <section class="dashboard__section">
+        <h2>
+            <span class="material-symbols-outlined heading-icon" aria-hidden="true">storefront</span>
+            My Listings
+        </h2>
+
+        {% if my_listings %}
+        <div class="dashboard__list">
+            {% for item in my_listings %}
+            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="dash-item {% if item.is_sold %}dash-item--sold{% endif %}">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
+                <div class="dash-item__info">
+                    <strong class="dash-item__title">{{ item.title }}</strong>
+                    <span class="dash-item__meta">
+                        {{ item.category }} &middot;
+                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                    </span>
+                </div>
+                <div class="dash-item__status">
+                    {% if item.is_sold %}
+                        <span class="status-badge status-badge--sold">Sold</span>
+                        <span class="dash-item__buyer">to {{ item.buyer.name if item.buyer else "someone" }}</span>
+                    {% else %}
+                        <span class="status-badge status-badge--active">Active</span>
+                    {% endif %}
+                </div>
+                <span class="dash-item__points">
+                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                    {{ item.kg_saved }} kg
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="dashboard__empty">
+            <p>You haven't listed anything yet.</p>
+            <a href="{{ url_for('items.list_item') }}" class="btn btn--primary btn--sm">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">add</span>
+                List Your First Item
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- ─── My Purchases ─── -->
+    <section class="dashboard__section">
+        <h2>
+            <span class="material-symbols-outlined heading-icon" aria-hidden="true">shopping_bag</span>
+            My Purchases
+        </h2>
+
+        {% if my_purchases %}
+        <div class="dashboard__list">
+            {% for item in my_purchases %}
+            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="dash-item">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
+                <div class="dash-item__info">
+                    <strong class="dash-item__title">{{ item.title }}</strong>
+                    <span class="dash-item__meta">
+                        {{ item.category }} &middot;
+                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                        &middot; from {{ item.seller.name }}
+                    </span>
+                </div>
+                <span class="status-badge status-badge--purchased">Purchased</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="dashboard__empty">
+            <p>You haven't bought anything yet. Browse the marketplace to find items!</p>
+            <a href="{{ url_for('index') }}" class="btn btn--outline btn--sm">Browse Items</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}List an Item — UniCycle{% endblock %}
+
+{% block content %}
+<div class="list-item-container" id="list-item-app">
+    <!-- Back button -->
+    <a href="{{ url_for('index') }}" class="back-link" aria-label="Go back to marketplace">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to Marketplace
+    </a>
+
+    <h2>
+        <span class="material-symbols-outlined heading-icon" aria-hidden="true">sell</span>
+        List an Item
+    </h2>
+    <p class="subtitle">Fill in the details below to give your item a second life.</p>
+
+    <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data"
+        class="form form--compact">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Image Upload (REQUIRED) -->
+        <div class="form__group">
+            <label for="image">Photo <span class="required" aria-label="required">*</span></label>
+            <div class="image-upload image-upload--compact" @click="$refs.fileInput.click()" @dragover.prevent
+                @drop.prevent="onDrop" :class="{ 'image-upload--has-preview': imagePreview }">
+                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" ref="fileInput"
+                    @change="onFileSelect" class="image-upload__input" aria-label="Upload item photo" required>
+                <div v-if="!imagePreview" class="image-upload__placeholder">
+                    <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
+                    <span>Click or drag to upload</span>
+                    <span class="image-upload__hint">JPG, PNG or WebP</span>
+                </div>
+                <img v-if="imagePreview" :src="imagePreview" alt="Upload preview" class="image-upload__preview">
+            </div>
+        </div>
+
+        <div class="form__group">
+            <label for="title">Title <span class="required" aria-label="required">*</span></label>
+            <input type="text" id="title" name="title" placeholder='e.g. "Organic Chemistry Textbook"' required
+                maxlength="140">
+        </div>
+
+        <div class="form__group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="2"
+                placeholder="Brief description (optional)"></textarea>
+        </div>
+
+        <div class="form__row">
+            <div class="form__group">
+                <label for="category">Category <span class="required" aria-label="required">*</span></label>
+                <select id="category" name="category" required v-model="selectedCategory"
+                    aria-describedby="eco-preview-text">
+                    <option value="" disabled selected>Select a category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form__group">
+                <label for="condition">Condition <span class="required" aria-label="required">*</span></label>
+                <select id="condition" name="condition" required>
+                    <option value="" disabled selected>Select condition</option>
+                    {% for cond in conditions %}
+                    <option value="{{ cond }}">{{ cond }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form__row">
+            <div class="form__group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="is_free" name="is_free" v-model="isFree">
+                    This item is <strong>free</strong>
+                </label>
+            </div>
+            <div class="form__group" v-show="!isFree">
+                <label for="price">Price (&pound;)</label>
+                <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" :disabled="isFree">
+            </div>
+        </div>
+
+        <!-- ─── kg Saved Preview ─── -->
+        <div class="eco-preview eco-preview--compact" v-if="selectedCategory" role="status" aria-live="polite">
+            <span class="material-symbols-outlined eco-preview__icon" aria-hidden="true">eco</span>
+            <div class="eco-preview__text" id="eco-preview-text">
+                <strong>[[ kgSaved ]] kg saved</strong>
+                <span>from landfill when this item finds a new home</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">
+            <span class="material-symbols-outlined btn__icon" aria-hidden="true">check_circle</span>
+            List Item
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
