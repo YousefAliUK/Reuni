@@ -70,14 +70,37 @@ def create_app(config_class=None):
 
         active_category = request.args.get("category", "")
         search_query = request.args.get("q", "").strip()
+        price_type = request.args.get("price_type", "all")
+        min_price = request.args.get("min_price", "").strip()
+        max_price = request.args.get("max_price", "").strip()
 
         query = Item.query.filter_by(is_sold=False)
 
+        # Apply Category Filter
         if active_category and active_category in CATEGORIES:
             query = query.filter_by(category=active_category)
 
+        # Apply Search Query
         if search_query:
             query = query.filter(Item.title.ilike(f"%{search_query}%"))
+
+        # Apply Price Type Filter (All, Free, Paid)
+        if price_type == "free":
+            query = query.filter(Item.is_free == True)
+        elif price_type == "paid":
+            query = query.filter(Item.is_free == False)
+
+        # Apply Price Range Filters (Min & Max)
+        if min_price:
+            try:
+                query = query.filter(Item.price >= float(min_price))
+            except ValueError:
+                pass
+        if max_price:
+            try:
+                query = query.filter(Item.price <= float(max_price))
+            except ValueError:
+                pass
 
         items = query.order_by(Item.created_at.desc()).all()
 
@@ -87,6 +110,9 @@ def create_app(config_class=None):
             categories=CATEGORIES,
             active_category=active_category,
             search_query=search_query,
+            price_type=price_type,
+            min_price=min_price,
+            max_price=max_price,
         )
 
     # ── Dashboard ──

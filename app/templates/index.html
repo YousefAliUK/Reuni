@@ -24,35 +24,115 @@
 
     <!-- ─── Search & Filters Bar ─── -->
     <section class="marketplace-controls" aria-label="Search and filter items">
-        <form method="GET" action="{{ url_for('index') }}" class="search-bar" role="search" aria-label="Search items">
+        <form method="GET" action="{{ url_for('index') }}" class="marketplace-form" id="filter-form">
             {% if active_category %}
             <input type="hidden" name="category" value="{{ active_category }}">
             {% endif %}
-            <span class="material-symbols-outlined search-bar__icon" aria-hidden="true">search</span>
-            <input
-                type="search"
-                name="q"
-                id="search-input"
-                class="search-bar__input"
-                placeholder="Search items…"
-                value="{{ search_query }}"
-                aria-label="Search items by title"
-            >
-            {% if search_query %}
-            <a href="{{ url_for('index', category=active_category) }}" class="search-bar__clear" aria-label="Clear search">
-                <span class="material-symbols-outlined" aria-hidden="true">close</span>
-            </a>
-            {% endif %}
+
+            <div class="search-row">
+                <div class="search-bar">
+                    <span class="material-symbols-outlined search-bar__icon" aria-hidden="true">search</span>
+                    <input
+                        type="search"
+                        name="q"
+                        id="search-input"
+                        class="search-bar__input"
+                        placeholder="Search items…"
+                        value="{{ search_query }}"
+                        aria-label="Search items by title"
+                    >
+                    {% if search_query %}
+                    <a href="{{ url_for('index', category=active_category, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="search-bar__clear" aria-label="Clear search">
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <button type="button" class="btn btn--outline filter-toggle-btn" id="filter-toggle" aria-expanded="false" aria-controls="filters-panel">
+                    <span class="material-symbols-outlined btn__icon" aria-hidden="true">filter_list</span>
+                    Filters
+                    {% if price_type != 'all' or min_price or max_price %}
+                    <span class="filter-indicator"></span>
+                    {% endif %}
+                </button>
+            </div>
+
+            <!-- Collapsible Filters Panel -->
+            <div class="filters-panel {% if price_type != 'all' or min_price or max_price %}filters-panel--open{% endif %}" id="filters-panel">
+                <div class="filters-panel__grid">
+                    <!-- Price Type Group -->
+                    <div class="filter-group">
+                        <span class="filter-group__title">Price Classification</span>
+                        <div class="filter-group__options">
+                            <label class="radio-label">
+                                <input type="radio" name="price_type" value="all" {% if price_type == 'all' or not price_type %}checked{% endif %}>
+                                <span>All Prices</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="price_type" value="free" {% if price_type == 'free' %}checked{% endif %}>
+                                <span>Free Only</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="price_type" value="paid" {% if price_type == 'paid' %}checked{% endif %}>
+                                <span>Paid Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Custom Price Range Inputs -->
+                    <div class="filter-group">
+                        <span class="filter-group__title">Price Range (&pound;)</span>
+                        <div class="price-range-inputs">
+                            <input
+                                type="number"
+                                name="min_price"
+                                placeholder="Min"
+                                min="0"
+                                step="0.01"
+                                value="{{ min_price }}"
+                                class="price-input"
+                                aria-label="Minimum price"
+                            >
+                            <span class="range-divider">to</span>
+                            <input
+                                type="number"
+                                name="max_price"
+                                placeholder="Max"
+                                min="0"
+                                step="0.01"
+                                value="{{ max_price }}"
+                                class="price-input"
+                                aria-label="Maximum price"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Quick Range Presets -->
+                    <div class="filter-group">
+                        <span class="filter-group__title">Quick Presets</span>
+                        <div class="price-presets">
+                            <button type="button" class="preset-btn" data-min="0" data-max="5">Under &pound;5</button>
+                            <button type="button" class="preset-btn" data-min="0" data-max="10">Under &pound;10</button>
+                            <button type="button" class="preset-btn" data-min="0" data-max="20">Under &pound;20</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filters-panel__actions">
+                    <a href="{{ url_for('index', category=active_category, q=search_query) }}" class="btn btn--outline btn--sm">Reset Filters</a>
+                    <button type="submit" class="btn btn--primary btn--sm">Apply Filters</button>
+                </div>
+            </div>
         </form>
 
         <nav class="category-pills" aria-label="Filter by category">
-            <a href="{{ url_for('index', q=search_query) }}"
+            <a href="{{ url_for('index', q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
                class="pill {% if not active_category %}pill--active{% endif %}"
                aria-current="{% if not active_category %}true{% else %}false{% endif %}">
                 All
             </a>
             {% for cat in categories %}
-            <a href="{{ url_for('index', category=cat, q=search_query) }}"
+            <a href="{{ url_for('index', category=cat, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
                class="pill {% if active_category == cat %}pill--active{% endif %}"
                aria-current="{% if active_category == cat %}true{% else %}false{% endif %}">
                 {{ cat }}
@@ -130,4 +210,37 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleBtn = document.getElementById('filter-toggle');
+        const panel = document.getElementById('filters-panel');
+
+        if (toggleBtn && panel) {
+            toggleBtn.addEventListener('click', function () {
+                const isOpen = panel.classList.toggle('filters-panel--open');
+                toggleBtn.setAttribute('aria-expanded', isOpen);
+            });
+        }
+
+        // Quick presets button handlers
+        const presets = document.querySelectorAll('.preset-btn');
+        const minInput = document.querySelector('input[name="min_price"]');
+        const maxInput = document.querySelector('input[name="max_price"]');
+        const paidRadio = document.querySelector('input[value="paid"]');
+
+        presets.forEach(btn => {
+            btn.addEventListener('click', function () {
+                minInput.value = btn.getAttribute('data-min');
+                maxInput.value = btn.getAttribute('data-max');
+                if (paidRadio) {
+                    paidRadio.checked = true;
+                }
+                document.getElementById('filter-form').submit();
+            });
+        });
+    });
+</script>
 {% endblock %}
