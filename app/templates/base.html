@@ -28,8 +28,10 @@
     <nav class="navbar" aria-label="Main navigation">
         <div class="container navbar__inner">
             <a href="{{ url_for('index') }}" class="navbar__brand" aria-label="UniCycle home">
-                <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
-                UniCycle
+                <div class="navbar__brand-logo">
+                    <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
+                </div>
+                <span>UniCycle</span>
             </a>
 
             <div class="navbar__links">
