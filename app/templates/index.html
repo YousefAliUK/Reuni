@@ -12,7 +12,7 @@
                 Give your stuff a <span class="highlight">second life</span>
             </h1>
             <p class="welcome-banner__subtitle">
-                The campus marketplace where students buy, sell, and donate — keeping items out of landfill.
+                The Student Marketplace For Circular Living
             </p>
             <div class="welcome-banner__actions">
                 <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Get Started</a>
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Collapsible Filters Panel -->
-            <div class="filters-panel {% if price_type != 'all' or min_price or max_price %}filters-panel--open{% endif %}" id="filters-panel">
+            <div class="filters-panel" id="filters-panel">
                 <div class="filters-panel__grid">
                     <!-- Price Type Group -->
                     <div class="filter-group">
@@ -219,9 +219,17 @@
         const panel = document.getElementById('filters-panel');
 
         if (toggleBtn && panel) {
-            toggleBtn.addEventListener('click', function () {
+            toggleBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
                 const isOpen = panel.classList.toggle('filters-panel--open');
                 toggleBtn.setAttribute('aria-expanded', isOpen);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!panel.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)) {
+                    panel.classList.remove('filters-panel--open');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                }
             });
         }
 

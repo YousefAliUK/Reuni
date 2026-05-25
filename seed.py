@@ -78,6 +78,7 @@ SAMPLE_ITEMS = [
         "price": 450.00,
         "is_free": False,
         "seller_email": "alice@university.ac.uk",
+        "seed_image": "macbook.jpg",
     },
     {
         "title": "Organic Chemistry — Bruice, 8th Ed.",
@@ -87,6 +88,7 @@ SAMPLE_ITEMS = [
         "price": 15.00,
         "is_free": False,
         "seller_email": "alice@university.ac.uk",
+        "seed_image": "chemistry_book.jpg",
     },
     {
         "title": "IKEA KALLAX Shelf Unit",
@@ -96,6 +98,7 @@ SAMPLE_ITEMS = [
         "price": 0,
         "is_free": True,
         "seller_email": "bob@university.ac.uk",
+        "seed_image": "kallax.jpg",
     },
     {
         "title": "Full Kitchen Starter Set",
@@ -105,6 +108,7 @@ SAMPLE_ITEMS = [
         "price": 25.00,
         "is_free": False,
         "seller_email": "bob@university.ac.uk",
+        "seed_image": "kitchen_set.jpg",
     },
     {
         "title": "Nike Running Shoes (UK 9)",
@@ -114,6 +118,7 @@ SAMPLE_ITEMS = [
         "price": 20.00,
         "is_free": False,
         "seller_email": "cara@university.ac.uk",
+        "seed_image": "nike_shoes.jpg",
     },
     {
         "title": "Graphic Calculator (Casio fx-9860GII)",
@@ -123,6 +128,7 @@ SAMPLE_ITEMS = [
         "price": 35.00,
         "is_free": False,
         "seller_email": "cara@university.ac.uk",
+        "seed_image": "calculator.jpg",
     },
     {
         "title": "Winter Jacket — North Face (M)",
@@ -132,6 +138,7 @@ SAMPLE_ITEMS = [
         "price": 40.00,
         "is_free": False,
         "seller_email": "alice@university.ac.uk",
+        "seed_image": "winter_jacket.jpg",
     },
     {
         "title": "Stationery Bundle (Pens, Notebooks, Folders)",
@@ -141,6 +148,7 @@ SAMPLE_ITEMS = [
         "price": 0,
         "is_free": True,
         "seller_email": "bob@university.ac.uk",
+        "seed_image": "stationery.jpg",
     },
 ]
 
@@ -148,7 +156,7 @@ SAMPLE_ITEMS = [
 def seed():
     """Drop existing data and re-seed the database."""
     with app.app_context():
-        print("🗑  Dropping all tables…")
+        print("Dropping all tables...")
         db.drop_all()
         db.create_all()
 
@@ -162,11 +170,24 @@ def seed():
 
         db.session.flush()  # assign IDs
 
-        # Create items with placeholder images
+        # Create items with placeholder images or copy actual seed images
         for i_data in SAMPLE_ITEMS:
             seller = users[i_data["seller_email"]]
             kg = CATEGORY_WEIGHTS.get(i_data["category"], 1.0)
-            image_filename = make_placeholder(i_data["category"], i_data["title"])
+            
+            seed_image = i_data.get("seed_image")
+            seed_images_dir = os.path.join(app.static_folder, "seed_images")
+            
+            if seed_image and os.path.exists(os.path.join(seed_images_dir, seed_image)):
+                import shutil
+                image_ext = os.path.splitext(seed_image)[1]
+                image_filename = f"{uuid.uuid4().hex}{image_ext}"
+                shutil.copy2(
+                    os.path.join(seed_images_dir, seed_image),
+                    os.path.join(UPLOAD_DIR, image_filename)
+                )
+            else:
+                image_filename = make_placeholder(i_data["category"], i_data["title"])
 
             item = Item(
                 title=i_data["title"],
@@ -183,12 +204,12 @@ def seed():
 
         db.session.commit()
 
-        print(f"✅ Seeded {len(SAMPLE_USERS)} users and {len(SAMPLE_ITEMS)} items.")
-        print(f"📁 Placeholder images saved to: {UPLOAD_DIR}")
+        print(f"Seeded {len(SAMPLE_USERS)} users and {len(SAMPLE_ITEMS)} items.")
+        print(f"Images saved to: {UPLOAD_DIR}")
         print()
         print("Test accounts (all passwords: password123):")
         for u in SAMPLE_USERS:
-            print(f"   • {u['email']}  ({u['name']})")
+            print(f"   * {u['email']}  ({u['name']})")
 
 
 if __name__ == "__main__":
