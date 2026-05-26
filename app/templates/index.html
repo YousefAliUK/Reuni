@@ -182,7 +182,10 @@
                         {% endif %}
                     </p>
                     <div class="item-card__footer">
-                        <span class="item-card__seller">{{ item.seller.name or 'User' }}</span>
+                        <span class="item-card__seller">
+                            <span class="item-card__seller-avatar" aria-hidden="true">{{ (item.seller.name or 'U')[0] }}</span>
+                            {{ item.seller.name or 'User' }}
+                        </span>
                     </div>
                 </div>
             </a>

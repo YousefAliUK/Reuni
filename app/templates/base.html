@@ -100,8 +100,22 @@
 
     <!-- ─── Footer ─── -->
     <footer class="footer" role="contentinfo">
-        <div class="container">
-            <p>&copy; 2026 UniCycle &middot; Supporting UN SDG 12: Responsible Consumption &amp; Production</p>
+        <div class="container footer__inner">
+            <div class="footer__brand">
+                <span class="material-symbols-outlined footer__icon" aria-hidden="true">recycling</span>
+                <span class="footer__name">UniCycle</span>
+            </div>
+            <nav class="footer__links" aria-label="Footer navigation">
+                <a href="{{ url_for('index') }}">Browse</a>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('items.list_item') }}">List Item</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}">Log In</a>
+                <a href="{{ url_for('auth.register') }}">Sign Up</a>
+                {% endif %}
+            </nav>
+            <p class="footer__copy">&copy; 2026 UniCycle &middot; Supporting UN SDG 12: Responsible Consumption &amp; Production</p>
         </div>
     </footer>
 
