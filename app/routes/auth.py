@@ -5,7 +5,7 @@ Handles user registration, login, and logout.
 
 import re
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User
@@ -49,28 +49,46 @@ def register():
             flash("All fields are required.", "danger")
             return redirect(url_for("auth.register"))
 
+        # Email format validation
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            flash("Please enter a valid email address.", "danger")
+            return redirect(url_for("auth.register"))
+
+        # Password strength validation
+        min_pw_len = current_app.config.get("MIN_PASSWORD_LENGTH", 8)
+        if len(password) < min_pw_len:
+            flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return redirect(url_for("auth.register"))
+
         if password != confirm:
             flash("Passwords do not match.", "danger")
             return redirect(url_for("auth.register"))
 
-        if User.query.filter_by(email=email).first():
-            flash("An account with that email already exists.", "danger")
-            return redirect(url_for("auth.register"))
-
-        # Normalise phone, validate format, and check uniqueness
+        # Check for existing email OR phone — use generic message to prevent enumeration
+        existing_email = User.query.filter_by(email=email).first()
         phone_number = _normalise_phone(phone_raw)
+
         if not re.match(r'^\+\d{10,15}$', phone_number):
             flash("Please enter a valid phone number.", "danger")
             return redirect(url_for("auth.register"))
-        if User.query.filter_by(phone_number=phone_number).first():
-            flash("This number is already linked to an account.", "danger")
+
+        existing_phone = User.query.filter_by(phone_number=phone_number).first()
+
+        if existing_email or existing_phone:
+            flash("An account with these details already exists.", "danger")
             return redirect(url_for("auth.register"))
 
         # --- Create user ---
         user = User(email=email, name=name, phone_number=phone_number)
         user.set_password(password)
         db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during registration: {e}")
+            flash("A registration error occurred. Please try again.", "danger")
+            return redirect(url_for("auth.register"))
 
         login_user(user)
         flash("Welcome to UniCycle! 🎉", "success")
@@ -103,14 +121,15 @@ def login():
         if next_page:
             from urllib.parse import urlparse
             parsed = urlparse(next_page)
-            if parsed.netloc or parsed.scheme:
-                next_page = None  # reject absolute URLs
+            # Reject absolute URLs, protocol-relative URLs, and any with scheme/netloc
+            if parsed.netloc or parsed.scheme or next_page.startswith("//"):
+                next_page = None  # reject unsafe URLs
         return redirect(next_page or url_for("index"))
 
     return render_template("auth/login.html")
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()

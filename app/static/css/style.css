@@ -2077,3 +2077,17 @@ textarea:focus-visible {
         display: none;
     }
 }
+
+/* ─── Logout form in dropdown (POST-based for CSRF safety) ─── */
+.user-dropdown__logout-form {
+    margin: 0;
+    padding: 0;
+}
+.user-dropdown__logout-form button {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}

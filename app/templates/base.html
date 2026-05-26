@@ -65,10 +65,13 @@
                                 <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
                                 Dashboard
                             </a>
-                            <a href="{{ url_for('auth.logout') }}" class="user-dropdown__item user-dropdown__item--danger" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-                                Log Out
-                            </a>
+                            <form method="POST" action="{{ url_for('auth.logout') }}" class="user-dropdown__logout-form" role="none">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="user-dropdown__item user-dropdown__item--danger" role="menuitem">
+                                    <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                                    Log Out
+                                </button>
+                            </form>
                         </div>
                     </div>
                 {% else %}
@@ -103,7 +106,9 @@
     </footer>
 
     <!-- Vue 3 via CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"
+            integrity="sha384-VZcNpmAsYOolFmzCPnyj2Y4J6ROMzqSDSfVG+/6ZDIDNGePL7ROhI3g74WXj06hB"
+            crossorigin="anonymous"></script>
 
     <!-- User dropdown toggle -->
     <script>

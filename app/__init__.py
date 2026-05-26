@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 # Load .env file if present (for local development)
@@ -21,6 +23,11 @@ login_manager.login_view = "auth.login"
 login_manager.login_message_category = "info"
 csrf = CSRFProtect()
 migrate = Migrate()
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "60 per hour"],
+    storage_uri="memory://",
+)
 
 
 def create_app(config_class=None):
@@ -33,6 +40,10 @@ def create_app(config_class=None):
         from app.config import DevelopmentConfig
         config_class = DevelopmentConfig
     app.config.from_object(config_class)
+
+    # Run production validation if available
+    if hasattr(config_class, "init_app"):
+        config_class.init_app(app)
 
     # Ensure the instance folder exists (SQLite DB lives here)
     os.makedirs(app.instance_path, exist_ok=True)
@@ -49,12 +60,16 @@ def create_app(config_class=None):
     csrf.init_app(app)
     migrate.init_app(app, db)
 
+    # Disable rate limiter during testing to avoid interfering with test suite
+    if not app.config.get("TESTING"):
+        limiter.init_app(app)
+
     # User loader for Flask-Login
     from app.models import User
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -146,6 +161,14 @@ def create_app(config_class=None):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'"
+        )
         return response
 
     # Create tables directly for testing (in-memory DB); otherwise use migrations

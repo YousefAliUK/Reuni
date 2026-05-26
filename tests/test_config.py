@@ -21,9 +21,15 @@ class TestAppConfig:
         assert dev_app.config["TESTING"] is not True
 
     def test_production_config(self):
-        """ProductionConfig should disable DEBUG."""
-        prod_app = create_app(ProductionConfig)
-        assert prod_app.config["DEBUG"] is False
+        """ProductionConfig should refuse to start without SECRET_KEY."""
+        import pytest
+        # Production should raise RuntimeError if SECRET_KEY is not set
+        with pytest.raises(RuntimeError, match="SECRET_KEY"):
+            create_app(ProductionConfig)
+
+    def test_production_config_debug_disabled(self):
+        """ProductionConfig should have DEBUG disabled."""
+        assert ProductionConfig.DEBUG is False
 
     def test_app_factory_returns_flask_app(self, app):
         """create_app() should return a Flask application instance."""

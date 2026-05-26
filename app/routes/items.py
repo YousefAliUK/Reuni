@@ -112,10 +112,30 @@ def list_item():
         category = request.form.get("category", "")
         condition = request.form.get("condition", "")
         is_free = request.form.get("is_free") == "on"
-        price = 0.0 if is_free else float(request.form.get("price", 0))
+
+        # Safe price parsing
+        if is_free:
+            price = 0.0
+        else:
+            try:
+                price = float(request.form.get("price", 0))
+            except (ValueError, TypeError):
+                flash("Please enter a valid price.", "danger")
+                return redirect(url_for("items.list_item"))
+            if price < 0:
+                flash("Price cannot be negative.", "danger")
+                return redirect(url_for("items.list_item"))
 
         if not title or category not in CATEGORIES or condition not in CONDITION_CHOICES:
             flash("Please fill in all required fields correctly.", "danger")
+            return redirect(url_for("items.list_item"))
+
+        # Input length validation
+        if len(title) > 140:
+            flash("Title must be 140 characters or fewer.", "danger")
+            return redirect(url_for("items.list_item"))
+        if len(description) > 2000:
+            flash("Description must be 2000 characters or fewer.", "danger")
             return redirect(url_for("items.list_item"))
 
         image_file = request.files.get("image")
@@ -190,10 +210,30 @@ def edit_item(item_id):
         category = request.form.get("category", "")
         condition = request.form.get("condition", "")
         is_free = request.form.get("is_free") == "on"
-        price = 0.0 if is_free else float(request.form.get("price", 0))
+
+        # Safe price parsing
+        if is_free:
+            price = 0.0
+        else:
+            try:
+                price = float(request.form.get("price", 0))
+            except (ValueError, TypeError):
+                flash("Please enter a valid price.", "danger")
+                return redirect(url_for("items.edit_item", item_id=item.id))
+            if price < 0:
+                flash("Price cannot be negative.", "danger")
+                return redirect(url_for("items.edit_item", item_id=item.id))
 
         if not title or category not in CATEGORIES or condition not in CONDITION_CHOICES:
             flash("Please fill in all required fields correctly.", "danger")
+            return redirect(url_for("items.edit_item", item_id=item.id))
+
+        # Input length validation
+        if len(title) > 140:
+            flash("Title must be 140 characters or fewer.", "danger")
+            return redirect(url_for("items.edit_item", item_id=item.id))
+        if len(description) > 2000:
+            flash("Description must be 2000 characters or fewer.", "danger")
             return redirect(url_for("items.edit_item", item_id=item.id))
 
         # Handle optional image replacement

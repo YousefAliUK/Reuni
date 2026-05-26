@@ -82,7 +82,7 @@ class TestRegister:
             "password": "password123",
             "confirm_password": "password123",
         }, follow_redirects=True)
-        assert b"already linked to an account" in resp.data
+        assert b"already exists" in resp.data
 
     def test_register_normalises_phone(self, client, db_session):
         """Phone starting with +44 should be stored unchanged."""
@@ -167,10 +167,11 @@ class TestLogout:
 
     def test_logout_redirects(self, auth_client):
         """Logging out should redirect to index."""
-        resp = auth_client.get("/auth/logout", follow_redirects=False)
+        resp = auth_client.post("/auth/logout", follow_redirects=False)
         assert resp.status_code == 302
 
     def test_logout_message(self, auth_client):
         """Logging out should flash a confirmation message."""
-        resp = auth_client.get("/auth/logout", follow_redirects=True)
+        resp = auth_client.post("/auth/logout", follow_redirects=True)
         assert b"logged out" in resp.data
+
