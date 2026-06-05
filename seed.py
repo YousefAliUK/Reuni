@@ -1,5 +1,5 @@
 """
-UniCycle — Seed Script
+Reuni — Seed Script
 Populates the database with test users and sample items (with placeholder images).
 
 Usage:
@@ -161,9 +161,17 @@ def seed():
         db.create_all()
 
         # Create users
+        from app.utils.email_validation import extract_university_domain
         users = {}
         for u_data in SAMPLE_USERS:
-            user = User(email=u_data["email"], name=u_data["name"], phone_number=u_data["phone_number"])
+            domain = extract_university_domain(u_data["email"])
+            user = User(
+                email=u_data["email"],
+                name=u_data["name"],
+                phone_number=u_data["phone_number"],
+                university_domain=domain,
+                is_verified=True
+            )
             user.set_password(u_data["password"])
             db.session.add(user)
             users[u_data["email"]] = user
@@ -199,6 +207,7 @@ def seed():
                 image_filename=image_filename,
                 kg_saved=kg,
                 seller_id=seller.id,
+                university_domain=seller.university_domain,
             )
             db.session.add(item)
 
@@ -213,4 +222,6 @@ def seed():
 
 
 if __name__ == "__main__":
+    if not app.debug:
+        sys.exit("Refusing to seed in production")
     seed()

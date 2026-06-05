@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Partner Sign Up — Reuni{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Create Partner Account</h2>
+    <p class="auth-container__sub" style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-bottom: 1.5rem; text-align: center;">
+        Scoped to: <strong>{{ university_domain }}</strong>
+    </p>
+    <form method="POST" action="{{ url_for('auth.invite_register', token=token) }}" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form__group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="Jane Doe" required>
+        </div>
+        <div class="form__group">
+            <label for="email">Staff Institutional Email</label>
+            <input type="email" id="email" name="email" placeholder="j.doe@{{ university_domain }}" required>
+            <small class="form__hint" style="color: var(--color-warning, #f59e0b);">Please use your personal institutional email address, not a team or shared inbox (e.g. do not use sustainability@...).</small>
+        </div>
+        <div class="form__group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8">
+        </div>
+        <div class="form__group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required minlength="8">
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">Create Partner Account</button>
+    </form>
+    <p class="auth-container__footer">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+    </p>
+</div>
+{% endblock %}

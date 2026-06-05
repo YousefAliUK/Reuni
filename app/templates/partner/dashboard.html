@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Partner Dashboard — Reuni{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- ─── Dashboard Header ─── -->
+    <div class="dashboard__header">
+        <div class="dashboard__avatar">
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 2.25rem;">analytics</span>
+        </div>
+        <div class="dashboard__user-info">
+            {% if is_global %}
+                <h1>Global Sustainability Dashboard</h1>
+                <p class="dashboard__email">All Registered Institutions</p>
+            {% else %}
+                <h1>{{ current_user.partner_university | upper }} Dashboard</h1>
+                <p class="dashboard__email">Institution Scope: {{ current_user.partner_university }}</p>
+            {% endif %}
+        </div>
+        <div class="dashboard__stats" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">recycling</span>
+                <div>
+                    <span class="stat-card__value">{{ total_items_exchanged }}</span>
+                    <span class="stat-card__label">Items Exchanged</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">eco</span>
+                <div>
+                    <span class="stat-card__value">{{ "%.1f"|format(total_kg_saved) }}</span>
+                    <span class="stat-card__label">kg Saved</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">group</span>
+                <div>
+                    <span class="stat-card__value">{{ total_verified_students }}</span>
+                    <span class="stat-card__label">Verified Students</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Category Stats ─── -->
+    <section class="dashboard__section">
+        <h2>
+            <span class="material-symbols-outlined heading-icon" aria-hidden="true">bar_chart</span>
+            Activity by Category
+        </h2>
+        
+        {% if items_by_category %}
+            <div class="dashboard__list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                {% for category, count in items_by_category %}
+                    <div class="dash-item" style="padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); text-decoration: none; color: inherit; cursor: default;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary, #10b981);">folder</span>
+                            <strong>{{ category }}</strong>
+                        </div>
+                        <span class="status-badge status-badge--active" style="font-size: 0.875rem; font-weight: 600;">{{ count }} exchanged</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard__empty">
+                <p>No activity recorded yet for this university domain.</p>
+                {% if not is_global %}
+                    <p style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-top: 0.25rem;">Share Reuni with students at {{ current_user.partner_university }} to get started!</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- ─── Footnote Disclosure ─── -->
+    <div style="margin-top: 2rem; padding: 1rem; text-align: center; border-radius: 8px; font-size: 0.875rem; color: var(--color-text-muted, #64748b); background: var(--bg-hover, #f8fafc);">
+        <p>♻️ <em>Data updates in real time. Individual student data is never shared to preserve privacy.</em></p>
+    </div>
+</div>
+{% endblock %}

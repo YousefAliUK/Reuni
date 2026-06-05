@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Verify Email — Reuni{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Verify Your Email</h2>
+    <p style="margin-bottom: 1.5rem; color: var(--text-light); text-align: center;">
+        We've sent a 6-digit verification code to <strong>{{ email }}</strong>. Please enter the code below to activate your account.
+    </p>
+    <form method="POST" action="{{ url_for('auth.verify_email') }}" class="form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form__group">
+            <label for="code">6-Digit Verification Code</label>
+            <input type="text" id="code" name="code" placeholder="123456" pattern="\d{6}" maxlength="6" required style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;" autocomplete="one-time-code">
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">Verify Account</button>
+    </form>
+    <p class="auth-container__footer">
+        Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a>
+    </p>
+</div>
+{% endblock %}

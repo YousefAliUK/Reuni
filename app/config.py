@@ -1,5 +1,5 @@
 """
-UniCycle — Application Configuration
+Reuni — Application Configuration
 """
 
 import os
@@ -16,12 +16,37 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    LATE_THRESHOLD_HOURS = 24
+    AUTO_EXPIRY_HOURS = 72
+
     # Session cookie security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = 7 * 24 * 60 * 60  # 7 days in seconds
+
+    # Limit file uploads to 5MB
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
     # Password policy
     MIN_PASSWORD_LENGTH = 8
+
+    # Set of university domains permitted to register.
+    # Use a Python set literal — {'brookes.ac.uk'} is a set, not a dict.
+    # To open to ALL .ac.uk universities, set this to an empty set: set()
+    # Never use a plain string comparison — always use set membership.
+    _raw_domains = os.environ.get("ALLOWED_UNIVERSITY_DOMAINS", "brookes.ac.uk")
+    ALLOWED_UNIVERSITY_DOMAINS: set = set(
+        d.strip().lower() for d in _raw_domains.split(",") if d.strip()
+    )
+
+    # Flask-Mail configuration
+    MAIL_SERVER = os.environ.get("MAIL_SERVER")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
+    MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "support@reuni.ac.uk")
 
 
 class DevelopmentConfig(Config):
@@ -38,6 +63,14 @@ class TestingConfig(Config):
     SECRET_KEY = "testing-secret-key-not-for-production"
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SESSION_COOKIE_SECURE = False
+    RATELIMIT_ENABLED = False
+
+    
+    # For testing, we also allow university.ac.uk so existing tests pass
+    ALLOWED_UNIVERSITY_DOMAINS = {"brookes.ac.uk", "university.ac.uk"}
+    
+    # Suppress real emails during tests
+    MAIL_SUPPRESS_SEND = True
 
 
 class ProductionConfig(Config):

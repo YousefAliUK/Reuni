@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}PIN Handshake — {{ item.title }} — UniCycle{% endblock %}
+{% block title %}PIN Handshake — {{ item.title }} — Reuni{% endblock %}
 
 {% block content %}
 <div class="pin-page">
@@ -37,11 +37,26 @@
                         Show this PIN to the seller after you've inspected the item and confirmed payment.
                     {% endif %}
                 </p>
+                {% if pin_code %}
                 <div class="pin-page__code" aria-label="PIN code">
-                    {% for digit in item.pin_code %}
+                    {% for digit in pin_code %}
                     <span class="pin-page__digit">{{ digit }}</span>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="pin-page__no-code" style="text-align: center; margin-bottom: 1.5rem;">
+                    <p class="pin-page__instruction" style="color: var(--clr-danger); font-weight: 500;">
+                        ⚠️ For security, the PIN is only shown once immediately after claiming and is not stored in plaintext. It has been sent to your registered university email.
+                    </p>
+                </div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('items.resend_pin', item_id=item.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--outline btn--sm" style="margin: 0 auto; display: flex;">
+                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">mail</span>
+                        Regenerate &amp; Email PIN
+                    </button>
+                </form>
             </div>
             {% else %}
             <!-- This user ENTERS the PIN -->
@@ -74,18 +89,26 @@
             {% endif %}
         </div>
 
-        <!-- Contact Info (buyer sees seller's phone) -->
-        {% if current_user.id == item.buyer_id %}
+        <!-- Contact Info -->
         <div class="pin-page__contact">
+            {% if current_user.id == item.buyer_id %}
             <h3>📱 Contact Seller</h3>
             <p>{{ item.seller.name }}: <strong>{{ item.seller.phone_number }}</strong></p>
-            <a href="https://wa.me/{{ item.seller.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20UniCycle.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
+            <a href="https://wa.me/{{ item.seller.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
                class="btn btn--outline" target="_blank" rel="noopener">
                 <span class="material-symbols-outlined btn__icon" aria-hidden="true">chat</span>
                 Message on WhatsApp
             </a>
+            {% elif current_user.id == item.seller_id %}
+            <h3>📱 Contact Buyer</h3>
+            <p>{{ item.buyer.name }}: <strong>{{ item.buyer.phone_number }}</strong></p>
+            <a href="https://wa.me/{{ item.buyer.phone_number[1:] }}?text=Hey%2C%20thanks%20for%20claiming%20my%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
+               class="btn btn--outline" target="_blank" rel="noopener">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">chat</span>
+                Message on WhatsApp
+            </a>
+            {% endif %}
         </div>
-        {% endif %}
 
         <!-- Safe Exchange Guide -->
         <div class="pin-page__guide">

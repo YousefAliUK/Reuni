@@ -1,5 +1,5 @@
 """
-UniCycle — Database Models
+Reuni — Database Models
 """
 
 from datetime import datetime, timezone
@@ -42,17 +42,38 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     name = db.Column(db.String(80), nullable=False)
-    phone_number = db.Column(db.String(20), unique=True, nullable=False)
+    phone_number = db.Column(db.String(20), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    kg_saved_total = db.Column(db.Float, default=0.0)
+    kg_saved_total = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
+    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default='0')
+    locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
+
+    role = db.Column(db.String(20), nullable=False, default='student', server_default='student')
+    partner_university = db.Column(db.String(100), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, server_default='1')
+
+    # Email ownership verification fields
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    university_domain = db.Column(db.String(100), nullable=True)
+    email_verification_code = db.Column(db.String(256), nullable=True)
+    email_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    email_verification_attempts = db.Column(db.Integer, default=0, nullable=False)
 
     # Relationship
     items = db.relationship(
         "Item", foreign_keys="Item.seller_id", backref="seller", lazy=True
     )
+
+    @property
+    def is_partner(self):
+        return self.role == 'partner'
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -71,14 +92,14 @@ class Item(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(140), nullable=False)
-    description = db.Column(db.Text, default="")
+    description = db.Column(db.Text, db.CheckConstraint('length(description) <= 2000'), default="")
     category = db.Column(db.String(60), nullable=False)
     condition = db.Column(db.String(20), nullable=False)
-    price = db.Column(db.Float, default=0.0)
+    price = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
     is_free = db.Column(db.Boolean, default=False)
     image_filename = db.Column(db.String(255), nullable=True, default=None)
-    kg_saved = db.Column(db.Float, default=0.0)
-    pin_code = db.Column(db.String(4), nullable=True, default=None)
+    kg_saved = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
+    pin_code = db.Column(db.String(256), nullable=True, default=None)
     pin_expires_at = db.Column(db.DateTime, nullable=True, default=None)
     claimed_at = db.Column(db.DateTime, nullable=True, default=None)
     pin_attempts = db.Column(db.Integer, default=0)
@@ -86,6 +107,8 @@ class Item(db.Model):
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
     is_sold = db.Column(db.Boolean, default=False)
+
+    university_domain = db.Column(db.String(100), nullable=True)
 
     # Foreign keys
     seller_id = db.Column(
@@ -102,3 +125,28 @@ class Item(db.Model):
 
     def __repr__(self):
         return f"<Item {self.title}>"
+
+
+# ──────────────────────────────────────────────
+# Cancellation Record Model
+# ──────────────────────────────────────────────
+class CancellationRecord(db.Model):
+    __tablename__ = "cancellation_records"
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey("items.id"), nullable=False)
+    cancelled_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    other_party_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    claimed_at = db.Column(db.DateTime, nullable=False)
+    cancelled_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    hours_held = db.Column(db.Float, nullable=False)
+    tier = db.Column(db.String(10), nullable=False)  # 'clean' or 'late'
+    cancelled_by_role = db.Column(db.String(10), nullable=False)  # 'buyer' or 'seller'
+
+    # Relationships
+    item = db.relationship("Item", backref=db.backref("cancellations", lazy=True))
+    cancelled_by = db.relationship("User", foreign_keys=[cancelled_by_id], backref="cancellations_initiated", lazy=True)
+    other_party = db.relationship("User", foreign_keys=[other_party_id], backref="cancellations_received", lazy=True)
+
+    def __repr__(self):
+        return f"<CancellationRecord item_id={self.item_id} tier={self.tier}>"

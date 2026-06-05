@@ -1,5 +1,5 @@
 """
-UniCycle — Items Routes (Blueprint)
+Reuni — Items Routes (Blueprint)
 Handles listing, viewing, editing, deleting, buying/claiming items,
 and the PIN-handshake flow for completing transactions.
 """
@@ -9,17 +9,25 @@ import uuid
 import secrets
 from datetime import datetime, timezone, timedelta
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from flask import (
     Blueprint, render_template, redirect, url_for, flash,
-    request, jsonify, current_app,
+    request, jsonify, current_app, abort, session
 )
 from flask_login import login_required, current_user
 from PIL import Image as PILImage
+from flask_mail import Message
 
-from app import db
+from app import db, mail, limiter
 from app.models import (
-    Item, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES,
+    Item, User, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES,
     ALLOWED_EXTENSIONS, MAX_IMAGE_SIZE,
+)
+from app.utils.decorators import verified_required
+from app.utils.cancellation import (
+    calculate_hours_held, get_cancellation_tier,
+    get_tier_message_for_canceller, get_tier_message_for_other_party
 )
 
 items_bp = Blueprint("items", __name__, url_prefix="/items")
@@ -78,7 +86,7 @@ def _delete_image(filename):
         os.remove(path)
 
 
-def _cancel_claim(item):
+def cancel_claim(item):
     """Reset all claim-related fields on an item."""
     item.buyer_id = None
     item.pin_code = None
@@ -104,8 +112,12 @@ def detail(item_id):
 
 @items_bp.route("/new", methods=["GET", "POST"])
 @login_required
+@verified_required
 def list_item():
     """Display and process the 'List an Item' form."""
+    if current_user.phone_number is None:
+        flash("Please add a phone number in your settings before listing or buying items.", "warning")
+        return redirect(url_for("profile"))
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
@@ -157,6 +169,7 @@ def list_item():
             image_filename=image_filename,
             kg_saved=kg,
             seller_id=current_user.id,
+            university_domain=current_user.university_domain,
         )
         db.session.add(item)
         try:
@@ -238,10 +251,13 @@ def edit_item(item_id):
 
         # Handle optional image replacement
         image_file = request.files.get("image")
+        old_image_filename = None
+        new_image_filename = None
         if image_file and image_file.filename:
             new_filename = _save_image(image_file)
             if new_filename:
-                _delete_image(item.image_filename)
+                old_image_filename = item.image_filename
+                new_image_filename = new_filename
                 item.image_filename = new_filename
             else:
                 flash("Invalid image file. Original image kept.", "warning")
@@ -256,7 +272,11 @@ def edit_item(item_id):
 
         try:
             db.session.commit()
+            if old_image_filename:
+                _delete_image(old_image_filename)
         except Exception as e:
+            if new_image_filename:
+                _delete_image(new_image_filename)
             db.session.rollback()
             current_app.logger.error(f"Database error during edit_item: {e}")
             flash("A database error occurred. Your changes could not be saved. Please try again.", "danger")
@@ -295,10 +315,11 @@ def delete_item(item_id):
         flash("You can't delete this item while a handshake is pending.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    _delete_image(item.image_filename)
+    image_filename = item.image_filename
     db.session.delete(item)
     try:
         db.session.commit()
+        _delete_image(image_filename)
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Database error during delete_item: {e}")
@@ -315,8 +336,12 @@ def delete_item(item_id):
 
 @items_bp.route("/<int:item_id>/buy", methods=["POST"])
 @login_required
+@verified_required
 def buy_item(item_id):
     """Initiate a claim — generates a PIN for the handshake."""
+    if current_user.phone_number is None:
+        flash("Please add a phone number in your settings before listing or buying items.", "warning")
+        return redirect(url_for("profile"))
     item = db.get_or_404(Item, item_id)
 
     if item.seller_id == current_user.id:
@@ -327,12 +352,13 @@ def buy_item(item_id):
     # The WHERE clause ensures only one concurrent request can succeed.
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     pin = f"{secrets.randbelow(10000):04d}"
+    hashed_pin = generate_password_hash(pin)
     try:
         rows = Item.query.filter_by(
             id=item_id, buyer_id=None, is_sold=False
         ).update({
             "buyer_id": current_user.id,
-            "pin_code": pin,
+            "pin_code": hashed_pin,
             "claimed_at": now,
             "pin_expires_at": now + timedelta(hours=72),
             "pin_attempts": 0,
@@ -349,6 +375,30 @@ def buy_item(item_id):
         current_app.logger.error(f"Database error during buy_item: {e}")
         flash("A database error occurred while claiming the item. Please try again.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
+
+    session[f"pin_{item.id}"] = pin
+
+    try:
+        holder = item.seller if item.is_free else current_user
+        msg = Message(
+            subject=f"Transaction PIN for {item.title}",
+            recipients=[holder.email]
+        )
+        msg.body = f"""Hi {holder.name},
+
+An exchange has been initiated for the item "{item.title}" on Reuni.
+
+Your 4-digit transaction PIN is:
+
+{pin}
+
+Please keep this PIN secure. 
+{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}
+
+— The Reuni team"""
+        mail.send(msg)
+    except Exception as e:
+        current_app.logger.error(f"Failed to send PIN email: {e}")
 
     flash(f"Claim initiated for \"{item.title}\"! Complete the PIN handshake to finish.", "success")
     return redirect(url_for("items.pin_page", item_id=item.id))
@@ -381,8 +431,9 @@ def pin_page(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
-            _cancel_claim(item)
+            cancel_claim(item)
             db.session.commit()
+            session.pop(f"pin_{item.id}", None)
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during auto-cancel in pin_page: {e}")
@@ -397,10 +448,14 @@ def pin_page(item_id):
     else:
         is_holder = (current_user.id == item.buyer_id)
 
+    # Get plaintext PIN if cached in session
+    pin_code = session.get(f"pin_{item.id}")
+
     return render_template(
         "items/pin.html",
         item=item,
         is_holder=is_holder,
+        pin_code=pin_code,
     )
 
 
@@ -428,22 +483,25 @@ def confirm_pin(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
-            _cancel_claim(item)
+            cancel_claim(item)
             db.session.commit()
+            session.pop(f"pin_{item.id}", None)
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during auto-cancel in confirm_pin: {e}")
         flash("The claim has expired. The item is available again.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
+    from werkzeug.security import check_password_hash
     entered_pin = request.form.get("pin", "").strip()
 
-    if entered_pin != item.pin_code:
+    if not check_password_hash(item.pin_code, entered_pin):
         try:
             item.pin_attempts += 1
             if item.pin_attempts >= 3:
-                _cancel_claim(item)
+                cancel_claim(item)
                 db.session.commit()
+                session.pop(f"pin_{item.id}", None)
                 flash("Too many wrong attempts. The claim has been cancelled.", "danger")
                 return redirect(url_for("items.detail", item_id=item.id))
             db.session.commit()
@@ -469,6 +527,7 @@ def confirm_pin(item_id):
         item.pin_attempts = 0
 
         db.session.commit()
+        session.pop(f"pin_{item.id}", None)
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Database error during PIN confirmation: {e}")
@@ -493,29 +552,184 @@ def cancel_claim_route(item_id):
     """Cancel a pending claim — either buyer or seller can do this."""
     item = db.get_or_404(Item, item_id)
 
-    if current_user.id != item.buyer_id and current_user.id != item.seller_id:
-        flash("You don't have permission to cancel this claim.", "danger")
-        return redirect(url_for("items.detail", item_id=item.id))
-
+    # 1. Check the item is actually in a claimed/pending state
     if item.is_sold:
-        flash("This transaction is already complete and cannot be cancelled.", "info")
+        flash("This exchange is already complete", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    if not item.pin_code:
-        flash("No active claim to cancel.", "info")
+    if not item.buyer_id or not item.pin_code:
+        flash("This item is no longer claimed", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
+    # 2. Verify authorization
+    if current_user.id != item.buyer_id and current_user.id != item.seller_id:
+        abort(403)
+
+    # Data integrity check
+    if item.claimed_at is None:
+        current_app.logger.error(f"Data integrity issue: claimed_at is None for claimed item {item.id}")
+        abort(500)
+
+    # 3. Check auto-expiry
+    hours_held = calculate_hours_held(item.claimed_at)
+    auto_expiry_hours = current_app.config.get("AUTO_EXPIRY_HOURS", 72)
+    if hours_held >= auto_expiry_hours:
+        try:
+            cancel_claim(item)
+            db.session.commit()
+            session.pop(f"pin_{item.id}", None)
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during cancel of expired claim: {e}")
+        flash("This claim already expired automatically", "info")
+        if current_user.id == item.seller_id:
+            return redirect(url_for("items.detail", item_id=item.id))
+        else:
+            return redirect(url_for("index"))
+
+    # 4. Calculate hours_held and tier
+    tier = get_cancellation_tier(item.claimed_at)
+
+    # 5. Determine cancelled_by_role
+    if current_user.id == item.buyer_id:
+        cancelled_by_role = "buyer"
+        other_party_id = item.seller_id
+        redirect_url = redirect(url_for("index"))
+    else:
+        cancelled_by_role = "seller"
+        other_party_id = item.buyer_id
+        redirect_url = redirect(url_for("items.detail", item_id=item.id))
+
+    other_party = db.session.get(User, other_party_id)
+    if not other_party:
+        current_app.logger.error(f"Data integrity issue: other party user {other_party_id} not found for claimed item {item.id}")
+        abort(500)
+
+    # Cache metadata for email sending
+    item_title = item.title
+    canceller_name = current_user.name
+
+    # 6. Create the CancellationRecord
+    record = CancellationRecord(
+        item_id=item.id,
+        cancelled_by_id=current_user.id,
+        other_party_id=other_party_id,
+        claimed_at=item.claimed_at,
+        hours_held=hours_held,
+        tier=tier,
+        cancelled_by_role=cancelled_by_role
+    )
+    db.session.add(record)
+
+    # 7. Update item status back to available, clear claim fields
+    cancel_claim(item)
+
+    # 8. Commit both atomically
     try:
-        _cancel_claim(item)
         db.session.commit()
+        session.pop(f"pin_{item.id}", None)
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Database error during cancel_claim_route: {e}")
-        flash("A database error occurred while cancelling the claim. Please try again.", "danger")
+        current_app.logger.error(f"Database error committing cancellation transaction: {e}")
+        flash("A database error occurred. Please try again.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    flash(f"Claim on \"{item.title}\" has been cancelled. The item is available again.", "info")
-    return redirect(url_for("items.detail", item_id=item.id))
+    # 9. Send email notification to the other party (see email section)
+    # Send after db.session.commit() — never inside the transaction
+    try:
+        other_party_role = "seller" if cancelled_by_role == "buyer" else "buyer"
+        tier_msg = get_tier_message_for_other_party(
+            tier=tier,
+            role=other_party_role,
+            name=canceller_name,
+            item=item_title,
+            hours=hours_held
+        )
+        item_link = url_for("items.detail", item_id=item_id, _external=True)
+
+        msg = Message(
+            subject=f"A claim on {item_title} has been cancelled",
+            recipients=[other_party.email]
+        )
+        msg.body = (
+            f"Hello {other_party.name},\n\n"
+            f"The claim on the item \"{item_title}\" has been cancelled.\n\n"
+            f"Cancelled by: {cancelled_by_role}\n"
+            f"Item name: {item_title}\n\n"
+            f"{tier_msg}\n\n"
+            f"You can view the item listing back on the marketplace here: {item_link}\n\n"
+            f"— The Reuni team"
+        )
+        mail.send(msg)
+    except Exception as mail_err:
+        current_app.logger.warning(f"Failed to send cancellation email notification to {other_party.email}: {mail_err}")
+
+    # 10. Flash the appropriate tier message to the canceller
+    flash_msg = get_tier_message_for_canceller(tier, cancelled_by_role)
+    flash(flash_msg, "info" if tier == "clean" else "warning")
+
+    # 11. Redirect to the item page (seller) or browse page (buyer)
+    return redirect_url
+
+
+@items_bp.route("/<int:item_id>/resend-pin", methods=["POST"])
+@login_required
+@limiter.limit("3 per hour")
+def resend_pin(item_id):
+    """Regenerate and email a new transaction PIN to the authorized holder."""
+    item = db.get_or_404(Item, item_id)
+
+    if current_user.id != item.buyer_id and current_user.id != item.seller_id:
+        abort(403)
+
+    if item.is_sold or not item.pin_code:
+        flash("No active claim on this item.", "info")
+        return redirect(url_for("items.detail", item_id=item.id))
+
+    if item.is_free:
+        holder = item.seller
+        is_holder = (current_user.id == item.seller_id)
+    else:
+        holder = item.buyer
+        is_holder = (current_user.id == item.buyer_id)
+
+    if not is_holder:
+        abort(403)
+
+    from werkzeug.security import generate_password_hash
+    pin = f"{secrets.randbelow(10000):04d}"
+    item.pin_code = generate_password_hash(pin)
+    item.pin_attempts = 0
+    try:
+        db.session.commit()
+        session[f"pin_{item.id}"] = pin
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Database error during PIN regeneration: {e}")
+        flash("A database error occurred. Please try again.", "danger")
+        return redirect(url_for("items.pin_page", item_id=item.id))
+
+    try:
+        msg = Message(
+            subject=f"New Transaction PIN for {item.title}",
+            recipients=[holder.email]
+        )
+        msg.body = f"""Hi {holder.name},
+
+A new 4-digit transaction PIN has been generated for "{item.title}":
+
+{pin}
+
+{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}
+
+— The Reuni team"""
+        mail.send(msg)
+        flash("A new PIN has been generated and sent to your email.", "success")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send resend-pin email: {e}")
+        flash("Failed to send email, but a new PIN was generated. If you can see it on this screen, please note it down.", "warning")
+
+    return redirect(url_for("items.pin_page", item_id=item.id))
 
 
 # ──────────────────────────────────────────────

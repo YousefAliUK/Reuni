@@ -1,5 +1,5 @@
 """
-UniCycle — Entry Point
+Reuni — Entry Point
 Run this file to start the Flask development server.
 Usage: python run.py
 """

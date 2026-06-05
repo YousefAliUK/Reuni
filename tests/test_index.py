@@ -1,5 +1,5 @@
 """
-UniCycle — Index & Dashboard Tests
+Reuni — Index & Dashboard Tests
 Verifies marketplace home page and dashboard access.
 """
 
@@ -41,6 +41,65 @@ class TestIndexPage:
         """Logged-in users should not see the welcome banner."""
         resp = auth_client.get("/")
         assert b"Get Started" not in resp.data
+
+    def test_search_wildcard_escaping(self, client, db_session, sample_user):
+        """Search queries containing % and _ should be escaped to match literally."""
+        from app.models import Item
+        item1 = Item(
+            title="100% Pure Silk Scarf",
+            description="Scarf",
+            category="Clothing",
+            condition="New",
+            price=12.50,
+            seller_id=sample_user.id,
+            image_filename="scarf.jpg"
+        )
+        item2 = Item(
+            title="Cotton_Shirt_Blue",
+            description="Shirt",
+            category="Clothing",
+            condition="Good",
+            price=10.00,
+            seller_id=sample_user.id,
+            image_filename="shirt.jpg"
+        )
+        db_session.session.add_all([item1, item2])
+        db_session.session.commit()
+
+        # Search literal '%'
+        resp = client.get("/?q=%")
+        assert b"100% Pure Silk Scarf" in resp.data
+        assert b"Cotton_Shirt_Blue" not in resp.data
+
+        # Search literal '_'
+        resp = client.get("/?q=_")
+        assert b"Cotton_Shirt_Blue" in resp.data
+        assert b"100% Pure Silk Scarf" not in resp.data
+
+    def test_price_filter_edge_cases(self, client, db_session, sample_user):
+        """Price filter should not crash on negative inputs or invalid ranges."""
+        from app.models import Item
+        item = Item(
+            title="Filtered Item",
+            description="Test",
+            category="Books",
+            condition="New",
+            price=10.00,
+            seller_id=sample_user.id,
+            image_filename="book.jpg"
+        )
+        db_session.session.add(item)
+        db_session.session.commit()
+
+        # Min price negative
+        resp = client.get("/?min_price=-5&max_price=15")
+        assert resp.status_code == 200
+        assert b"Filtered Item" in resp.data
+
+        # Min price > Max price
+        resp = client.get("/?min_price=20&max_price=5")
+        assert resp.status_code == 200
+        assert b"Filtered Item" not in resp.data
 
 
 class TestDashboard:
@@ -85,3 +144,19 @@ class TestSecurityHeaders:
         """Response should include Referrer-Policy header."""
         resp = client.get("/")
         assert resp.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+
+class TestProfilePage:
+
+    def test_profile_route_authenticated(self, auth_client):
+        """GET /profile as logged-in user should succeed."""
+        resp = auth_client.get("/profile")
+        assert resp.status_code == 200
+        assert b"Eco Impact" in resp.data or b"Activity" in resp.data
+
+    def test_profile_route_anonymous(self, client):
+        """GET /profile as anonymous user should redirect to login."""
+        resp = client.get("/profile", follow_redirects=False)
+        assert resp.status_code == 302
+        assert "/auth/login" in resp.headers["Location"]
+

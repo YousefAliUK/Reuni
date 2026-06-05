@@ -1,5 +1,5 @@
 """
-UniCycle — Configuration Tests
+Reuni — Configuration Tests
 Verifies that each config class has the correct settings.
 """
 
@@ -24,8 +24,13 @@ class TestAppConfig:
         """ProductionConfig should refuse to start without SECRET_KEY."""
         import pytest
         # Production should raise RuntimeError if SECRET_KEY is not set
-        with pytest.raises(RuntimeError, match="SECRET_KEY"):
-            create_app(ProductionConfig)
+        original_secret = ProductionConfig.SECRET_KEY
+        ProductionConfig.SECRET_KEY = None
+        try:
+            with pytest.raises(RuntimeError, match="SECRET_KEY"):
+                create_app(ProductionConfig)
+        finally:
+            ProductionConfig.SECRET_KEY = original_secret
 
     def test_production_config_debug_disabled(self):
         """ProductionConfig should have DEBUG disabled."""

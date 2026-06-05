@@ -1,7 +1,7 @@
-# UniCycle — Product Specification
+# Reuni — Product Specification
 
-> **Version:** 1.1 · **Date:** 29 March 2026
-> **Author:** Yousef · **University:** Oxford Brookes (`brookes.ac.uk`)
+> **Version:** 1.2 · **Date:** 4 June 2026
+> **Author:** Yousef / AI Assistant · **University:** Oxford Brookes (`brookes.ac.uk`)
 > **Mission:** A hyper-local campus circular-economy platform supporting UN SDG 12 — Responsible Consumption & Production
 
 ---
@@ -22,7 +22,7 @@
 
 ## 1. Vision & Strategy
 
-UniCycle is a student-to-student sustainability marketplace that prevents university waste. Students buy, sell, and donate items — keeping them out of landfill — and the platform tracks the environmental impact in real kilograms saved.
+Reuni is a student-to-student sustainability marketplace that prevents university waste. Students buy, sell, and donate items — keeping them out of landfill — and the platform tracks the environmental impact in real kilograms saved.
 
 ### Strategic Principles
 
@@ -40,31 +40,64 @@ UniCycle is a student-to-student sustainability marketplace that prevents univer
 
 ### 2.1 Tech Stack
 
-| Layer            | Technology                                                                     |
-| ---------------- | ------------------------------------------------------------------------------ |
-| Backend          | Python 3.x, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Migrate |
-| Database         | SQLite (dev) → PostgreSQL (prod)                                               |
-| Frontend         | Jinja2 templates + Vue 3 (CDN, no build step)                                  |
-| CSS              | Vanilla CSS design system (Inter font, WCAG AA accessible)                     |
-| Image processing | Pillow (resize, EXIF strip, format validation)                                 |
-| Auth             | Session-based via Flask-Login, passwords hashed with Werkzeug (PBKDF2+SHA256)  |
+| Layer            | Technology                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| Backend          | Python 3.x, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Migrate, Flask-Limiter, Flask-Mail   |
+| Database         | SQLite (dev/test) → PostgreSQL (prod)                                                                       |
+| Frontend         | Jinja2 templates + Vue 3 (CDN, no build step)                                                               |
+| CSS              | Vanilla CSS design system (Inter / Plus Jakarta Sans font, WCAG AA accessible)                              |
+| Image processing | Pillow (resize, EXIF strip, format validation, JPEG compilation)                                            |
+| Auth & Timers    | Session-based via Flask-Login, passwords hashed with Werkzeug (scrypt), tokens timed with `itsdangerous`     |
 
 ### 2.2 Current Feature Set (Built)
 
-- ✅ User registration and login (`.ac.uk` emails)
-- ✅ Item listing with image upload (validated, resized, EXIF-stripped)
-- ✅ Marketplace browse with search + category filtering
-- ✅ Item detail page
-- ✅ Edit / Delete own listings (ownership-guarded)
-- ✅ Buy / Claim items (marks sold, awards eco-points to seller)
-- ✅ User dashboard (listings, purchases, eco-points)
-- ✅ Eco-points preview via Vue 3 (instant UI feedback on category selection)
-- ✅ CSRF protection on all forms
-- ✅ Security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
-- ✅ 5 MB upload limit
-- ✅ Open redirect prevention on login
-- ✅ Database migrations via Flask-Migrate (Alembic)
-- ✅ 65 automated tests (pytest, in-memory SQLite)
+#### User Authentication & Access Control
+- ✅ **Domain-restricted registration:** Signups restricted to allowed university `.ac.uk` email domains (configured in app, defaulting to `brookes.ac.uk`).
+- ✅ **Email OTP verification:** Dual-phase signups sending a 6-digit OTP code to the student email (using Flask-Mail). The code is securely hashed in the DB, expires in 15 minutes, and has a max 5-attempt verification limit.
+- ✅ **Brute-force account lockout:** Track failed login attempts and lock user accounts for 15 minutes after 5 consecutive failed logins.
+- ✅ **Rate limiting:** Limiter middleware protects auth-sensitive routes (login capped at 10/min, resend-verification at 10/hour).
+- ✅ **Open redirect prevention:** Login redirects check and reject external absolute URLs to prevent phishing.
+- ✅ **Session hijacking security:** Permanent sessions last 7 days with secure attributes (`HttpOnly`, `SameSite=Lax`, and `Secure` cookies enforced in non-development modes).
+
+#### Marketplace & Listing Management
+- ✅ **Item Listing & Uploads:** Students can list items with titles, descriptions (max 2000 chars), categories, conditions, prices, or mark them as free.
+- ✅ **Image Processing Pipeline:** Validates uploads against whitelisted extensions (JPG, PNG, WebP), verifies format integrity using Pillow, resizes to a max dimension of 800px, strips metadata/EXIF tags for privacy, saves with secure UUID-based filenames, and limits files to 5MB.
+- ✅ **Marketplace Browse:** Real-time search (wildcard-escaped), category filtering, price-type filter (free vs. paid), and price range filtering (min/max), using cursor/index pagination (12 items per page).
+- ✅ **Listing Lifecycle Management:** Ownership-guarded editing and deletion of listings (blocked once a transaction is pending or sold).
+
+#### Transaction Verification (PIN Handshake Protocol)
+- ✅ **Physical Verification Scheme:** Cements physical collection via a secure 4-digit PIN exchange. PIN is generated atomically on claim:
+  - **Free Item (£0):** Seller holds the PIN; Buyer inputs it on their phone to confirm receipt.
+  - **Paid Item (£):** Buyer holds the PIN; Seller inputs it to confirm collection after receiving payment.
+- ✅ **PIN Expiry & Rate Limiting:** Timed 72-hour PIN auto-expiry. Capped at 3 failed attempts to enter the PIN before the claim is automatically cancelled and the item is returned to "Available".
+- ✅ **PIN Email Delivery & Resend:** Automatically emails PIN codes to the respective code holder; features a resend action rate-limited to 3 times per hour.
+- ✅ **WhatsApp Bypass:** Phone numbers normalized (normalizes local 07 to `+44`) and validated as unique to detect alt accounts. The seller's phone number is securely revealed to the buyer only after claiming, with a pre-formatted message link to coordinate meeting.
+
+#### Reputation & Cancellation Management
+- ✅ **Manual Cancellation Tiers:** Implemented structured tiers for claimed items cancelled before completion.
+- ✅ **Cancellation Tiering:** Automatically flags cancellations as **Clean** (within 24 hours of claim) or **Late** (after 24 hours).
+- ✅ **Reputation Tracking:** Writes permanent `CancellationRecord` audit logs in the database, tracking elapsed hours, roles, and cancellation types.
+- ✅ **Smart Notifications:** Automated email notifications sent to the other party, and warning alerts displayed to the user who initiated the cancellation.
+- ✅ **Claim Cleanup:** Atomic reset of PIN fields, buyer association, and timestamps upon cancellation.
+
+#### B2B Institutional Portals & ESG Dashboard
+- ✅ **Admin Partner Invitation Portal:** System admins can generate timed invite tokens (signed with URLSafeTimedSerializer, 48-hour expiration) for specific `.ac.uk` university domains.
+- ✅ **Partner Lifecycle Management:** Admin portal lists and enables deactivation of partner accounts (sends deactivation notification email and revokes portal access).
+- ✅ **B2B Partner Dashboard:** Dedicated portal for verified university partners (and global admins) showing real-time ESG metrics:
+  - Total items successfully exchanged at their campus.
+  - Total real `kg saved` from landfill (calculated dynamically from category weights).
+  - Total verified student accounts at their university.
+  - Categorical distribution breakdown of successfully exchanged items.
+- ✅ **Partner Session Security:** Automatic session validation enforcing a hard 7-day session expiry (partner role is logged out and redirected to login).
+
+#### Security, Auditing & Quality Assurance
+- ✅ **CSRF Protection:** Enabled globally on all POST forms via Flask-WTF.
+- ✅ **SQL Injection Prevention:** Parameterized SQL queries enforced through SQLAlchemy ORM.
+- ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy`. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
+- ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, and deactivation events.
+- ✅ **136 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, and index pagination.
+
+---
 
 ### 2.3 Design System & Visual Identity
 
@@ -111,6 +144,8 @@ Load from Google Fonts: `<link href="https://fonts.googleapis.com/css2?family=Pl
 | Modals        | Centred overlay with backdrop blur, slide-up on mobile                 |
 | Notifications | Toast-style, slides in from top-right (desktop) / top (mobile)         |
 
+---
+
 ### 2.4a Mobile-First & PWA Strategy
 
 No native app. The web app is designed mobile-first and wrapped as a PWA:
@@ -118,7 +153,7 @@ No native app. The web app is designed mobile-first and wrapped as a PWA:
 #### Progressive Web App (PWA)
 
 - `manifest.json` → enables "Add to Home Screen" → launches fullscreen (URL bar hidden)
-- UniCycle icon on phone home screen, looks and feels like a native app
+- Reuni icon on phone home screen, looks and feels like a native app
 - Service worker caches static assets for faster loads (Phase 2: offline mode)
 - Zero app store friction — students just visit the URL
 
@@ -140,6 +175,8 @@ Opens the phone camera directly from the browser.
 
 > **Mobile-first rule:** Design for phone first, then `@media (min-width: 768px)` adds desktop layout. Never the other way around.
 
+---
+
 ### 2.4 Weight-Based Category System
 
 Each category maps to a static average weight based on WRAP (UK Waste & Resources Action Programme) reference data. The platform uses **one single metric: `kg_saved`** — there is no separate "points" system.
@@ -157,7 +194,9 @@ Each category maps to a static average weight based on WRAP (UK Waste & Resource
 | Stationery  | 0.3             | Notebooks, pen sets, folders         |
 | Other       | 1.0             | Miscellaneous (conservative default) |
 
-> **Design note:** 8 categories is the UX sweet spot (Hick's Law: 5–9 options). Weights represent what would have gone to landfill if the student hadn't sold it on UniCycle.
+> **Design note:** 8 categories is the UX sweet spot (Hick's Law: 5–9 options). Weights represent what would have gone to landfill if the student hadn't sold it on Reuni.
+
+---
 
 ### 2.5 The PIN Handshake Protocol
 
@@ -175,7 +214,7 @@ Prevents fake "ghost" transactions. Proves physical exchange happened. The PIN h
 ```mermaid
 sequenceDiagram
     participant Buyer
-    participant App as UniCycle
+    participant App as Reuni
     participant Seller
 
     Buyer->>App: Click "Claim"
@@ -193,7 +232,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Buyer
-    participant App as UniCycle
+    participant App as Reuni
     participant Seller
 
     Buyer->>App: Click "Buy"
@@ -227,8 +266,8 @@ For items above **£100**, an additional advisory appears:
 
 | Scenario                               | Outcome                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------- |
-| **Buyer no-show** (72h PIN expiry)     | Claim auto-cancelled, item returns to "available", buyer receives -5 trust      |
-| **Seller no-show** (72h PIN expiry)    | Claim expires, no penalty to buyer (seller is the no-show)                      |
+| **Buyer no-show** (72h PIN expiry)     | Claim auto-cancelled, item returns to "available", cancellation record logged.  |
+| **Seller no-show** (72h PIN expiry)    | Claim expires, item returns to "available", cancellation record logged.         |
 | **Buyer refuses to reveal PIN (paid)** | Seller doesn't hand over item. Stalemate resolves itself — no exchange happens. |
 | **Seller refuses PIN (free)**          | Buyer walks away, claim expires. Logged as a transaction report (see §6.8).     |
 
@@ -253,6 +292,8 @@ For items above **£100**, an additional advisory appears:
 
 Seller cancellation never penalises the buyer (not their fault). The 2 free per month allows genuine "changed my mind" situations without enabling selective buyer rejection.
 
+> **Current Implementation Note:** Since user trust scores are not yet stored in the database model, point penalties are not automatically subtracted during Phase 1. Instead, all cancellation metrics (elapsed hours, roles, and clean/late tiers) are written directly to the `cancellation_records` table to build a transaction history that will seed the trust score system when it is implemented in Phase 2.
+
 **UI transparency:** The claim status page shows the buyer a clear countdown:
 
 > 🟢 _"Free cancellation — 18h 32m left to cancel without penalty"_
@@ -261,14 +302,16 @@ or
 
 > 🟡 _"Late cancellation — Cancelling now will result in a small trust adjustment"_
 
+---
+
 ### 2.6 External Communication (WhatsApp Bypass)
 
 To avoid building in-app chat for the MVP:
 
 - Registration requires a **phone number** (WhatsApp) — normalised to `+44` format, validated as unique across all accounts
-- Duplicate phone numbers are rejected: _"This number is already linked to an account"_ — doubles as **alt-account detection**
+- Duplicate phone numbers are rejected: _"An account with this phone number already exists."_ — doubles as **alt-account detection**
 - When an item is claimed, the system reveals the seller's number to the buyer
-- A "Copy Message" button pre-fills: _"Hey, I just claimed your [Item Name] on UniCycle. When can we meet for the PIN handshake?"_
+- A "Copy Message" button pre-fills: _"Hey, I just claimed your [Item Name] on Reuni. When can we meet for the PIN handshake?"_
 - Contact info is hidden until after the buyer clicks "Claim"/"Buy" — protects seller privacy
 
 ---
@@ -277,9 +320,9 @@ To avoid building in-app chat for the MVP:
 
 ### 3.1 University Scoping
 
-- Sign-ups restricted to `.ac.uk` emails
-- University domain extracted via Python (e.g., `brookes.ac.uk`)
-- Initially all users are Brookes; schema is prepared for multi-university
+- Sign-ups restricted to `.ac.uk` emails (implemented validation rules)
+- University domain extracted via Python (implemented and tested helper `extract_university_domain`)
+- DB schema supports multi-university domain mapping (`university_domain` stored on `users` and `items`)
 
 ### 3.2 Graduated Student Handling
 
@@ -293,7 +336,9 @@ The PIN handshake is the natural membership filter — graduates who leave campu
 
 **Phase 2 (multi-university):** Annual re-verification email to `.ac.uk` address. If it bounces → account enters read-only mode (browse only, can't list or claim).
 
-### 3.3 Trust Score System
+---
+
+### 3.3 Trust Score System (Planned)
 
 An internal, invisible health metric per user account. Never shown directly to users as a raw number.
 
@@ -331,7 +376,9 @@ When a user's trust drops below 50:
 - **Recovery path:** Complete 3 clean PIN handshakes within 60 days → trust resets to 60 (on probation, but visible again)
 - **One vague notification:** _"Your listings are receiving less visibility due to community feedback. Continue making successful transactions to improve."_
 
-### 3.3 Leaderboard Seasons
+---
+
+### 3.3 Leaderboard Seasons (Planned)
 
 | Period             | State                                                                                                     |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
@@ -341,15 +388,17 @@ When a user's trust drops below 50:
 
 > **Critical:** The `kg_saved` lifetime total on each user's profile is **never** reset. Only the seasonal ranking resets.
 
+---
+
 ### 3.4 Academic Year kg Tracking
 
 Three tiers of environmental data, each serving a different purpose:
 
-| Metric                  | Storage                                                       | Resets?     | Purpose                              |
+| Metric                  | Storage                                                       | Resets?     | Status / Purpose                     |
 | ----------------------- | ------------------------------------------------------------- | ----------- | ------------------------------------ |
-| **Lifetime total**      | `users.kg_saved_total`                                        | Never       | User's all-time environmental impact |
-| **Seasonal kg**         | `season_scores` table                                         | Each season | Powers leaderboard rankings          |
-| **Academic year total** | Computed: `SUM(kg_saved) WHERE season BETWEEN Sep 1 – Aug 31` | N/A (query) | University ESG reports               |
+| **Lifetime total**      | `users.kg_saved_total`                                        | Never       | **Built** — User's environmental impact |
+| **Seasonal kg**         | `season_scores` table                                         | Each season | **Planned** — Powers leaderboard     |
+| **Academic year total** | Computed: `SUM(kg_saved) WHERE season BETWEEN Sep 1 – Aug 31` | N/A (query) | **Planned** — University ESG reports |
 
 **For the university ESG dashboard:**
 
@@ -358,7 +407,9 @@ Three tiers of environmental data, each serving a different purpose:
 - Month-by-month trend chart
 - Year-on-year comparison (when data exists)
 
-### 3.5 Badge / Milestone System
+---
+
+### 3.5 Badge / Milestone System (Planned)
 
 Badges are a visual gamification layer on top of `kg_saved`. They create mini-goals and dopamine hits without introducing a separate points system.
 
@@ -382,7 +433,7 @@ Badges are a visual gamification layer on top of `kg_saved`. They create mini-go
 | Progress bar | "████████░░ 0.2 kg to Tree 🌳" shown on dashboard |
 | Notification | In-app notification + animation when a new badge is unlocked |
 
-> **Psychology:** Selling a t-shirt (1.5 kg) alone feels small, but "1.5 kg closer to your next badge" triggers the progress bar effect — the same dopamine loop that makes people grind XP in games. Small items feel meaningful because they contribute to a visible milestone.
+---
 
 ### 3.6 Future Monetisation — Purchasable Boosts (Post-Graduation)
 
@@ -395,7 +446,7 @@ When monetisation is enabled (Graduate Route Visa):
 - `kg_saved` remains sacred, immutable, and exclusively for ESG reporting
 - Purchased boosts work identically to earned boosts (organic feed injection)
 
-> **Why not use kg as currency?** If users "spend" kg on boosts, the ESG number becomes meaningless. Universities need a real, unmanipulated total. Two systems, cleanly separated: kg = environmental impact (immutable), boost tokens = marketplace utility (earnable + purchasable).
+---
 
 ### 3.7 Guerrilla Acquisition
 
@@ -408,13 +459,13 @@ Print QR codes linking to the site → tape inside university laundry rooms, caf
 ### 4.1 The Trojan Horse Pitch
 
 1. Approach the University Sustainability Office
-2. Offer them a **free ESG data dashboard** showing total `kg_saved` by their students
+2. Offer them a **free ESG data dashboard** showing total `kg_saved` by their students (**fully built** at `/partner/dashboard`!)
 3. In exchange, they put your link in the **official university newsletter**
 4. They supply the users for free — you supply the data they need for government reporting
 
 ### 4.2 The B2B Flip
 
-Once UniCycle has hundreds of users and proven data across multiple universities:
+Once Reuni has hundreds of users and proven data across multiple universities:
 
 - Charge universities a **yearly licensing fee** to access the ESG data dashboard
 - Universities need this data to prove "green" metrics to the UK government
@@ -442,9 +493,9 @@ Once UniCycle has hundreds of users and proven data across multiple universities
 
 ### 5.3 GDPR Compliance
 
-- **Required:** Privacy policy page, cookie consent (if applicable)
-- **Required:** "Delete my account" button (right to erasure)
-- **Data stored:** Email, name, WhatsApp/contact, hashed password, transaction history
+- **Planned:** Privacy policy page, cookie consent (if applicable)
+- **Planned:** "Delete my account" button (right to erasure)
+- **Data stored:** Email, name, phone_number, hashed password, transaction and cancellation history
 - **No:** GPS tracking, advertising IDs, third-party data sharing
 
 ---
@@ -453,12 +504,17 @@ Once UniCycle has hundreds of users and proven data across multiple universities
 
 ### 6.1 Rate Limits
 
-| Constraint                | Limit              |
-| ------------------------- | ------------------ |
-| Item listings per account | Max 5 per 24 hours |
-| Reports per account       | Max 3 per 24 hours |
+| Constraint                | Limit              | Status                                                |
+| ------------------------- | ------------------ | ----------------------------------------------------- |
+| Login attempts            | Max 10 per minute  | **Built** (IP + Email keying, blocks via rate limits) |
+| Verification Resends      | Max 10 per hour    | **Built** (Email keying, blocks spam)                 |
+| PIN handshakes resend     | Max 3 per hour     | **Built** (Protects email relays)                     |
+| Item listings per account | Max 5 per 24 hours | **Planned**                                           |
+| Reports per account       | Max 3 per 24 hours | **Planned**                                           |
 
-### 6.2 Jury Moderation System
+---
+
+### 6.2 Jury Moderation System (Planned)
 
 When an item receives enough reports, it's shown to **3 random users with 120+ trust** for a yes/no audit.
 
@@ -473,27 +529,35 @@ When an item receives enough reports, it's shown to **3 random users with 120+ t
 | ✅ Clear  | ❌ Guilty | 🔘 Abstain | **Tie**       | Held           | Held                    | Draft 4th user           |
 
 > **Key rule:** Dissenting voters are never punished. Protects minority opinions and prevents rubber-stamping.
-
+>
 > **Item visibility:** Hidden items use `moderation_status` column (`visible` → `hidden` → `removed`), not deletion. Preserves audit trail for ESG/legal.
 
-### 6.3 Anti-Wash-Trading
+---
+
+### 6.3 Anti-Wash-Trading (Planned)
 
 - **3-item point cap** between the same two users in a 30-day window
 - Marketplace utility (buying/selling) is unlimited — only leaderboard `kg_saved` is capped
 - Sellers won't reject bulk buyers just because the point cap is hit — primary utility (money / convenience) overrides secondary utility (leaderboard position)
 
+---
+
 ### 6.4 Alt-Account Detection
 
-- Flag duplicate WhatsApp/phone numbers across accounts
-- Shadow-banned users who register with a second `.ac.uk` email can be detected via shared device fingerprint or phone number
+- **Flag duplicate WhatsApp/phone numbers:** Enforced in registration database constraints. (Built)
+- **Shadow fingerprinting:** Shadow-banned users who register with a second `.ac.uk` email can be detected via shared device fingerprint or phone number. (Planned)
 
-### 6.5 Bootstrap Phase (First 100 Users)
+---
+
+### 6.5 Bootstrap Phase (First 100 Users) (Planned)
 
 - Disable the -25 reporter penalty (social graph too small for random jury to work)
 - Enable it automatically once user count hits 100
 - This prevents early users from being afraid to report
 
-### 6.6 Boost Token Economy
+---
+
+### 6.6 Boost Token Economy (Planned)
 
 | Parameter     | Value                                                                      |
 | ------------- | -------------------------------------------------------------------------- |
@@ -503,9 +567,9 @@ When an item receives enough reports, it's shown to **3 random users with 120+ t
 | Effect        | Item natively injected into organic feed (e.g., every ~5th item in scroll) |
 | Spend         | Manual — user chooses when to boost which item                             |
 
-> **No banner ads, no special styling.** The boosted item looks identical to every other item. It's simply positioned more frequently in the feed. The user doesn't know it's boosted unless they're the seller.
+---
 
-### 6.7 In-App Notifications
+### 6.7 In-App Notifications (Planned)
 
 Since this is a web app (no native push notifications):
 
@@ -515,7 +579,9 @@ Since this is a web app (no native push notifications):
 - Used for: jury summons, PIN generation, claim confirmations, trust changes, boost token awards
 - Notification feed page: simple list, mark-as-read on click
 
-### 6.8 Split Report System
+---
+
+### 6.8 Split Report System (Planned)
 
 Reports are categorised into two types that follow completely different resolution paths:
 
@@ -553,9 +619,9 @@ Things the jury **cannot** verify (he-said-she-said meetup disputes):
 
 #### Dispute Scope — Terms of Service
 
-UniCycle explicitly does not adjudicate payment or quality disputes:
+Reuni explicitly does not adjudicate payment or quality disputes:
 
-> _"UniCycle connects buyers and sellers. All payments are made directly between users. UniCycle does not process, hold, or guarantee any payments or item quality."_
+> _"Reuni connects buyers and sellers. All payments are made directly between users. Reuni does not process, hold, or guarantee any payments or item quality."_
 
 The campus social pressure, `.ac.uk` identity verification, and simultaneous PIN exchange protocol mitigate real-world risk.
 
@@ -571,8 +637,19 @@ erDiagram
         int id PK
         string email UK
         string name
+        string phone_number UK
         string password_hash
-        int eco_points
+        numeric kg_saved_total
+        int failed_login_attempts
+        datetime locked_until
+        string role
+        string partner_university
+        bool is_active
+        bool is_verified
+        string university_domain
+        string email_verification_code
+        datetime email_verification_expires_at
+        int email_verification_attempts
         datetime created_at
     }
     ITEMS {
@@ -581,19 +658,38 @@ erDiagram
         text description
         string category
         string condition
-        float price
+        numeric price
         bool is_free
         string image_filename
-        int eco_points_awarded
+        numeric kg_saved
+        string pin_code
+        datetime pin_expires_at
+        datetime claimed_at
+        int pin_attempts
         bool is_sold
-        bool eco_points_claimed
-        datetime created_at
+        string university_domain
         int seller_id FK
         int buyer_id FK
+        datetime created_at
+    }
+    CANCELLATION_RECORDS {
+        int id PK
+        int item_id FK
+        int cancelled_by_id FK
+        int other_party_id FK
+        datetime claimed_at
+        datetime cancelled_at
+        float hours_held
+        string tier
+        string cancelled_by_role
     }
     USERS ||--o{ ITEMS : sells
     USERS ||--o{ ITEMS : buys
+    USERS ||--o{ CANCELLATION_RECORDS : cancels
+    ITEMS ||--o{ CANCELLATION_RECORDS : references
 ```
+
+---
 
 ### Future Schema (Phase 2+)
 
@@ -603,13 +699,7 @@ New columns on existing tables:
 | ------- | ------------------- | ------------------------------- | ------------------------------------------ |
 | `users` | `trust_score`       | `Integer, default=100`          | Internal trust metric                      |
 | `users` | `boost_tokens`      | `Integer, default=0`            | Capped at 3                                |
-| `users` | `university_domain` | `String(100)`                   | Extracted from email, e.g. `brookes.ac.uk` |
-| `users` | `contact_method`    | `String(20)`                    | `whatsapp` / `telegram` / `instagram`      |
-| `users` | `contact_handle`    | `String(120)`                   | Phone number or handle                     |
-| `items` | `kg_saved`          | `Float`                         | Looked up from category weight table       |
 | `items` | `moderation_status` | `String(20), default='visible'` | `visible` / `hidden` / `removed`           |
-| `items` | `pin_code`          | `String(4)`                     | Random 4-digit PIN for handshake           |
-| `items` | `pin_expires_at`    | `DateTime`                      | 72-hour auto-expiry                        |
 | `items` | `is_boosted`        | `Boolean, default=False`        | Currently boosted in feed                  |
 | `items` | `boost_expires_at`  | `DateTime`                      | When boost ends                            |
 
@@ -633,40 +723,40 @@ New tables:
 
 ### Implemented (MVP)
 
-| Area               | Implementation                                                 |
-| ------------------ | -------------------------------------------------------------- |
-| Password hashing   | Werkzeug PBKDF2+SHA256 with salt                               |
-| CSRF protection    | Flask-WTF `CSRFProtect` on all POST forms                      |
-| SQL injection      | SQLAlchemy ORM parameterises all queries                       |
-| Image validation   | Extension whitelist + PIL verify + EXIF strip + UUID filenames |
-| Upload limit       | `MAX_CONTENT_LENGTH = 5 MB`                                    |
-| Open redirect      | Login `?next=` param rejects absolute URLs                     |
-| Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` |
-| Ownership checks   | Edit/delete routes verify `seller_id == current_user.id`       |
-| Session management | Flask-Login handles session cookies                            |
-| DB migrations      | Flask-Migrate (Alembic) — version-controlled schema changes    |
+| Area               | Implementation                                                                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| Password hashing   | Werkzeug PBKDF2+SHA256 with salt                                                                          |
+| Password strength  | Server-side enforcement: minimum 8 characters, requiring mixed case (upper/lower) and a digit.             |
+| CSRF protection    | Flask-WTF `CSRFProtect` on all POST forms                                                                 |
+| SQL injection      | SQLAlchemy ORM parameterises all queries                                                                  |
+| Image validation   | Extension whitelist + PIL verify + EXIF strip + UUID filenames                                            |
+| Upload limit       | `MAX_CONTENT_LENGTH = 5 MB`                                                                               |
+| Open redirect      | Login `?next=` param rejects absolute / external URLs                                                     |
+| Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and Strict-Transport-Security (STS)       |
+| CSP configuration  | Strict `Content-Security-Policy` header restricting assets, scripts, styles, and fonts to trusted sources |
+| Ownership checks   | Edit/delete routes verify `seller_id == current_user.id`                                                  |
+| Session management | Flask-Login handles secure session cookies; hard 7-day timeout for partner sessions.                      |
+| Email OTP validation| 6-digit OTP verified via secure hash comparison, 15m expiration, locked after 5 failed attempts           |
+| Account Lockout    | Temporary 15-minute account lockout after 5 consecutive failed login attempts                             |
+| Rate Limiting      | Middleware controls sensitive entry points (login rate, OTP verification resend, PIN resend limits)       |
+| DB migrations      | Flask-Migrate (Alembic) — version-controlled schema changes                                               |
 
 ### Planned (Production)
 
 | Area              | Implementation                                          |
 | ----------------- | ------------------------------------------------------- |
 | HTTPS             | Cloudflare free tier / `Flask-Talisman`                 |
-| Rate limiting     | Flask-Limiter (5 login attempts/min, 10 listings/hour)  |
-| Password policy   | Server-side: min 8 chars, mixed case + digit            |
-| CSP header        | `Content-Security-Policy` via `Flask-Talisman`          |
-| Email restriction | Validate `@*.ac.uk` domain on registration              |
-| Secret key        | Fail-hard in production if `SECRET_KEY` env var missing |
 
 ---
 
 ## 9. Open Questions & Future Work
 
-| Question                                                       | Status                                                                                                                     |
+| Question                                                       | Status / Resolution                                                                                                        |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Should NudeNet image moderation be added?                      | **Deferred to Phase 3.** Jury system handles content moderation for now.                                                   |
 | University off-season (summer) — run marketplace or shut down? | **Run normally, freeze leaderboard.** Marketplace stays open, rankings pause.                                              |
-| Multi-university data isolation?                               | **Schema-ready** (`university_domain` column). No cross-university data leakage by default.                                |
+| Multi-university data isolation?                               | **Schema-ready** (`university_domain` column on both users and items). No cross-university data leakage by default.        |
 | Payment integration?                                           | **Not needed for MVP.** All transactions are in-person cash/bank transfer. Platform shows price, doesn't process payments. |
-| In-app notifications vs email?                                 | **In-app only for MVP.** Email notifications are a Phase 3 feature (requires email sending infrastructure).                |
+| Email notifications?                                           | **Implemented** via Flask-Mail for registration verification codes, transaction PIN handshakes, claims cancellation alerts, and partner account actions. |
 | Real-time chat?                                                | **Permanently deferred.** WhatsApp bypass handles all communication needs. Building chat is technical debt with no ROI.    |
 | QR Code Handshake?                                             | **Deferred to Phase 2.** An alternative option where the PIN holder displays a QR code encoding the PIN, which the other party scans to confirm physical exchange. |

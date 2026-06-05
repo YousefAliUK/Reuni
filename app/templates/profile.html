@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Profile — Reuni{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+    <!-- ── Header ── -->
+    <div class="profile-header">
+        <div class="profile-header__avatar">{{ current_user.name[0] }}</div>
+        <div class="profile-header__info">
+            <h1 class="profile-header__name">{{ current_user.name }}</h1>
+            <p class="profile-header__email">{{ current_user.email }}</p>
+        </div>
+    </div>
+
+    <!-- ── Eco Impact ── -->
+    <section class="profile-section" aria-label="Eco impact">
+        <h2 class="profile-section__title">
+            <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+            Eco Impact
+        </h2>
+        <div class="profile-stats">
+            <div class="profile-stat">
+                <span class="profile-stat__value">{{ "%.1f"|format(current_user.kg_saved_total) }} kg</span>
+                <span class="profile-stat__label">CO₂ saved</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat__value">{{ total_sold + total_bought }}</span>
+                <span class="profile-stat__label">Items recycled</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Activity ── -->
+    <section class="profile-section" aria-label="Activity">
+        <h2 class="profile-section__title">
+            <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+            Activity
+        </h2>
+        <div class="profile-stats profile-stats--3col">
+            <div class="profile-stat">
+                <span class="profile-stat__value">{{ total_listed }}</span>
+                <span class="profile-stat__label">Listed</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat__value">{{ total_sold }}</span>
+                <span class="profile-stat__label">Sold</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat__value">{{ total_bought }}</span>
+                <span class="profile-stat__label">Bought</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Quick Links ── -->
+    <section class="profile-section" aria-label="Quick links">
+        <h2 class="profile-section__title">
+            <span class="material-symbols-outlined" aria-hidden="true">link</span>
+            Quick Links
+        </h2>
+        <nav class="profile-links">
+            <a href="{{ url_for('dashboard') }}" class="profile-link">
+                <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+                <span>Dashboard</span>
+                <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+            </a>
+            <a href="{{ url_for('items.list_item') }}" class="profile-link">
+                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                <span>Sell an item</span>
+                <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+            </a>
+        </nav>
+    </section>
+
+    <!-- ── Account ── -->
+    <section class="profile-section" aria-label="Account">
+        <h2 class="profile-section__title">
+            <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+            Account
+        </h2>
+        <nav class="profile-links">
+            <form method="POST" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="profile-link profile-link--danger">
+                    <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                    <span>Log out</span>
+                    <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+                </button>
+            </form>
+        </nav>
+    </section>
+
+</div>
+{% endblock %}

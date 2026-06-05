@@ -1,60 +1,89 @@
 {% extends "base.html" %}
-{% block title %}UniCycle — Campus Marketplace{% endblock %}
+{% block title %}Reuni — Campus Marketplace{% endblock %}
 
 {% block content %}
 <div id="marketplace-app">
 
-    <!-- ─── Welcome Banner (logged-out users only) ─── -->
+    <!-- ─── Hero (logged-out users only) ─── -->
     {% if not current_user.is_authenticated %}
-    <section class="welcome-banner" aria-label="Welcome message">
-        <div class="welcome-banner__content">
-            <h1 class="welcome-banner__title">
-                Give your stuff a <span class="highlight">second life</span>
+    <section class="hero" aria-label="Welcome to Reuni"
+             style="background-image: url('{{ url_for('static', filename='images/hero_photo.jpg') }}')">
+        <div class="hero__overlay"></div>
+        <div class="hero__content">
+            <h1 class="hero__title">
+                Give your stuff a<br><span class="hero__accent">second life</span>
             </h1>
-            <p class="welcome-banner__subtitle">
-                The Student Marketplace For Circular Living
+            <p class="hero__subtitle">
+                Buy and sell pre-loved items on your campus.<br>Save money, reduce waste, build community.
             </p>
-            <div class="welcome-banner__actions">
-                <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Get Started</a>
-                <a href="{{ url_for('auth.login') }}" class="btn btn--outline">Log In</a>
+            <div class="hero__ctas">
+                <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Get Started — it's free</a>
+                <a href="#marketplace-grid" class="hero__browse-link">
+                    Browse items
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+                </a>
+            </div>
+            <div class="hero__trust">
+                <div class="hero__trust-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+                    Campus-verified
+                </div>
+                <div class="hero__trust-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">money_off</span>
+                    Zero fees
+                </div>
+                <div class="hero__trust-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                    Eco-friendly
+                </div>
             </div>
         </div>
     </section>
     {% endif %}
 
-    <!-- ─── Search & Filters Bar ─── -->
-    <section class="marketplace-controls" aria-label="Search and filter items">
+    <!-- ─── Category Pills + Filters ─── -->
+    <section class="marketplace-controls" aria-label="Filter items">
         <form method="GET" action="{{ url_for('index') }}" class="marketplace-form" id="filter-form">
             {% if active_category %}
             <input type="hidden" name="category" value="{{ active_category }}">
             {% endif %}
+            {% if search_query %}
+            <input type="hidden" name="q" value="{{ search_query }}">
+            {% endif %}
 
-            <div class="search-row">
-                <div class="search-bar">
-                    <span class="material-symbols-outlined search-bar__icon" aria-hidden="true">search</span>
-                    <input
-                        type="search"
-                        name="q"
-                        id="search-input"
-                        class="search-bar__input"
-                        placeholder="Search items…"
-                        value="{{ search_query }}"
-                        aria-label="Search items by title"
-                    >
-                    {% if search_query %}
-                    <a href="{{ url_for('index', category=active_category, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="search-bar__clear" aria-label="Clear search">
-                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                    </a>
-                    {% endif %}
-                </div>
-
-                <button type="button" class="btn btn--outline filter-toggle-btn" id="filter-toggle" aria-expanded="false" aria-controls="filters-panel">
-                    <span class="material-symbols-outlined btn__icon" aria-hidden="true">filter_list</span>
-                    Filters
+            <!-- Pills row: Filter button + categories + search tag -->
+            <div class="pills-row">
+                <button type="button" class="filter-icon-btn" id="filter-toggle" aria-expanded="false" aria-controls="filters-panel" title="Filters">
+                    <span class="material-symbols-outlined" aria-hidden="true">tune</span>
                     {% if price_type != 'all' or min_price or max_price %}
                     <span class="filter-indicator"></span>
                     {% endif %}
                 </button>
+
+                <nav class="category-pills" aria-label="Filter by category">
+                    <a href="{{ url_for('index', q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
+                       class="pill {% if not active_category %}pill--active{% endif %}"
+                       aria-current="{% if not active_category %}true{% else %}false{% endif %}">
+                        All
+                    </a>
+                    {% for cat in categories %}
+                    <a href="{{ url_for('index', category=cat, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
+                       class="pill {% if active_category == cat %}pill--active{% endif %}"
+                       aria-current="{% if active_category == cat %}true{% else %}false{% endif %}">
+                        {{ cat }}
+                    </a>
+                    {% endfor %}
+                </nav>
+
+                {% if search_query %}
+                <div class="search-active-tag">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 0.85rem;">search</span>
+                    "{{ search_query }}"
+                    <a href="{{ url_for('index', category=active_category, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="search-active-tag__clear" aria-label="Clear search">
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </a>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Collapsible Filters Panel -->
@@ -124,26 +153,11 @@
                 </div>
             </div>
         </form>
-
-        <nav class="category-pills" aria-label="Filter by category">
-            <a href="{{ url_for('index', q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
-               class="pill {% if not active_category %}pill--active{% endif %}"
-               aria-current="{% if not active_category %}true{% else %}false{% endif %}">
-                All
-            </a>
-            {% for cat in categories %}
-            <a href="{{ url_for('index', category=cat, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
-               class="pill {% if active_category == cat %}pill--active{% endif %}"
-               aria-current="{% if active_category == cat %}true{% else %}false{% endif %}">
-                {{ cat }}
-            </a>
-            {% endfor %}
-        </nav>
     </section>
 
     <!-- ─── Items Grid ─── -->
     {% if items %}
-    <section class="items-grid" aria-label="Listed items">
+    <section class="items-grid" id="marketplace-grid" aria-label="Listed items">
         {% for item in items %}
         <article class="item-card {% if item.is_sold %}item-card--sold{% endif %}" aria-label="{{ item.title }}">
             <!-- Clickable card link -->
@@ -172,15 +186,13 @@
                 </div>
                 <div class="item-card__body">
                     <h3 class="item-card__title">{{ item.title }}</h3>
-                    <p class="item-card__meta">
-                        <span class="item-card__condition">{{ item.condition }}</span>
-                        &middot;
+                    <div class="item-card__price-row">
                         {% if item.is_free %}
                             <span class="item-card__price item-card__price--free">Free</span>
                         {% else %}
                             <span class="item-card__price">&pound;{{ "%.2f"|format(item.price) }}</span>
                         {% endif %}
-                    </p>
+                    </div>
                     <div class="item-card__footer">
                         <span class="item-card__seller">
                             <span class="item-card__seller-avatar" aria-hidden="true">{{ (item.seller.name or 'U')[0] }}</span>
@@ -192,6 +204,47 @@
         </article>
         {% endfor %}
     </section>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <nav class="pagination" aria-label="Pagination Navigation">
+        <ul class="pagination__list">
+            {% if pagination.has_prev %}
+            <li class="pagination__item">
+                <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; margin-right: 0.25rem;">chevron_left</span>
+                    Prev
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <li class="pagination__item">
+                        <span class="pagination__link pagination__link--active" aria-current="page">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="pagination__item">
+                        <a href="{{ url_for('index', page=page_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="pagination__item pagination__item--ellipsis" aria-hidden="true">…</li>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <li class="pagination__item">
+                <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">
+                    Next
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; margin-left: 0.25rem;">chevron_right</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
     {% else %}
     <section class="empty-state" aria-label="No items found">
         <span class="material-symbols-outlined empty-state__icon" aria-hidden="true">inventory_2</span>

@@ -1,9 +1,10 @@
 """
-UniCycle — Auth Route Tests
+Reuni — Auth Route Tests
 Covers registration, login, logout, and edge cases.
 """
 
 from app.models import User
+from unittest.mock import patch
 
 
 class TestRegister:
@@ -20,8 +21,8 @@ class TestRegister:
             "email": "new@university.ac.uk",
             "name": "New User",
             "phone_number": "07912345678",
-            "password": "strongpass",
-            "confirm_password": "strongpass",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=False)
         assert resp.status_code == 302  # redirect
 
@@ -36,8 +37,8 @@ class TestRegister:
             "email": "test@university.ac.uk",
             "name": "Duplicate",
             "phone_number": "07912345678",
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=True)
         assert b"already exists" in resp.data
 
@@ -47,8 +48,8 @@ class TestRegister:
             "email": "mismatch@university.ac.uk",
             "name": "Mismatch",
             "phone_number": "07912345678",
-            "password": "password123",
-            "confirm_password": "different",
+            "password": "StrongPass123",
+            "confirm_password": "DifferentPass123",
         }, follow_redirects=True)
         assert b"do not match" in resp.data
 
@@ -68,8 +69,8 @@ class TestRegister:
         resp = client.post("/auth/register", data={
             "email": "phone-missing@university.ac.uk",
             "name": "No Phone",
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=True)
         assert b"All fields are required" in resp.data
 
@@ -79,8 +80,8 @@ class TestRegister:
             "email": "another-email@university.ac.uk",
             "name": "Another User",
             "phone_number": sample_user.phone_number,  # duplicate phone
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=True)
         assert b"already exists" in resp.data
 
@@ -90,8 +91,8 @@ class TestRegister:
             "email": "intl@university.ac.uk",
             "name": "Intl User",
             "phone_number": "+447912345678",
-            "password": "strongpass",
-            "confirm_password": "strongpass",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=False)
         assert resp.status_code == 302
 
@@ -105,8 +106,8 @@ class TestRegister:
             "email": "bad-phone@university.ac.uk",
             "name": "Bad Phone",
             "phone_number": "abc123",
-            "password": "strongpass",
-            "confirm_password": "strongpass",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
         }, follow_redirects=True)
         assert b"valid phone number" in resp.data
 
@@ -123,7 +124,7 @@ class TestLogin:
         """Valid credentials should redirect (302)."""
         resp = client.post("/auth/login", data={
             "email": "test@university.ac.uk",
-            "password": "password123",
+            "password": "StrongPass123",
         }, follow_redirects=False)
         assert resp.status_code == 302
 
@@ -139,7 +140,7 @@ class TestLogin:
         """Non-existent email should flash an error."""
         resp = client.post("/auth/login", data={
             "email": "nobody@university.ac.uk",
-            "password": "password123",
+            "password": "StrongPass123",
         }, follow_redirects=True)
         assert b"Invalid email or password" in resp.data
 
@@ -157,7 +158,7 @@ class TestLogin:
         """The ?next= parameter should reject absolute URLs (open redirect attack)."""
         resp = client.post("/auth/login?next=http://evil.com", data={
             "email": "test@university.ac.uk",
-            "password": "password123",
+            "password": "StrongPass123",
         }, follow_redirects=False)
         # Should redirect to index (/) not to evil.com
         assert "evil.com" not in resp.headers.get("Location", "")
@@ -174,4 +175,344 @@ class TestLogout:
         """Logging out should flash a confirmation message."""
         resp = auth_client.post("/auth/logout", follow_redirects=True)
         assert b"logged out" in resp.data
+
+
+class TestEmailVerification:
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_register_creates_unverified_and_sends_email(self, mock_send, client, db_session):
+        """Registration with valid Brookes email creates unverified user and sends email."""
+        resp = client.post("/auth/register", data={
+            "email": "new@brookes.ac.uk",
+            "name": "Brookes User",
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/verify-email")
+
+        user = User.query.filter_by(email="new@brookes.ac.uk").first()
+        assert user is not None
+        assert user.is_verified is False
+        assert user.university_domain == "brookes.ac.uk"
+        assert user.email_verification_code is not None
+        mock_send.assert_called_once()
+
+    def test_register_invalid_tld_rejected(self, client):
+        """Registration with non-.ac.uk email is rejected."""
+        resp = client.post("/auth/register", data={
+            "email": "student@gmail.com",
+            "name": "Invalid TLD",
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        }, follow_redirects=True)
+        assert b"Please use a valid university email address" in resp.data
+
+    def test_register_domain_not_allowed_rejected(self, client):
+        """Registration with .ac.uk email not in allowed set is rejected."""
+        resp = client.post("/auth/register", data={
+            "email": "student@oxford.ac.uk",
+            "name": "Not Allowed University",
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        }, follow_redirects=True)
+        assert b"Reuni is not yet available at your university" in resp.data
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_re_registration_unverified_overwrites(self, mock_send, client, db_session):
+        """Re-registration with same unverified email deletes old record and creates new one."""
+        # Create unverified user
+        user1 = User(
+            email="unverified@brookes.ac.uk",
+            name="Unverified One",
+            phone_number="+447912345678",
+            is_verified=False
+        )
+        user1.set_password("StrongPass123")
+        db_session.session.add(user1)
+        db_session.session.commit()
+
+        # Re-register
+        resp = client.post("/auth/register", data={
+            "email": "unverified@brookes.ac.uk",
+            "name": "Unverified Two",
+            "phone_number": "07912345678",
+            "password": "NewPassword123",
+            "confirm_password": "NewPassword123",
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+
+        # Old user should be deleted, new one created
+        users = User.query.filter_by(email="unverified@brookes.ac.uk").all()
+        assert len(users) == 1
+        assert users[0].name == "Unverified Two"
+        assert users[0].check_password("NewPassword123") is True
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_re_registration_verified_fails(self, mock_send, client, db_session):
+        """Re-registration with same verified email is rejected."""
+        user = User(
+            email="verified@brookes.ac.uk",
+            name="Verified User",
+            phone_number="+447912345678",
+            is_verified=True
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/register", data={
+            "email": "verified@brookes.ac.uk",
+            "name": "Verified Re-register",
+            "phone_number": "07912345678",
+            "password": "NewPassword123",
+            "confirm_password": "NewPassword123",
+        }, follow_redirects=True)
+        assert b"already exists" in resp.data
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_verify_valid_code(self, mock_send, client, db_session):
+        """Entering valid code verifies the user."""
+        # 1. Register to get code generated
+        client.post("/auth/register", data={
+            "email": "verifytest@brookes.ac.uk",
+            "name": "Verify Test",
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        })
+
+        user = User.query.filter_by(email="verifytest@brookes.ac.uk").first()
+        assert user.is_verified is False
+
+        # Retrieve the generated OTP code from mock send call
+        args, kwargs = mock_send.call_args
+        otp_code = args[2]
+
+        with client.session_transaction() as sess:
+            sess["verify_email"] = "verifytest@brookes.ac.uk"
+
+        resp = client.post("/auth/verify-email", data={"code": otp_code}, follow_redirects=True)
+        assert b"Email verified!" in resp.data
+
+        # Refresh from DB
+        db_session.session.refresh(user)
+        assert user.is_verified is True
+        assert user.email_verification_code is None
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_verify_expired_code(self, mock_send, client, db_session):
+        """Entering expired code shows error and redirects to resend page."""
+        from datetime import datetime, timezone, timedelta
+        client.post("/auth/register", data={
+            "email": "verifytest@brookes.ac.uk",
+            "name": "Verify Test",
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        })
+        user = User.query.filter_by(email="verifytest@brookes.ac.uk").first()
+        user.email_verification_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1)
+        db_session.session.commit()
+
+        args, _ = mock_send.call_args
+        otp_code = args[2]
+
+        with client.session_transaction() as sess:
+            sess["verify_email"] = "verifytest@brookes.ac.uk"
+
+        resp = client.post("/auth/verify-email", data={"code": otp_code}, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/resend-verification")
+
+    def test_verify_already_verified(self, client, db_session):
+        """Entering code when already verified shows 'already verified' message."""
+        user = User(
+            email="already@brookes.ac.uk",
+            name="Already Verified",
+            phone_number="+447912345678",
+            is_verified=True
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        with client.session_transaction() as sess:
+            sess["verify_email"] = "already@brookes.ac.uk"
+
+        resp = client.post("/auth/verify-email", data={"code": "123456"}, follow_redirects=True)
+        assert b"already verified" in resp.data
+
+    def test_login_unverified_rejected(self, client, db_session):
+        """Login with unverified account is rejected regardless of correct password."""
+        user = User(
+            email="unverified@brookes.ac.uk",
+            name="Unverified Login",
+            phone_number="+447912345678",
+            is_verified=False
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/login", data={
+            "email": "unverified@brookes.ac.uk",
+            "password": "StrongPass123",
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/resend-verification")
+
+    def test_login_verified_succeeds(self, client, db_session):
+        """Login with verified account succeeds."""
+        user = User(
+            email="verified@brookes.ac.uk",
+            name="Verified Login",
+            phone_number="+447912345678",
+            is_verified=True
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/login", data={
+            "email": "verified@brookes.ac.uk",
+            "password": "StrongPass123",
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert not resp.headers["Location"].endswith("/auth/resend-verification")
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_resend_sends_email_for_unverified(self, mock_send, client, db_session):
+        """Resend endpoint sends email for unverified account."""
+        user = User(
+            email="unverified@brookes.ac.uk",
+            name="Unverified Resend",
+            phone_number="+447912345678",
+            is_verified=False
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/resend-verification", data={
+            "email": "unverified@brookes.ac.uk"
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/verify-email")
+        mock_send.assert_called_once()
+
+    @patch("app.routes.auth.send_otp_email")
+    def test_resend_silently_succeeds_for_nonexistent(self, mock_send, client):
+        """Resend endpoint silently succeeds for non-existent email (no error revealed)."""
+        resp = client.post("/auth/resend-verification", data={
+            "email": "nonexistent@brookes.ac.uk"
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/verify-email")
+        mock_send.assert_not_called()
+
+    def test_verified_required_decorator(self, client, db_session):
+        """verified_required decorator blocks unverified users from protected routes."""
+        user = User(
+            email="unverified@brookes.ac.uk",
+            name="Unverified User",
+            phone_number="+447912345678",
+            is_verified=False
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        with client.session_transaction() as sess:
+            sess["_user_id"] = str(user.id)
+
+        resp = client.get("/items/new", follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/auth/resend-verification")
+
+
+class TestLockoutAndComplexity:
+
+    def test_account_lockout_login(self, client, db_session):
+        """Five failed login attempts should lock the account for 15 minutes."""
+        from datetime import datetime, timezone, timedelta
+        user = User(
+            email="lockout@university.ac.uk",
+            name="Lockout User",
+            phone_number="+447700100015",
+            is_verified=True,
+            university_domain="university.ac.uk",
+        )
+        user.set_password("CorrectPassword123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        # Fail 5 times
+        for i in range(5):
+            resp = client.post("/auth/login", data={
+                "email": "lockout@university.ac.uk",
+                "password": "WrongPassword123"
+            }, follow_redirects=True)
+            if i < 4:
+                assert b"Invalid email or password" in resp.data
+            else:
+                assert b"locked" in resp.data or b"Too many failed login attempts" in resp.data
+
+        # 6th attempt should block with lockout warning
+        resp_lockout = client.post("/auth/login", data={
+            "email": "lockout@university.ac.uk",
+            "password": "CorrectPassword123"
+        }, follow_redirects=True)
+        assert b"locked due to too many failed login attempts" in resp_lockout.data
+
+        # Fast forward locked_until to past to simulate lockout expiration
+        user_db = db_session.session.get(User, user.id)
+        user_db.locked_until = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1)
+        db_session.session.commit()
+
+        # Should now log in successfully and reset failed count & locked_until
+        resp_success = client.post("/auth/login", data={
+            "email": "lockout@university.ac.uk",
+            "password": "CorrectPassword123"
+        }, follow_redirects=True)
+        assert b"Welcome back" in resp_success.data
+
+        user_after = db_session.session.get(User, user.id)
+        assert user_after.failed_login_attempts == 0
+        assert user_after.locked_until is None
+
+    def test_password_complexity_registration(self, client):
+        """Registration should reject passwords that do not meet complexity requirements."""
+        # No digit
+        resp1 = client.post("/auth/register", data={
+            "email": "complex1@brookes.ac.uk",
+            "name": "User One",
+            "phone_number": "07900100021",
+            "password": "NoDigitsPassword",
+            "confirm_password": "NoDigitsPassword"
+        }, follow_redirects=True)
+        assert b"at least one uppercase letter, one lowercase letter, and one digit" in resp1.data
+
+        # No uppercase
+        resp2 = client.post("/auth/register", data={
+            "email": "complex2@brookes.ac.uk",
+            "name": "User Two",
+            "phone_number": "07900100022",
+            "password": "nouppercasepassword1",
+            "confirm_password": "nouppercasepassword1"
+        }, follow_redirects=True)
+        assert b"at least one uppercase letter, one lowercase letter, and one digit" in resp2.data
+
+        # Too short
+        resp3 = client.post("/auth/register", data={
+            "email": "complex3@brookes.ac.uk",
+            "name": "User Three",
+            "phone_number": "07900100023",
+            "password": "Sh1",
+            "confirm_password": "Sh1"
+        }, follow_redirects=True)
+        assert b"must be at least 8 characters long" in resp3.data
 

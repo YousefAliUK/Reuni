@@ -1,5 +1,5 @@
 """
-UniCycle — Model Tests
+Reuni — Model Tests
 Verifies User and Item ORM models, relationships, and constants.
 """
 

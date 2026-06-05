@@ -1,16 +1,17 @@
 """
-UniCycle — Application Factory
+Reuni — Application Factory
 """
 
 import os
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_required, current_user
+from flask_login import LoginManager, login_required, current_user, logout_user
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 from dotenv import load_dotenv
 
 # Load .env file if present (for local development)
@@ -28,6 +29,7 @@ limiter = Limiter(
     default_limits=["1000 per day", "100 per hour"],
     storage_uri="memory://",
 )
+mail = Mail()
 
 
 def create_app(config_class=None):
@@ -59,10 +61,29 @@ def create_app(config_class=None):
     login_manager.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
 
-    # Disable rate limiter during testing to avoid interfering with test suite
-    if not app.config.get("TESTING"):
-        limiter.init_app(app)
+    # Configure rotating file logging
+    if not app.debug and not app.testing:
+        import logging
+        from logging.handlers import RotatingFileHandler
+        log_dir = os.path.join(app.instance_path, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            os.path.join(log_dir, "Reuni.log"),
+            maxBytes=10240000,
+            backupCount=10
+        )
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Reuni startup')
+
+    # Initialize rate limiter
+    limiter.init_app(app)
 
     # User loader for Flask-Login
     from app.models import User
@@ -71,12 +92,53 @@ def create_app(config_class=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    @app.before_request
+    def enforce_session_rules():
+        from datetime import datetime, timezone, timedelta
+
+        # Expire session cache to ensure fresh data in concurrent/test environments
+        db.session.expire_all()
+
+        # 1. Deactivated account check — applies to all roles
+        user_id = session.get("_user_id")
+        if user_id:
+            user = db.session.get(User, int(user_id))
+            if user and not user.is_active:
+                logout_user()
+                flash("Your account has been deactivated. Contact support.", "danger")
+                return redirect(url_for("auth.login"))
+
+        # 2. Partner 7-day expiry check
+        if current_user.is_authenticated and current_user.role == 'partner':
+            logged_in_at_str = session.get('logged_in_at')
+            if logged_in_at_str:
+                try:
+                    logged_in_at = datetime.fromisoformat(logged_in_at_str)
+                    now = datetime.now(timezone.utc).replace(tzinfo=None)
+                    if now - logged_in_at > timedelta(days=7):
+                        logout_user()
+                        flash("Your session has expired. Please log in again.", "info")
+                        return redirect(url_for("auth.login"))
+                except ValueError:
+                    # Corrupted session payload fallback
+                    logout_user()
+                    return redirect(url_for("auth.login"))
+            else:
+                # Force logout if timestamp is missing to avoid silent skip
+                logout_user()
+                flash("Your session has expired. Please log in again.", "info")
+                return redirect(url_for("auth.login"))
+
     # Register blueprints
     from app.routes.auth import auth_bp
     from app.routes.items import items_bp
+    from app.routes.partner import partner_bp
+    from app.routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(items_bp)
+    app.register_blueprint(partner_bp)
+    app.register_blueprint(admin_bp)
 
     # ── Marketplace home page (merged browse + landing) ──
     @app.route("/")
@@ -95,9 +157,10 @@ def create_app(config_class=None):
         if active_category and active_category in CATEGORIES:
             query = query.filter_by(category=active_category)
 
-        # Apply Search Query
+        # Apply Search Query (escaping '%' and '_')
         if search_query:
-            query = query.filter(Item.title.ilike(f"%{search_query}%"))
+            escaped_search = search_query.replace("/", "//").replace("%", "/%").replace("_", "/_")
+            query = query.filter(Item.title.ilike(f"%{escaped_search}%", escape="/"))
 
         # Apply Price Type Filter (All, Free, Paid)
         if price_type == "free":
@@ -117,11 +180,16 @@ def create_app(config_class=None):
             except ValueError:
                 pass
 
-        items = query.order_by(Item.created_at.desc()).all()
+        page = request.args.get("page", 1, type=int)
+        pagination = query.order_by(Item.created_at.desc()).paginate(
+            page=page, per_page=12, error_out=False
+        )
+        items = pagination.items
 
         return render_template(
             "index.html",
             items=items,
+            pagination=pagination,
             categories=CATEGORIES,
             active_category=active_category,
             search_query=search_query,
@@ -134,6 +202,11 @@ def create_app(config_class=None):
     @app.route("/dashboard")
     @login_required
     def dashboard():
+        if current_user.role == 'partner':
+            return redirect(url_for('partner.partner_dashboard'))
+        elif current_user.role == 'admin':
+            return redirect(url_for('admin.admin_partners'))
+
         from app.models import Item
 
         my_listings = (
@@ -155,6 +228,37 @@ def create_app(config_class=None):
             my_purchases=my_purchases,
         )
 
+    # ── Profile / Settings ──
+    @app.route("/profile")
+    @login_required
+    def profile():
+        from app.models import Item
+
+        total_listed = Item.query.filter_by(seller_id=current_user.id).count()
+        total_sold = Item.query.filter_by(
+            seller_id=current_user.id, is_sold=True
+        ).count()
+        total_bought = Item.query.filter_by(buyer_id=current_user.id).count()
+
+        return render_template(
+            "profile.html",
+            total_listed=total_listed,
+            total_sold=total_sold,
+            total_bought=total_bought,
+        )
+
+    # ── Permanent session configuration ──
+    @app.before_request
+    def make_session_permanent():
+        session.permanent = True
+
+    # ── Request Entity Too Large error handler ──
+    @app.errorhandler(413)
+    def request_too_large(e):
+        from flask import flash, redirect, url_for
+        flash("Image too large. Maximum file size is 5MB.", "danger")
+        return redirect(request.referrer or url_for('index'))
+
     # ── Security response headers ──
     @app.after_request
     def set_security_headers(response):
@@ -169,6 +273,8 @@ def create_app(config_class=None):
             "img-src 'self' data:; "
             "connect-src 'self'"
         )
+        if not app.debug and not app.testing:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
     # Create tables directly for testing (in-memory DB); otherwise use migrations

@@ -8,3 +8,4 @@ python-dotenv==1.1.*
 Werkzeug==3.1.*
 Pillow==11.*
 pytest==8.*
+Flask-Mail==0.10.0

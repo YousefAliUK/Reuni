@@ -1,5 +1,5 @@
 """
-UniCycle — Shared Test Fixtures (pytest)
+Reuni — Shared Test Fixtures (pytest)
 Uses TestingConfig with an in-memory SQLite database.
 """
 
@@ -43,8 +43,14 @@ def client(app):
 @pytest.fixture()
 def sample_user(db_session):
     """Create and return a persisted test user."""
-    user = User(email="test@university.ac.uk", name="Test User", phone_number="+447700100005")
-    user.set_password("password123")
+    user = User(
+        email="test@university.ac.uk",
+        name="Test User",
+        phone_number="+447700100005",
+        is_verified=True,
+        university_domain="university.ac.uk",
+    )
+    user.set_password("StrongPass123")
     db_session.session.add(user)
     db_session.session.commit()
     return user
@@ -53,8 +59,14 @@ def sample_user(db_session):
 @pytest.fixture()
 def second_user(db_session):
     """Create and return a second test user (for ownership / buy tests)."""
-    user = User(email="other@university.ac.uk", name="Other User", phone_number="+447700100006")
-    user.set_password("password123")
+    user = User(
+        email="other@university.ac.uk",
+        name="Other User",
+        phone_number="+447700100006",
+        is_verified=True,
+        university_domain="university.ac.uk",
+    )
+    user.set_password("StrongPass123")
     db_session.session.add(user)
     db_session.session.commit()
     return user
@@ -73,6 +85,7 @@ def sample_item(db_session, sample_user):
         image_filename="test_placeholder.jpg",
         kg_saved=CATEGORY_WEIGHTS["Books"],
         seller_id=sample_user.id,
+        university_domain=sample_user.university_domain,
     )
     db_session.session.add(item)
     db_session.session.commit()
@@ -84,7 +97,7 @@ def auth_client(client, sample_user):
     """Return a test client that is already logged in as sample_user."""
     client.post("/auth/login", data={
         "email": "test@university.ac.uk",
-        "password": "password123",
+        "password": "StrongPass123",
     }, follow_redirects=True)
     return client
 
@@ -95,7 +108,7 @@ def second_auth_client(app, second_user):
     c = app.test_client()
     c.post("/auth/login", data={
         "email": "other@university.ac.uk",
-        "password": "password123",
+        "password": "StrongPass123",
     }, follow_redirects=True)
     return c
 
