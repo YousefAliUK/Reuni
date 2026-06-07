@@ -252,7 +252,7 @@
             <p>No items match your search.</p>
             <a href="{{ url_for('index') }}" class="btn btn--outline">Clear Filters</a>
         {% else %}
-            <p>No items listed yet. Be the first to give something a second life!</p>
+            <p>No items listed yet. List an item to give it a second life.</p>
             {% if current_user.is_authenticated %}
                 <a href="{{ url_for('items.list_item') }}" class="btn btn--primary">
                     <span class="material-symbols-outlined btn__icon" aria-hidden="true">add</span>

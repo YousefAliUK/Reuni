@@ -57,7 +57,7 @@
                         {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
                     </span>
                 </div>
-                <span class="status-badge status-badge--pending">⏳ Awaiting PIN</span>
+                <span class="status-badge status-badge--pending">Awaiting PIN</span>
             </a>
             {% endfor %}
         </div>
@@ -137,7 +137,7 @@
         </div>
         {% else %}
         <div class="dashboard__empty">
-            <p>You haven't bought anything yet. Browse the marketplace to find items!</p>
+            <p>You haven't bought any items yet. Browse the marketplace to find items.</p>
             <a href="{{ url_for('index') }}" class="btn btn--outline btn--sm">Browse Items</a>
         </div>
         {% endif %}

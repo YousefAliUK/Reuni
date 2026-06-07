@@ -134,6 +134,7 @@ def create_app(config_class=None):
     from app.routes.items import items_bp
     from app.routes.partner import partner_bp
     from app.routes.admin import admin_bp
+    from app.utils.decorators import verified_required
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(items_bp)
@@ -202,11 +203,6 @@ def create_app(config_class=None):
     @app.route("/dashboard")
     @login_required
     def dashboard():
-        if current_user.role == 'partner':
-            return redirect(url_for('partner.partner_dashboard'))
-        elif current_user.role == 'admin':
-            return redirect(url_for('admin.admin_partners'))
-
         from app.models import Item
 
         my_listings = (
@@ -247,6 +243,116 @@ def create_app(config_class=None):
             total_bought=total_bought,
         )
 
+    # ── Settings Routes ──
+    @app.route("/settings", methods=["GET"])
+    @login_required
+    @verified_required
+    def settings():
+        return render_template("settings.html")
+
+    @app.route("/settings/phone", methods=["GET", "POST"])
+    @login_required
+    @verified_required
+    def settings_phone():
+        if request.method == "GET":
+            return redirect(url_for("settings"))
+
+        from app.routes.auth import _normalise_phone
+        from app.models import User
+        import re
+
+        phone_raw = request.form.get("phone_number", "").strip()
+
+        # No user of any role may set their phone number to None/empty once it has been set.
+        if not phone_raw:
+            flash("Phone number is required.", "danger")
+            return redirect(url_for("settings"))
+
+        # Normalise phone
+        phone_number = _normalise_phone(phone_raw)
+
+        # Validate format
+        if not re.match(r'^\+\d{10,15}$', phone_number):
+            flash("Please enter a valid phone number (e.g. +447912345678 or UK mobile).", "danger")
+            return redirect(url_for("settings"))
+
+        # If same as current:
+        if phone_number == current_user.phone_number:
+            flash("That's already your phone number.", "info")
+            return redirect(url_for("settings"))
+
+        # Check uniqueness against other users (both verified and unverified)
+        duplicate_user = User.query.filter(User.phone_number == phone_number, User.id != current_user.id).first()
+        if duplicate_user:
+            flash("This number is already registered to another account.", "danger")
+            return redirect(url_for("settings"))
+
+        # Update
+        current_user.phone_number = phone_number
+        try:
+            db.session.commit()
+            flash("Phone number updated successfully.", "success")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Database error during phone update: {e}")
+            flash("A database error occurred. Please try again.", "danger")
+
+        return redirect(url_for("settings"))
+
+    @app.route("/settings/password", methods=["GET", "POST"])
+    @login_required
+    @verified_required
+    def settings_password():
+        if request.method == "GET":
+            return redirect(url_for("settings"))
+
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not current_password or not new_password or not confirm_password:
+            flash("All password fields are required.", "danger")
+            return redirect(url_for("settings"))
+
+        # Verify current password
+        if not current_user.check_password(current_password):
+            flash("Current password is incorrect.", "danger")
+            return redirect(url_for("settings"))
+
+        # Check new == confirm
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for("settings"))
+
+        # Check new != current
+        if new_password == current_password:
+            flash("New password must be different from your current password.", "danger")
+            return redirect(url_for("settings"))
+
+        # Validate complexity
+        min_pw_len = app.config.get("MIN_PASSWORD_LENGTH", 8)
+        if len(new_password) < min_pw_len:
+            flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return redirect(url_for("settings"))
+
+        if (not any(c.isupper() for c in new_password) or
+            not any(c.islower() for c in new_password) or
+            not any(c.isdigit() for c in new_password)):
+            flash("Password must contain at least one uppercase letter, one lowercase letter, and one digit.", "danger")
+            return redirect(url_for("settings"))
+
+        # Update password
+        current_user.set_password(new_password)
+        try:
+            db.session.commit()
+            flash("Password updated successfully.", "success")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Database error during password update: {e}")
+            flash("A database error occurred. Please try again.", "danger")
+
+        return redirect(url_for("settings"))
+
     # ── Permanent session configuration ──
     @app.before_request
     def make_session_permanent():
@@ -267,7 +373,7 @@ def create_app(config_class=None):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+            "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data:; "

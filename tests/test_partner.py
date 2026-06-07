@@ -126,7 +126,7 @@ def test_student_and_partner_routing_protection(client, app, db_session):
     client.post("/auth/logout", follow_redirects=True)
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
     resp = client.get("/items/new", follow_redirects=True)
-    assert b"Please add a phone number in your settings before listing or buying items." in resp.data
+    assert b"Please add a phone number in Settings" in resp.data
 
 def test_session_expiry_and_deactivation(client, app, db_session):
     """Test partner 7-day session expiry rules and immediate deactivation behavior."""
@@ -168,3 +168,26 @@ def test_session_expiry_and_deactivation(client, app, db_session):
     # Access page (should be kicked out instantly)
     resp = client.get("/partner/dashboard", follow_redirects=True)
     assert b"Your account has been deactivated. Contact support." in resp.data
+
+def test_partner_marketplace_dashboard(client, app, db_session):
+    """Test that a partner accessing /dashboard reaches the regular marketplace dashboard rather than being redirected."""
+    with app.app_context():
+        partner = User(
+            name="Marketplace Partner",
+            email="partner@brookes.ac.uk",
+            role="partner",
+            partner_university="brookes.ac.uk",
+            is_verified=True,
+            is_active=True
+        )
+        partner.set_password("password123")
+        db.session.add(partner)
+        db.session.commit()
+
+    # Log in
+    client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
+
+    # Get /dashboard (should load normally, return 200, and show "My Listings")
+    resp = client.get("/dashboard", follow_redirects=False)
+    assert resp.status_code == 200
+    assert b"My Listings" in resp.data

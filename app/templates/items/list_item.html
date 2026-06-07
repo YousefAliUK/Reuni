@@ -22,16 +22,15 @@
         <!-- Image Upload (REQUIRED) -->
         <div class="form__group">
             <label for="image">Photo <span class="required" aria-label="required">*</span></label>
-            <div class="image-upload image-upload--compact" @click="$refs.fileInput.click()" @dragover.prevent
-                @drop.prevent="onDrop" :class="{ 'image-upload--has-preview': imagePreview }">
-                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" ref="fileInput"
-                    @change="onFileSelect" class="image-upload__input" aria-label="Upload item photo" required>
-                <div v-if="!imagePreview" class="image-upload__placeholder">
+            <div class="image-upload image-upload--compact">
+                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp"
+                    class="image-upload__input" aria-label="Upload item photo" required>
+                <div class="image-upload__placeholder">
                     <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
                     <span>Click or drag to upload</span>
                     <span class="image-upload__hint">JPG, PNG or WebP</span>
                 </div>
-                <img v-if="imagePreview" :src="imagePreview" alt="Upload preview" class="image-upload__preview">
+                <img src="" alt="Upload preview" class="image-upload__preview" style="display: none;">
             </div>
         </div>
 
@@ -50,8 +49,7 @@
         <div class="form__row">
             <div class="form__group">
                 <label for="category">Category <span class="required" aria-label="required">*</span></label>
-                <select id="category" name="category" required v-model="selectedCategory"
-                    aria-describedby="eco-preview-text">
+                <select id="category" name="category" required aria-describedby="eco-preview-text">
                     <option value="" disabled selected>Select a category</option>
                     {% for cat in categories %}
                     <option value="{{ cat }}">{{ cat }}</option>
@@ -73,24 +71,26 @@
         <div class="form__row">
             <div class="form__group">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="is_free" name="is_free" v-model="isFree">
+                    <input type="checkbox" id="is_free" name="is_free">
                     This item is <strong>free</strong>
                 </label>
             </div>
-            <div class="form__group" v-show="!isFree">
+            <div class="form__group">
                 <label for="price">Price (&pound;)</label>
-                <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" :disabled="isFree">
+                <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00">
             </div>
         </div>
 
         <!-- ─── kg Saved Preview ─── -->
-        <div class="eco-preview eco-preview--compact" v-if="selectedCategory" role="status" aria-live="polite">
+        <div class="eco-preview eco-preview--compact" style="display: none;" role="status" aria-live="polite">
             <span class="material-symbols-outlined eco-preview__icon" aria-hidden="true">eco</span>
             <div class="eco-preview__text" id="eco-preview-text">
-                <strong>[[ kgSaved ]] kg saved</strong>
+                <strong><span id="kg-saved-display">0.0</span> kg saved</strong>
                 <span>from landfill when this item finds a new home</span>
             </div>
         </div>
+
+        <script type="application/json" id="category-weights">{{ category_weights | tojson | safe }}</script>
 
         <button type="submit" class="btn btn--primary btn--block">
             <span class="material-symbols-outlined btn__icon" aria-hidden="true">check_circle</span>

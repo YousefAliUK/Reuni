@@ -234,7 +234,7 @@ def login():
         login_user(user)
         if user.role == 'partner':
             session['logged_in_at'] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
-        flash(f"Welcome back, {user.name}!", "success")
+        flash(f"Welcome back, {user.name}.", "success")
 
         next_page = request.args.get("next")
         if next_page:
@@ -301,7 +301,7 @@ def verify_email():
             user.email_verification_attempts = 0
             db.session.commit()
 
-            flash("Email verified! You can now log in.", "success")
+            flash("Email verified. You can now log in.", "success")
             session.pop("verify_email", None)
             return redirect(url_for("auth.login"))
         else:

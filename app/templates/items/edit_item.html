@@ -24,14 +24,17 @@
                 <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Current photo" class="edit-image-current__img">
                 <span class="edit-image-current__label">Current photo</span>
             </div>
-            <div class="image-upload image-upload--compact image-upload--replace" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="onDrop" :class="{ 'image-upload--has-preview': imagePreview }">
+            <div class="image-upload image-upload--compact image-upload--replace"
+                 {% if item.image_filename %}
+                 data-existing-image="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                 {% endif %}>
                 <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp"
-                       ref="fileInput" @change="onFileSelect" class="image-upload__input" aria-label="Replace item photo">
-                <div v-if="!imagePreview" class="image-upload__placeholder">
+                       class="image-upload__input" aria-label="Replace item photo">
+                <div class="image-upload__placeholder">
                     <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
                     <span>Upload new photo (optional)</span>
                 </div>
-                <img v-if="imagePreview" :src="imagePreview" alt="New upload preview" class="image-upload__preview">
+                <img src="" alt="New upload preview" class="image-upload__preview" style="display: none;">
             </div>
         </div>
 
@@ -48,7 +51,7 @@
         <div class="form__row">
             <div class="form__group">
                 <label for="category">Category <span class="required" aria-label="required">*</span></label>
-                <select id="category" name="category" required v-model="selectedCategory">
+                <select id="category" name="category" required>
                     {% for cat in categories %}
                         <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>{{ cat }}</option>
                     {% endfor %}
@@ -67,23 +70,25 @@
         <div class="form__row">
             <div class="form__group">
                 <label class="checkbox-label">
-                    <input type="checkbox" id="is_free" name="is_free" v-model="isFree" {% if item.is_free %}checked{% endif %}>
+                    <input type="checkbox" id="is_free" name="is_free" {% if item.is_free %}checked{% endif %}>
                     This item is <strong>free</strong>
                 </label>
             </div>
-            <div class="form__group" v-show="!isFree">
+            <div class="form__group">
                 <label for="price">Price (&pound;)</label>
-                <input type="number" id="price" name="price" min="0" step="0.01" value="{{ item.price }}" :disabled="isFree">
+                <input type="number" id="price" name="price" min="0" step="0.01" value="{{ item.price }}">
             </div>
         </div>
 
-        <div class="eco-preview eco-preview--compact" v-if="selectedCategory" role="status" aria-live="polite">
+        <div class="eco-preview eco-preview--compact" style="display: none;" role="status" aria-live="polite">
             <span class="material-symbols-outlined eco-preview__icon" aria-hidden="true">eco</span>
             <div class="eco-preview__text">
-                <strong>[[ kgSaved ]] kg saved</strong>
+                <strong><span id="kg-saved-display">0.0</span> kg saved</strong>
                 <span>from landfill when this item finds a new home</span>
             </div>
         </div>
+
+        <script type="application/json" id="category-weights">{{ category_weights | tojson | safe }}</script>
 
         <button type="submit" class="btn btn--primary btn--block">
             <span class="material-symbols-outlined btn__icon" aria-hidden="true">save</span>

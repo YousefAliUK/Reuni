@@ -81,21 +81,25 @@
                                     <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
                                     Admin Panel
                                 </a>
+                            {% endif %}
+                            {% if current_user.is_partner or current_user.is_admin %}
                                 <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem">
                                     <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
                                     Partner Dashboard
-                                </a>
-                            {% elif current_user.is_partner %}
-                                <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem">
-                                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
-                                    Partner Dashboard
-                                </a>
-                            {% else %}
-                                <a href="{{ url_for('dashboard') }}" class="user-dropdown__item" role="menuitem">
-                                    <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-                                    Dashboard
                                 </a>
                             {% endif %}
+                            <a href="{{ url_for('dashboard') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+                                Dashboard
+                            </a>
+                            <a href="{{ url_for('profile') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                                Profile
+                            </a>
+                            <a href="{{ url_for('settings') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                                Settings
+                            </a>
                             <form method="POST" action="{{ url_for('auth.logout') }}" class="user-dropdown__logout-form" role="none">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="user-dropdown__item user-dropdown__item--danger" role="menuitem">
@@ -203,10 +207,6 @@
         {% endif %}
     </nav>
 
-    <!-- Vue 3 via CDN -->
-    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"
-            integrity="sha384-W/1Fp/LgAYO/oTn9Gs+PbeWuMuq1eQCnUMPCeg8POmMYchhzxctjEqtbiCIxDOON"
-            crossorigin="anonymous"></script>
 
     <!-- Dropdown + mobile search + mobile tabs -->
     <script>

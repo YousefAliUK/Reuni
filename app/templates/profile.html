@@ -80,6 +80,11 @@
             Account
         </h2>
         <nav class="profile-links">
+            <a href="{{ url_for('settings') }}" class="profile-link">
+                <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                <span>Settings</span>
+                <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+            </a>
             <form method="POST" action="{{ url_for('auth.logout') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="profile-link profile-link--danger">

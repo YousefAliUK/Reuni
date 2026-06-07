@@ -65,7 +65,7 @@
             <div class="dashboard__empty">
                 <p>No activity recorded yet for this university domain.</p>
                 {% if not is_global %}
-                    <p style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-top: 0.25rem;">Share Reuni with students at {{ current_user.partner_university }} to get started!</p>
+                    <p style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-top: 0.25rem;">Share Reuni with students at {{ current_user.partner_university }}.</p>
                 {% endif %}
             </div>
         {% endif %}
@@ -73,7 +73,7 @@
 
     <!-- ─── Footnote Disclosure ─── -->
     <div style="margin-top: 2rem; padding: 1rem; text-align: center; border-radius: 8px; font-size: 0.875rem; color: var(--color-text-muted, #64748b); background: var(--bg-hover, #f8fafc);">
-        <p>♻️ <em>Data updates in real time. Individual student data is never shared to preserve privacy.</em></p>
+        <p><em>Data updates in real time. Individual student data is never shared to preserve privacy.</em></p>
     </div>
 </div>
 {% endblock %}

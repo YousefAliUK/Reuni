@@ -296,7 +296,7 @@ class TestEmailVerification:
             sess["verify_email"] = "verifytest@brookes.ac.uk"
 
         resp = client.post("/auth/verify-email", data={"code": otp_code}, follow_redirects=True)
-        assert b"Email verified!" in resp.data
+        assert b"Email verified" in resp.data
 
         # Refresh from DB
         db_session.session.refresh(user)

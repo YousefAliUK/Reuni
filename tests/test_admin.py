@@ -48,7 +48,7 @@ def test_admin_invite_generation(client, app, db_session):
     # Valid domain
     resp = client.post("/admin/partners/invite", data={"university_domain": "brookes.ac.uk"})
     assert resp.status_code == 200
-    assert b"Invitation Link Generated Successfully!" in resp.data
+    assert b"Invitation link generated successfully." in resp.data
     assert b"/auth/invite/" in resp.data
 
     # Invalid domain
@@ -114,3 +114,19 @@ def test_admin_global_dashboard(client, app, db_session):
     # Aggregate data: items = 2, kg_saved = 27.0
     assert b"2" in resp.data
     assert b"27.0" in resp.data
+
+def test_admin_marketplace_dashboard(client, app, db_session):
+    """Test that an admin accessing /dashboard reaches the regular marketplace dashboard rather than being redirected to admin panel."""
+    with app.app_context():
+        admin = User(name="Marketplace Admin", email="admin@brookes.ac.uk", role="admin", is_verified=True, is_active=True)
+        admin.set_password("password123")
+        db.session.add(admin)
+        db.session.commit()
+
+    # Log in
+    client.post("/auth/login", data={"email": "admin@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
+
+    # Get /dashboard (should load normally, return 200, and show "My Listings")
+    resp = client.get("/dashboard", follow_redirects=False)
+    assert resp.status_code == 200
+    assert b"My Listings" in resp.data

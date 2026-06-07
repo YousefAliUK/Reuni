@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Settings — Reuni{% endblock %}
+
+{% block content %}
+<div class="list-item-container">
+    <!-- Back link -->
+    <a href="{{ url_for('profile') }}" class="back-link" aria-label="Go back to profile">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Back to Profile
+    </a>
+
+    <h2>
+        <span class="material-symbols-outlined heading-icon" aria-hidden="true">settings</span>
+        Settings
+    </h2>
+    <p class="subtitle">Manage your account information, phone number, and password.</p>
+
+    <!-- Email & University (Read-Only) -->
+    <div class="form form--compact" style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--clr-border);">
+        <div class="form__group">
+            <label>Email Address</label>
+            <div style="padding: 0.6rem 0.75rem; background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius); color: var(--clr-text-muted);">
+                {{ current_user.email }}
+            </div>
+            <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
+                Email cannot be changed.
+            </small>
+        </div>
+
+        <div class="form__group">
+            <label>University / Institution</label>
+            <div style="padding: 0.6rem 0.75rem; background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius); color: var(--clr-text-muted);">
+                {{ current_user.university_domain }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Number Form -->
+    <section style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--clr-border);">
+        <h3 style="margin-bottom: 1rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-text);">
+            <span class="material-symbols-outlined" style="color: var(--clr-primary);" aria-hidden="true">phone</span>
+            Phone Number Settings
+        </h3>
+        <form method="POST" action="{{ url_for('settings_phone') }}" class="form form--compact">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form__group">
+                <label for="phone_number">Phone Number (required for listing or buying items)</label>
+                <input type="tel" id="phone_number" name="phone_number" 
+                       value="{{ current_user.phone_number or '' }}" 
+                       placeholder='e.g. "+447912345678" or "07912345678"'
+                       required>
+                <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
+                    Must start with + and country code, or local 07 for UK.
+                </small>
+            </div>
+            <button type="submit" class="btn btn--primary">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">save</span>
+                Update Phone Number
+            </button>
+        </form>
+    </section>
+
+    <!-- Password Change Form -->
+    <section>
+        <h3 style="margin-bottom: 1rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-text);">
+            <span class="material-symbols-outlined" style="color: var(--clr-primary);" aria-hidden="true">lock</span>
+            Change Password
+        </h3>
+        <form method="POST" action="{{ url_for('settings_password') }}" class="form form--compact">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form__group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+            <div class="form__group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required>
+                <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
+                    Min 8 characters, at least 1 uppercase letter, 1 lowercase letter, and 1 digit.
+                </small>
+            </div>
+            <div class="form__group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit" class="btn btn--primary">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">lock_reset</span>
+                Change Password
+            </button>
+        </form>
+    </section>
+</div>
+{% endblock %}

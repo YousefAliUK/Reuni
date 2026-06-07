@@ -115,9 +115,13 @@ def detail(item_id):
 @verified_required
 def list_item():
     """Display and process the 'List an Item' form."""
-    if current_user.phone_number is None:
-        flash("Please add a phone number in your settings before listing or buying items.", "warning")
-        return redirect(url_for("profile"))
+    if not current_user.phone_number:
+        flash(
+            "Please add a phone number in Settings before listing or buying items. "
+            "It is required for the PIN handshake.",
+            "warning"
+        )
+        return redirect(url_for("settings"))
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
@@ -181,7 +185,7 @@ def list_item():
             return redirect(url_for("items.list_item"))
 
         flash(
-            f"Item listed! You'll save {kg} kg ♻️ from landfill when this "
+            f"Item listed. You'll save {kg} kg from landfill when this "
             f"{category.lower()} item finds a new home.",
             "success",
         )
@@ -281,7 +285,7 @@ def edit_item(item_id):
             current_app.logger.error(f"Database error during edit_item: {e}")
             flash("A database error occurred. Your changes could not be saved. Please try again.", "danger")
             return redirect(url_for("items.edit_item", item_id=item.id))
-        flash("Item updated successfully!", "success")
+        flash("Item updated successfully.", "success")
         return redirect(url_for("items.detail", item_id=item.id))
 
     return render_template(
@@ -339,13 +343,17 @@ def delete_item(item_id):
 @verified_required
 def buy_item(item_id):
     """Initiate a claim — generates a PIN for the handshake."""
-    if current_user.phone_number is None:
-        flash("Please add a phone number in your settings before listing or buying items.", "warning")
-        return redirect(url_for("profile"))
+    if not current_user.phone_number:
+        flash(
+            "Please add a phone number in Settings before listing or buying items. "
+            "It is required for the PIN handshake.",
+            "warning"
+        )
+        return redirect(url_for("settings"))
     item = db.get_or_404(Item, item_id)
 
     if item.seller_id == current_user.id:
-        flash("You can't buy your own item!", "danger")
+        flash("You can't buy your own item.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
 
     # Atomic claim — prevents race condition when two buyers click simultaneously.
@@ -400,7 +408,7 @@ Please keep this PIN secure.
     except Exception as e:
         current_app.logger.error(f"Failed to send PIN email: {e}")
 
-    flash(f"Claim initiated for \"{item.title}\"! Complete the PIN handshake to finish.", "success")
+    flash(f"Claim initiated for \"{item.title}\". Complete the PIN handshake to finish.", "success")
     return redirect(url_for("items.pin_page", item_id=item.id))
 
 
@@ -535,8 +543,8 @@ def confirm_pin(item_id):
         return redirect(url_for("items.pin_page", item_id=item.id))
 
     flash(
-        f"✅ Handshake complete! \"{item.title}\" is now sold. "
-        f"{item.kg_saved} kg saved from landfill!",
+        f"Handshake complete. \"{item.title}\" is now sold. "
+        f"{item.kg_saved} kg saved from landfill.",
         "success",
     )
     return redirect(url_for("items.detail", item_id=item.id))
