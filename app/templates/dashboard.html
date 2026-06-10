@@ -37,7 +37,7 @@
 
     <!-- ─── Pending Handshakes ─── -->
     {% set pending_as_seller = my_listings | selectattr('buyer_id') | rejectattr('is_sold') | list %}
-    {% set pending_as_buyer = my_purchases | rejectattr('is_sold') | list %}
+    {% set pending_as_buyer = my_claims %}
     {% set pending_items = pending_as_seller + pending_as_buyer %}
     {% if pending_items %}
     <section class="dashboard__section dashboard__section--pending">

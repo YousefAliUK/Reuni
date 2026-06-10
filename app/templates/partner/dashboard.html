@@ -2,78 +2,187 @@
 {% block title %}Partner Dashboard — Reuni{% endblock %}
 
 {% block content %}
-<div class="dashboard">
+<div class="partner-dashboard">
     <!-- ─── Dashboard Header ─── -->
-    <div class="dashboard__header">
-        <div class="dashboard__avatar">
-            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 2.25rem;">analytics</span>
-        </div>
-        <div class="dashboard__user-info">
-            {% if is_global %}
-                <h1>Global Sustainability Dashboard</h1>
-                <p class="dashboard__email">All Registered Institutions</p>
-            {% else %}
-                <h1>{{ current_user.partner_university | upper }} Dashboard</h1>
-                <p class="dashboard__email">Institution Scope: {{ current_user.partner_university }}</p>
-            {% endif %}
-        </div>
-        <div class="dashboard__stats" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">recycling</span>
-                <div>
-                    <span class="stat-card__value">{{ total_items_exchanged }}</span>
-                    <span class="stat-card__label">Items Exchanged</span>
+    <div class="partner-dashboard__header">
+        <div class="partner-dashboard__header-main">
+            <div class="partner-dashboard__avatar-wrapper">
+                {% if logo_url %}
+                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="partner-dashboard__logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                {% endif %}
+                <div class="partner-dashboard__avatar" style="{% if logo_url %}display: none;{% endif %}">
+                    {{ uni_initials }}
                 </div>
             </div>
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">eco</span>
-                <div>
-                    <span class="stat-card__value">{{ "%.1f"|format(total_kg_saved) }}</span>
-                    <span class="stat-card__label">kg Saved</span>
-                </div>
+            <div class="partner-dashboard__info">
+                <h1>{{ uni_name }} Dashboard</h1>
+                <p class="partner-dashboard__institution">Sustainability Dashboard</p>
             </div>
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">group</span>
-                <div>
-                    <span class="stat-card__value">{{ total_verified_students }}</span>
-                    <span class="stat-card__label">Verified Students</span>
-                </div>
+        </div>
+        <div class="partner-dashboard__scope-badge">
+            <span class="material-symbols-outlined">domain</span>
+            <span>@{{ uni_domain or "global" }}</span>
+        </div>
+    </div>
+
+    <!-- ─── KPI Metrics Row ─── -->
+    <div class="partner-kpis">
+        <!-- KPI 1: Waste Diverted -->
+        <div class="partner-kpi-card partner-kpi-card--waste">
+            <div class="partner-kpi-card__main">
+                <span class="partner-kpi-card__label">Waste Diverted</span>
+                <span class="partner-kpi-card__value">
+                    {% if total_kg_saved >= 1000 %}
+                        {{ "%.1f"|format(total_kg_saved / 1000) }} tons
+                    {% else %}
+                        {{ "%.0f"|format(total_kg_saved) }} kg
+                    {% endif %}
+                </span>
+                <span class="partner-kpi-card__subtext">
+                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">swap_horiz</span>
+                    Across {{ total_items_exchanged }} items exchanged
+                </span>
+            </div>
+            <div class="partner-kpi-card__icon-wrapper">
+                <span class="material-symbols-outlined">recycling</span>
+            </div>
+        </div>
+
+        <!-- KPI 2: Active Students -->
+        <div class="partner-kpi-card partner-kpi-card--students">
+            <div class="partner-kpi-card__main">
+                <span class="partner-kpi-card__label">Active Students</span>
+                <span class="partner-kpi-card__value">{{ "%d"|format(total_verified_students) }}</span>
+                <span class="partner-kpi-card__subtext">
+                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">group</span>
+                    Verified on platform
+                </span>
+            </div>
+            <div class="partner-kpi-card__icon-wrapper">
+                <span class="material-symbols-outlined">person_add</span>
+            </div>
+        </div>
+
+        <!-- KPI 3: Est. Carbon Offset -->
+        <div class="partner-kpi-card partner-kpi-card--carbon">
+            <div class="partner-kpi-card__main">
+                <span class="partner-kpi-card__label">Est. Carbon Offset</span>
+                <span class="partner-kpi-card__value">
+                    {% set CO2_kg = total_kg_saved * 2.5 %}
+                    {% if CO2_kg >= 1000 %}
+                        {{ "%.1f"|format(CO2_kg / 1000) }} tons
+                    {% else %}
+                        {{ "%.0f"|format(CO2_kg) }} kg CO₂e
+                    {% endif %}
+                </span>
+                <span class="partner-kpi-card__subtext">
+                    {% set trees = CO2_kg / 22 %}
+                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">eco</span>
+                    Equivalent to {{ "%.0f"|format(trees) }} trees / year
+                </span>
+            </div>
+            <div class="partner-kpi-card__icon-wrapper">
+                <span class="material-symbols-outlined">cloud</span>
             </div>
         </div>
     </div>
 
-    <!-- ─── Category Stats ─── -->
-    <section class="dashboard__section">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">bar_chart</span>
-            Activity by Category
-        </h2>
+    <!-- ─── Main Content Grid ─── -->
+    <div class="partner-grid">
         
-        {% if items_by_category %}
-            <div class="dashboard__list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-                {% for category, count in items_by_category %}
-                    <div class="dash-item" style="padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); text-decoration: none; color: inherit; cursor: default;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary, #10b981);">folder</span>
-                            <strong>{{ category }}</strong>
-                        </div>
-                        <span class="status-badge status-badge--active" style="font-size: 0.875rem; font-weight: 600;">{{ count }} exchanged</span>
-                    </div>
-                {% endfor %}
+        <!-- Column 1: Category Distribution -->
+        <div class="partner-card">
+            <div class="partner-card__header">
+                <div>
+                    <h2 class="partner-card__title">Category Distribution</h2>
+                    <p class="partner-card__subtitle">Items saved from landfill by type</p>
+                </div>
             </div>
-        {% else %}
-            <div class="dashboard__empty">
-                <p>No activity recorded yet for this university domain.</p>
-                {% if not is_global %}
-                    <p style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-top: 0.25rem;">Share Reuni with students at {{ current_user.partner_university }}.</p>
+            <div class="partner-card__body">
+                {% if categories_list %}
+                    <div class="category-distribution">
+                        {% for cat in categories_list %}
+                            <div class="category-row">
+                                <div class="category-row__header">
+                                    <span class="category-row__name">
+                                        <span class="material-symbols-outlined category-row__icon">{{ cat.icon }}</span>
+                                        {{ cat.category }}
+                                    </span>
+                                    <span class="category-row__meta">
+                                        <span class="category-row__percentage">{{ "%.0f"|format(cat.percentage) }}%</span>
+                                        <span class="category-row__weight">({{ "%.1f"|format(cat.kg) }} kg, {{ cat.count }} exchanged)</span>
+                                    </span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar__fill progress-bar__fill--{{ cat.category | lower }}" style="width: {{ cat.percentage }}%;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="partner-empty">
+                        <span class="material-symbols-outlined partner-empty__icon">bar_chart</span>
+                        <p class="partner-empty__text">No category statistics available yet.</p>
+                    </div>
                 {% endif %}
             </div>
-        {% endif %}
-    </section>
+        </div>
 
-    <!-- ─── Footnote Disclosure ─── -->
-    <div style="margin-top: 2rem; padding: 1rem; text-align: center; border-radius: 8px; font-size: 0.875rem; color: var(--color-text-muted, #64748b); background: var(--bg-hover, #f8fafc);">
-        <p><em>Data updates in real time. Individual student data is never shared to preserve privacy.</em></p>
+        <!-- Column 2: Live Circulation Log -->
+        <div class="partner-card">
+            <div class="partner-card__header">
+                <div>
+                    <h2 class="partner-card__title">Live Circulation Log</h2>
+                    <p class="partner-card__subtitle">Real-time circular transactions on campus</p>
+                </div>
+                <span class="partner-card__badge-live">
+                    <span class="live-dot"></span>
+                    Live
+                </span>
+            </div>
+            <div class="partner-card__body">
+                {% if recent_exchanges %}
+                    <div class="circulation-log">
+                        {% for log in recent_exchanges %}
+                            <div class="circulation-row">
+                                <div class="circulation-row__icon-container circulation-row__icon-container--{{ log.category | lower }}">
+                                    <span class="material-symbols-outlined">{{ log.icon }}</span>
+                                </div>
+                                <div class="circulation-row__details">
+                                    <span class="circulation-row__title">{{ log.title }}</span>
+                                    <div class="circulation-row__meta">
+                                        <span class="circulation-row__category">{{ log.category }}</span>
+                                        <span class="circulation-row__dot"></span>
+                                        <span class="circulation-row__time">{{ log.time_ago }}</span>
+                                    </div>
+                                </div>
+                                <div class="circulation-row__impact">
+                                    <span class="impact-badge">+{{ "%.1f"|format(log.kg_saved) }} kg</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="partner-empty">
+                        <span class="material-symbols-outlined partner-empty__icon">history</span>
+                        <p class="partner-empty__text">No completed transactions recorded yet.</p>
+                        {% if not is_global %}
+                            <p class="partner-empty__subtext" style="font-size: 0.8125rem; color: var(--clr-text-muted); margin-top: 0.25rem;">
+                                Exchanges will appear here in real time as students complete handshakes.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─── Footnote / Data Disclosure ─── -->
+    <div class="partner-dashboard__footer">
+        <span class="material-symbols-outlined">verified</span>
+        <p>UK/EU GDPR Compliant Log. Individual student names, emails, and transaction codes are redacted to preserve user privacy. Data updates in real time.</p>
     </div>
 </div>
 {% endblock %}
+

@@ -89,5 +89,93 @@
             </button>
         </form>
     </section>
+
+    <!-- Danger Zone: Delete Account -->
+    <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--clr-border);">
+        <h3 style="margin-bottom: 0.5rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-danger, #dc2626);">
+            <span class="material-symbols-outlined" style="color: var(--clr-danger, #dc2626);" aria-hidden="true">warning</span>
+            Danger Zone
+        </h3>
+        <p class="subtitle" style="margin-bottom: 1rem;">Permanently delete your account and all associated data.</p>
+        
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-lg); padding: var(--space-md); margin-bottom: 1.5rem;">
+            <p style="color: #991b1b; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 0.5rem; line-height: 1.5;">
+                Important Notice regarding UK GDPR Deletion:
+            </p>
+            <ul style="color: #991b1b; font-size: var(--fs-xs); padding-left: 1.2rem; line-height: 1.5; margin-bottom: 0;">
+                <li>Your account will be immediately deactivated and scheduled for deletion.</li>
+                <li>Your active listings will be permanently removed from the marketplace.</li>
+                <li>All active exchange claims and pending handshake PINs will be cancelled.</li>
+                <li>After a 30-day cool-down period, all personal data (name, email, phone) will be permanently anonymised.</li>
+                <li>Completed transaction history is retained anonymously for institutional ESG auditing.</li>
+            </ul>
+        </div>
+
+        <!-- Trigger Button -->
+        <button type="button" id="btn-show-delete-confirm" class="btn btn--danger">
+            <span class="material-symbols-outlined btn__icon" aria-hidden="true">delete_forever</span>
+            Delete My Account
+        </button>
+
+        <!-- Confirmation Section (Hidden by default) -->
+        <div id="delete-confirmation-wrap" style="display: none; margin-top: 1rem;">
+            <form method="POST" action="{{ url_for('delete_account') }}" class="form form--compact" onsubmit="return validateDeleteConfirm();">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form__group">
+                    <label for="delete_confirm_text" style="color: var(--clr-text); font-weight: 600;">
+                        To confirm, type <strong style="color: var(--clr-danger, #dc2626);">DELETE</strong> in the box below:
+                    </label>
+                    <input type="text" id="delete_confirm_text" name="delete_confirm_text" placeholder="Type DELETE" required autocomplete="off" style="border: 1px solid #fecaca; padding: 0.6rem 0.75rem; border-radius: var(--radius); width: 100%; max-width: 300px;">
+                </div>
+
+                <div style="display: flex; gap: var(--space-md); margin-top: 1rem;">
+                    <button type="submit" class="btn" style="background: var(--clr-danger, #dc2626); color: white; border: none;">
+                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">delete_forever</span>
+                        Confirm Permanent Deletion
+                    </button>
+                    <button type="button" class="btn btn--outline" id="btn-cancel-delete">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right of Access (SAR) Info Note -->
+        <p style="margin-top: 1.5rem; font-size: var(--fs-xs); color: var(--clr-text-muted); line-height: 1.4;">
+            To request a copy of your personal data under the UK GDPR (Article 15 Subject Access Request), please contact our support team at <a href="mailto:support@reuni.org" style="color: var(--clr-primary); text-decoration: underline;">support@reuni.org</a>. We will respond to your request within 30 days.
+        </p>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var btnShow = document.getElementById('btn-show-delete-confirm');
+            var btnCancel = document.getElementById('btn-cancel-delete');
+            var wrap = document.getElementById('delete-confirmation-wrap');
+            
+            if (btnShow && wrap) {
+                btnShow.addEventListener('click', function() {
+                    wrap.style.display = 'block';
+                    btnShow.style.display = 'none';
+                });
+            }
+            if (btnCancel && btnShow && wrap) {
+                btnCancel.addEventListener('click', function() {
+                    wrap.style.display = 'none';
+                    btnShow.style.display = 'inline-flex';
+                    document.getElementById('delete_confirm_text').value = '';
+                });
+            }
+        });
+
+        function validateDeleteConfirm() {
+            var val = document.getElementById('delete_confirm_text').value.trim();
+            if (val !== 'DELETE') {
+                alert('Please type DELETE exactly to confirm.');
+                return false;
+            }
+            return true;
+        }
+    </script>
 </div>
 {% endblock %}

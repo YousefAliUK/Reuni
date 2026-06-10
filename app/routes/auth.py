@@ -10,6 +10,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, mail, limiter
 from app.models import User
 from app.utils.email_validation import extract_university_domain, is_domain_allowed
+from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+from itsdangerous import URLSafeTimedSerializer
 from flask_limiter.util import get_remote_address
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -79,7 +81,7 @@ def register():
         # Domain format validation
         domain = extract_university_domain(email)
         if domain is None:
-            flash("Please use a valid university email address (e.g. yourname@brookes.ac.uk)", "danger")
+            flash("Please use a valid university email address (e.g. yourname@brookes.ac.uk).", "danger")
             return redirect(url_for("auth.register"))
 
         # Allowed domain enforcement
@@ -109,23 +111,60 @@ def register():
             flash("Please enter a valid phone number.", "danger")
             return redirect(url_for("auth.register"))
 
-        # Check for existing email and phone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Check for existing email
         existing_email = User.query.filter_by(email=email).first()
         if existing_email:
-            if existing_email.is_verified:
+            if existing_email.deletion_pending_until:
+                # Account is pending deletion (cooldown period)
+                if existing_email.deletion_pending_until <= now:
+                    # Cooldown has expired, anonymise immediately to free the email
+                    try:
+                        existing_email.anonymise()
+                        db.session.commit()
+                    except Exception as clean_err:
+                        db.session.rollback()
+                        current_app.logger.error(f"Error during JIT registration cleanup of expired account {existing_email.id}: {clean_err}")
+                        flash("An error occurred during registration. Please try again.", "danger")
+                        return redirect(url_for("auth.register"))
+                else:
+                    # Still in cooldown
+                    remaining = existing_email.deletion_pending_until - now
+                    days = max(1, remaining.days)
+                    flash(f"This email is associated with an account pending deletion. You can register a new account in {days} days.", "danger")
+                    return redirect(url_for("auth.register"))
+            elif existing_email.is_verified:
                 flash("An account with this email already exists.", "danger")
                 return redirect(url_for("auth.register"))
             else:
                 db.session.delete(existing_email)
                 db.session.commit()
 
-        existing_phone = User.query.filter_by(phone_number=phone_number).first()
-        if existing_phone:
-            if existing_phone.is_verified:
+        # Check for existing phone
+        user_with_phone = User.query.filter_by(phone_number=phone_number).first()
+        if user_with_phone:
+            if user_with_phone.deletion_pending_until:
+                # Account is pending deletion
+                if user_with_phone.deletion_pending_until <= now:
+                    try:
+                        user_with_phone.anonymise()
+                        db.session.commit()
+                    except Exception as clean_err:
+                        db.session.rollback()
+                        current_app.logger.error(f"Error during JIT registration phone cleanup: {clean_err}")
+                        flash("An error occurred during registration. Please try again.", "danger")
+                        return redirect(url_for("auth.register"))
+                else:
+                    remaining = user_with_phone.deletion_pending_until - now
+                    days = max(1, remaining.days)
+                    flash(f"This phone number is associated with an account pending deletion. You can register a new account in {days} days.", "danger")
+                    return redirect(url_for("auth.register"))
+            elif user_with_phone.is_verified:
                 flash("An account with this phone number already exists.", "danger")
                 return redirect(url_for("auth.register"))
             else:
-                db.session.delete(existing_phone)
+                db.session.delete(user_with_phone)
                 db.session.commit()
 
         # --- Create user ---
@@ -186,14 +225,21 @@ def login_limit_key():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
-
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
+        if email.endswith("@deleted.reuni") or email.startswith("deleted_"):
+            flash("Invalid email or password.", "danger")
+            return redirect(url_for("auth.login"))
+
         user = User.query.filter_by(email=email).first()
 
         if user:
+            # Block login if the account is deactivated or pending deletion
+            if user.deletion_pending_until is not None:
+                flash("Invalid email or password.", "danger")
+                return redirect(url_for("auth.login"))
             # 1. Check lockout status first
             if user.locked_until and user.locked_until > datetime.now(timezone.utc).replace(tzinfo=None):
                 remaining = int((user.locked_until - datetime.now(timezone.utc).replace(tzinfo=None)).total_seconds() / 60)
@@ -431,6 +477,125 @@ def invite_register(token):
         return redirect(url_for("auth.login"))
 
     return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("3 per hour", key_func=lambda: request.form.get('email', '').strip().lower())
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        if email:
+            if email.endswith("@deleted.reuni") or email.startswith("deleted_"):
+                flash("If an account exists with that email, a reset link has been sent.", "info")
+                return redirect(url_for("auth.login"))
+
+            user = User.query.filter_by(email=email).first()
+            if user and user.is_verified and user.deletion_pending_until is None:
+                token = generate_password_reset_token(user.email, user.password_hash, current_app.config["SECRET_KEY"])
+                reset_url = url_for("auth.reset_password", token=token, _external=True)
+                
+                msg = Message(
+                    subject="Password reset for your Reuni account",
+                    recipients=[email]
+                )
+                msg.body = f"""Hi {user.name},
+
+We received a request to reset the password for your Reuni account.
+
+Click the link below to set a new password. This link expires in 1 hour.
+
+{reset_url}
+
+If you didn't request a password reset, you can safely ignore this email.
+Your password will not change unless you click the link above.
+
+— The Reuni team"""
+                try:
+                    mail.send(msg)
+                except Exception as e:
+                    current_app.logger.warning(f"Failed to send password reset email to {email}: {e}")
+
+        flash("If an account exists with that email, a reset link has been sent.", "info")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/forgot_password.html")
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+    try:
+        _, email = s.loads_unsafe(token)
+    except Exception:
+        email = None
+
+    if not email:
+        flash("This reset link is invalid.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash("This reset link is invalid.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    verified_email = verify_password_reset_token(
+        token, user.password_hash, current_app.config["SECRET_KEY"]
+    )
+    if not verified_email:
+        flash("This reset link is invalid or has expired.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    if request.method == "POST":
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not new_password or not confirm_password:
+            flash("All password fields are required.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        if user.check_password(new_password):
+            flash("New password must be different from your current password.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        min_pw_len = current_app.config.get("MIN_PASSWORD_LENGTH", 8)
+        if len(new_password) < min_pw_len:
+            flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        if (not any(c.isupper() for c in new_password) or
+            not any(c.islower() for c in new_password) or
+            not any(c.isdigit() for c in new_password)):
+            flash("Password must contain at least one uppercase letter, one lowercase letter, and one digit.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        user.set_password(new_password)
+        user.failed_login_attempts = 0
+        user.locked_until = None
+
+        try:
+            db.session.commit()
+            session.pop('reset_token', None)
+            flash("Password updated. You can now log in.", "success")
+            return redirect(url_for("auth.login"))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during password reset: {e}")
+            flash("An error occurred. Please try again.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+    session['reset_token'] = token
+    return render_template("auth/reset_password.html", token=token)
+
 
 
 

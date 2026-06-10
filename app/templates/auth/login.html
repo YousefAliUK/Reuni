@@ -13,11 +13,13 @@
         <div class="form__group">
             <label for="password">Password</label>
             <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <a href="{{ url_for('auth.forgot_password') }}" class="forgot-password-link">Forgot password?</a>
         </div>
         <button type="submit" class="btn btn--primary btn--block">Log In</button>
     </form>
     <p class="auth-container__footer">
-        Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a>
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a><br>
+        By logging in, you agree to our <a href="{{ url_for('privacy') }}">Privacy Policy</a>
     </p>
 </div>
 {% endblock %}

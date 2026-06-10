@@ -88,7 +88,7 @@ def test_admin_partner_deactivation(client, app, db_session):
 def test_admin_global_dashboard(client, app, db_session):
     """Test that admins see global statistics on the partner dashboard when no university is scoped."""
     with app.app_context():
-        admin = User(name="Admin", email="admin@brookes.ac.uk", role="admin", is_verified=True, is_active=True)
+        admin = User(name="Admin", email="admin@reuni.app", role="admin", is_verified=True, is_active=True)
         admin.set_password("password123")
         
         student_brookes = User(name="Brookes Student", email="stud@brookes.ac.uk", phone_number="+447700100015", is_verified=True, university_domain="brookes.ac.uk")
@@ -106,7 +106,7 @@ def test_admin_global_dashboard(client, app, db_session):
         db.session.add_all([item_brookes, item_oxford])
         db.session.commit()
 
-    client.post("/auth/login", data={"email": "admin@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
+    client.post("/auth/login", data={"email": "admin@reuni.app", "password": "password123"}, follow_redirects=True)
     
     resp = client.get("/partner/dashboard")
     assert resp.status_code == 200

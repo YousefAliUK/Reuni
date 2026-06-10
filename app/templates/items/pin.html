@@ -8,137 +8,167 @@
         Back to Item
     </a>
 
-    <div class="pin-page__layout">
-        <!-- Item Summary -->
-        <div class="pin-page__item-summary">
-            {% if item.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                 alt="{{ item.title }}" class="pin-page__item-image">
-            {% endif %}
-            <div>
-                <h2 class="pin-page__item-title">{{ item.title }}</h2>
-                <p class="pin-page__item-meta">
-                    {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
-                    &middot; {{ item.kg_saved }} kg saved
-                </p>
+    <div class="pin-page__container">
+        <!-- Main Verification Card -->
+        <div class="handshake-card">
+            <div class="handshake-card__item-context">
+                {% if item.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="handshake-card__item-thumb">
+                {% else %}
+                <span class="material-symbols-outlined handshake-card__item-icon" aria-hidden="true">image</span>
+                {% endif %}
+                <span class="handshake-card__item-name">{{ item.title }}</span>
             </div>
-        </div>
-
-        <!-- PIN Display / Entry -->
-        <div class="pin-page__main">
+            
             {% if is_holder %}
-            <!-- This user HOLDS the PIN — show it to them -->
-            <div class="pin-page__holder">
-                <h3>Your PIN Code</h3>
-                <p class="pin-page__instruction">
+                <h3 class="handshake-card__title">Your PIN Code</h3>
+            {% else %}
+                <h2 class="handshake-card__title">Handshake Verification</h2>
+            {% endif %}
+            
+            {% if is_holder %}
+                <!-- PIN Holder (Show Code) -->
+                <p class="handshake-card__subtitle">
                     {% if item.is_free %}
                         Share this PIN with the buyer when you hand over the item.
                     {% else %}
                         Show this PIN to the seller after you've inspected the item and confirmed payment.
                     {% endif %}
                 </p>
+
                 {% if pin_code %}
-                <div class="pin-page__code" aria-label="PIN code">
-                    {% for digit in pin_code %}
-                    <span class="pin-page__digit">{{ digit }}</span>
-                    {% endfor %}
-                </div>
+                    <div class="passcode-boxes passcode-boxes--readonly" aria-label="PIN Code">
+                        {% for digit in pin_code %}
+                            <div class="passcode-box passcode-box--filled">{{ digit }}</div>
+                        {% endfor %}
+                    </div>
                 {% else %}
-                <div class="pin-page__no-code" style="text-align: center; margin-bottom: 1.5rem;">
-                    <p class="pin-page__instruction" style="color: var(--clr-danger); font-weight: 500;">
-                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; vertical-align: middle; margin-right: 0.25rem;">warning</span> For security, the PIN is only shown once immediately after claiming and is not stored in plaintext. It has been sent to your registered university email.
-                    </p>
-                </div>
+                    <div class="handshake-card__error">
+                        <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                        <p>For security, the PIN is only shown once immediately after claiming and is not stored in plaintext. It has been sent to your registered university email.</p>
+                    </div>
                 {% endif %}
-                <form method="POST" action="{{ url_for('items.resend_pin', item_id=item.id) }}">
+
+                <form method="POST" action="{{ url_for('items.resend_pin', item_id=item.id) }}" class="handshake-card__form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn--outline btn--sm" style="margin: 0 auto; display: flex;">
+                    <button type="submit" class="btn btn--primary btn--pill btn--block">
                         <span class="material-symbols-outlined btn__icon" aria-hidden="true">mail</span>
                         Regenerate &amp; Email PIN
                     </button>
                 </form>
-            </div>
+
             {% else %}
-            <!-- This user ENTERS the PIN -->
-            <div class="pin-page__enterer">
-                <h3>Enter PIN Code</h3>
-                <p class="pin-page__instruction">
+                <!-- PIN Enterer (Input Code) -->
+                <p class="handshake-card__subtitle">
                     {% if item.is_free %}
                         Get the PIN from the seller when you collect the item.
                     {% else %}
                         The buyer will show you the PIN after inspecting the item.
                     {% endif %}
                 </p>
-                <form method="POST" action="{{ url_for('items.confirm_pin', item_id=item.id) }}" class="pin-page__form">
+
+                <form method="POST" action="{{ url_for('items.confirm_pin', item_id=item.id) }}" class="handshake-card__form" id="passcode-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="text" name="pin" maxlength="4" pattern="[0-9]{4}"
-                           class="pin-page__input" placeholder="0000"
-                           autocomplete="off" inputmode="numeric" required
-                           aria-label="Enter 4-digit PIN">
-                    <button type="submit" class="btn btn--primary btn--block">
-                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">check_circle</span>
-                        Confirm PIN
+                    
+                    <div class="passcode-input-wrapper">
+                        <!-- Hidden native input overlaying visual passcode boxes -->
+                        <input type="text" id="passcode-hidden" name="pin" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" autocomplete="off" required aria-label="Enter 4-digit PIN">
+                        
+                        <div class="passcode-boxes" id="passcode-visual-trigger">
+                            <div class="passcode-box" data-index="0">•</div>
+                            <div class="passcode-box" data-index="1">•</div>
+                            <div class="passcode-box" data-index="2">•</div>
+                            <div class="passcode-box" data-index="3">•</div>
+                        </div>
+                    </div>
+
+                    {% if item.pin_attempts > 0 %}
+                        <p class="handshake-card__attempts">
+                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                            {{ 3 - item.pin_attempts }} attempt{{ 's' if (3 - item.pin_attempts) != 1 else '' }} remaining
+                        </p>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn--primary btn--pill btn--block btn--verify">
+                        Verify Handshake
                     </button>
                 </form>
-                {% if item.pin_attempts > 0 %}
-                <p class="pin-page__attempts">
-                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; vertical-align: middle; margin-right: 0.25rem;">warning</span> {{ 3 - item.pin_attempts }} attempt{{ 's' if (3 - item.pin_attempts) != 1 else '' }} remaining
-                </p>
+            {% endif %}
+
+            <div class="handshake-card__encryption">
+                <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                <span>End-to-End Encrypted Exchange</span>
+            </div>
+        </div>
+
+        <!-- WhatsApp Bypass Card -->
+        {% if current_user.id == item.buyer_id %}
+            <a href="https://wa.me/{{ item.seller.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
+               class="whatsapp-bypass-card" target="_blank" rel="noopener">
+                <div class="whatsapp-bypass-card__content">
+                    <span class="material-symbols-outlined whatsapp-bypass-card__icon" aria-hidden="true">chat</span>
+                    <div class="whatsapp-bypass-card__text">
+                        <strong>WhatsApp Bypass</strong>
+                        <span>Chat securely with {{ item.seller.name }} ({{ item.seller.phone_number }})</span>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined whatsapp-bypass-card__chevron" aria-hidden="true">arrow_forward</span>
+            </a>
+        {% elif current_user.id == item.seller_id %}
+            <a href="https://wa.me/{{ item.buyer.phone_number[1:] }}?text=Hey%2C%20thanks%20for%20claiming%20my%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
+               class="whatsapp-bypass-card" target="_blank" rel="noopener">
+                <div class="whatsapp-bypass-card__content">
+                    <span class="material-symbols-outlined whatsapp-bypass-card__icon" aria-hidden="true">chat</span>
+                    <div class="whatsapp-bypass-card__text">
+                        <strong>WhatsApp Bypass</strong>
+                        <span>Chat securely with {{ item.buyer.name }} ({{ item.buyer.phone_number }})</span>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined whatsapp-bypass-card__chevron" aria-hidden="true">arrow_forward</span>
+            </a>
+        {% endif %}
+
+        <!-- Environmental Impact Card -->
+        <div class="eco-impact-card">
+            <span class="material-symbols-outlined eco-impact-card__icon" aria-hidden="true">eco</span>
+            <div class="eco-impact-card__text">
+                By completing this handshake, you save approximately <strong>{{ item.kg_saved }}kg of CO₂</strong> from entering the atmosphere.
+                <a href="{{ url_for('dashboard') }}" class="eco-impact-card__link">View Impact Details</a>
+            </div>
+        </div>
+
+        <!-- Safe Exchange Guide (Collapsible Accordion) -->
+        <details class="handshake-guide">
+            <summary class="handshake-guide__summary">
+                <div class="handshake-guide__header">
+                    <span class="material-symbols-outlined" aria-hidden="true">gavel</span>
+                    <strong>Safe Exchange Guide</strong>
+                </div>
+                <span class="material-symbols-outlined handshake-guide__arrow" aria-hidden="true">expand_more</span>
+            </summary>
+            <div class="handshake-guide__content">
+                <ol>
+                    <li>Meet in a <strong>public space on campus</strong> (library, SU, café)</li>
+                    <li>Buyer: inspect the item first</li>
+                    <li>Seller: confirm you've received payment (cash, bank transfer — check your app)</li>
+                    <li>Both phones out — PIN holder shows PIN, other party types it in</li>
+                    <li><strong>Both confirm the on-screen "Complete" before walking away</strong></li>
+                </ol>
+                {% if not item.is_free and item.price >= 100 %}
+                    <div class="handshake-guide__advisory">
+                        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                        <em>For high-value items, we recommend meeting at the SU reception desk and completing the exchange with both phones visible.</em>
+                    </div>
                 {% endif %}
             </div>
-            {% endif %}
-        </div>
+        </details>
 
-        <!-- Contact Info -->
-        <div class="pin-page__contact">
-            {% if current_user.id == item.buyer_id %}
-            <h3>
-                <span class="material-symbols-outlined" aria-hidden="true" style="vertical-align: middle; margin-right: 0.25rem;">phone</span>
-                Contact Seller
-            </h3>
-            <p>{{ item.seller.name }}: <strong>{{ item.seller.phone_number }}</strong></p>
-            <a href="https://wa.me/{{ item.seller.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
-               class="btn btn--outline" target="_blank" rel="noopener">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">chat</span>
-                Message on WhatsApp
-            </a>
-            {% elif current_user.id == item.seller_id %}
-            <h3>
-                <span class="material-symbols-outlined" aria-hidden="true" style="vertical-align: middle; margin-right: 0.25rem;">phone</span>
-                Contact Buyer
-            </h3>
-            <p>{{ item.buyer.name }}: <strong>{{ item.buyer.phone_number }}</strong></p>
-            <a href="https://wa.me/{{ item.buyer.phone_number[1:] }}?text=Hey%2C%20thanks%20for%20claiming%20my%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F"
-               class="btn btn--outline" target="_blank" rel="noopener">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">chat</span>
-                Message on WhatsApp
-            </a>
-            {% endif %}
-        </div>
-
-        <!-- Safe Exchange Guide -->
-        <div class="pin-page__guide">
-            <h3>Safe Exchange Guide</h3>
-            <ol>
-                <li>Meet in a <strong>public space on campus</strong> (library, SU, café)</li>
-                <li>Buyer: inspect the item first</li>
-                <li>Seller: confirm you've received payment (cash, bank transfer — check your app)</li>
-                <li>Both phones out — PIN holder shows PIN, other party types it in</li>
-                <li><strong>Both confirm the on-screen "Complete" before walking away</strong></li>
-            </ol>
-            {% if not item.is_free and item.price >= 100 %}
-            <div class="pin-page__advisory">
-                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; vertical-align: middle; margin-right: 0.25rem;">info</span> <em>For high-value items, we recommend meeting at the SU reception desk and completing the exchange with both phones visible.</em>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Cancel Button -->
-        <div class="pin-page__actions">
+        <!-- Cancel Claim Action -->
+        <div class="handshake-cancel">
             <form method="POST" action="{{ url_for('items.cancel_claim_route', item_id=item.id) }}"
                   onsubmit="return confirm('Are you sure you want to cancel this claim?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn--outline btn--danger">
+                <button type="submit" class="btn btn--outline btn--danger btn--pill">
                     <span class="material-symbols-outlined btn__icon" aria-hidden="true">cancel</span>
                     Cancel Claim
                 </button>
@@ -146,4 +176,48 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const hiddenInput = document.getElementById('passcode-hidden');
+        const boxes = document.querySelectorAll('#passcode-visual-trigger .passcode-box');
+        const trigger = document.getElementById('passcode-visual-trigger');
+
+        if (hiddenInput && boxes.length && trigger) {
+            // Focus hidden input on visual boxes container click
+            trigger.addEventListener('click', () => {
+                hiddenInput.focus();
+            });
+
+            // Focus on load if entering code
+            hiddenInput.focus();
+
+            hiddenInput.addEventListener('input', () => {
+                // Keep only numeric characters
+                let val = hiddenInput.value.replace(/[^0-9]/g, '');
+                hiddenInput.value = val;
+
+                // Sync digits or display placeholder dots
+                boxes.forEach((box, idx) => {
+                    if (idx < val.length) {
+                        box.textContent = val[idx];
+                        box.classList.add('passcode-box--filled');
+                    } else {
+                        box.textContent = '•';
+                        box.classList.remove('passcode-box--filled');
+                    }
+                });
+            });
+
+            // Prevent characters other than numbers from native keypress
+            hiddenInput.addEventListener('keypress', (e) => {
+                if (e.key < '0' || e.key > '9') {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

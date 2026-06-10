@@ -562,11 +562,11 @@ def cancel_claim_route(item_id):
 
     # 1. Check the item is actually in a claimed/pending state
     if item.is_sold:
-        flash("This exchange is already complete", "info")
+        flash("This exchange is already complete.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
     if not item.buyer_id or not item.pin_code:
-        flash("This item is no longer claimed", "info")
+        flash("This item is no longer claimed.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
     # 2. Verify authorization
@@ -589,7 +589,7 @@ def cancel_claim_route(item_id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during cancel of expired claim: {e}")
-        flash("This claim already expired automatically", "info")
+        flash("This claim already expired automatically.", "info")
         if current_user.id == item.seller_id:
             return redirect(url_for("items.detail", item_id=item.id))
         else:

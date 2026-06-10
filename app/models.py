@@ -54,6 +54,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default='student', server_default='student')
     partner_university = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, server_default='1')
+    deletion_pending_until = db.Column(db.DateTime, nullable=True)
 
     # Email ownership verification fields
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
@@ -80,6 +81,32 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def anonymise(self):
+        """Wipes personal data from the user record according to UK GDPR."""
+        self.name = "Deleted User"
+        self.email = f"deleted_{self.id}@deleted.reuni"
+        # Must be explicitly None (SQL NULL), not an empty string "", so that multiple
+        # deleted records do not violate the phone_number unique constraint (NULL != NULL).
+        self.phone_number = None
+        import secrets
+        self.password_hash = generate_password_hash(secrets.token_hex(32))
+        self.is_verified = False
+        self.is_active = False
+        self.university_domain = None
+        self.partner_university = None
+        self.role = "student"
+        self.deletion_pending_until = None
+        # Zero environmental impact score (GDPR data minimisation)
+        # WARNING: Zeroing this out means users.kg_saved_total will be 0.0 for deleted accounts.
+        # Future features calculating global ESG stats or university-wide circular economy impact
+        # MUST query and sum the items table directly (Item.kg_saved) where is_sold=True,
+        # rather than summing User.kg_saved_total, to avoid undercounting deleted users' impact.
+        # Sold items retain their university_domain and kg_saved by design.
+        self.kg_saved_total = 0.0
+        # Clear operational temporal PII logs
+        self.failed_login_attempts = 0
+        self.locked_until = None
 
     def __repr__(self):
         return f"<User {self.email}>"

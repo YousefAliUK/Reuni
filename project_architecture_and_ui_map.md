@@ -1,6 +1,6 @@
 # Reuni — Master System Architecture & UI/UX Navigation Map
 
-> **Date:** June 7, 2026
+> **Date:** June 10, 2026
 > **Author:** Master System Architect & Software Engineer
 > **Project:** Reuni (Campus Circular-Economy Platform)
 > **Mission:** Supporting UN SDG 12 — Responsible Consumption & Production
@@ -100,6 +100,7 @@ erDiagram
         string role
         string partner_university
         bool is_active
+        datetime deletion_pending_until
         bool is_verified
         string university_domain
         string email_verification_code
@@ -163,6 +164,7 @@ Represents student buyers/sellers, sustainability partners, and global administr
 | `role` | String(20) | Default `'student'`, Not Null | User privileges: `'student'`, `'partner'`, `'admin'`. |
 | `partner_university` | String(100) | Nullable | B2B Scoping domain (only for `'partner'` roles). |
 | `is_active` | Boolean | Default `True`, Not Null | Set to `False` to restrict account logins. |
+| `deletion_pending_until` | DateTime | Nullable | Cooldown timestamp for GDPR deletion scheduling. |
 | `is_verified` | Boolean | Default `False`, Not Null | User has proven email ownership via OTP. |
 | `university_domain` | String(100) | Nullable | Extracted domain from email (e.g. `brookes.ac.uk`). |
 | `email_verification_code` | String(256) | Nullable | Hashed OTP code string. |
@@ -235,6 +237,10 @@ Reuni applies rigorous defense-in-depth security policies:
     The login handler checks the `?next=` URL query parameter. If it contains an absolute protocol, target domain, or begins with double slashes (`//`), it rejects it, preventing phishing redirects.
 7.  **Cookies and Session Protection:**
     Saves cookies with `HttpOnly` and `SameSite=Lax`. In production mode, `Secure` cookie attributes are set, requiring HTTPS.
+8.  **GDPR Deactivation Isolation:**
+    Users who request account deletion are immediately flagged with `is_active = False` and have `deletion_pending_until` populated. Their login is blocked, and their active listings are purged. This prevents reputation-washing during the 30-day cooldown.
+9.  **Password Hash Salted Reset Tokens:**
+    The serializer salt is dynamically set to the user's password hash. If a user resets their password, the database hash changes, automatically invalidating any previously issued reset links.
 
 ---
 
@@ -391,6 +397,53 @@ To isolate university data, Reuni scopes data to specific institutional domains:
 
 ---
 
+### 5.6 GDPR Account Deletion & Anonymization Lifecycle (30-Day Queue)
+
+To satisfy the **UK GDPR "Right to Erasure" (Article 17)** while preventing marketplace abuse (e.g. deleting an account to evade penalties or reputation scores), Reuni implements a dual-phase deletion queue:
+
+1.  **Phase 1: Immediate Deactivation & Cleanup:**
+    *   The user initiates account deletion by submitting confirmation `DELETE` via the settings page.
+    *   Active listings (unsold items listed by the user) are instantly removed from the database and their images are hard-deleted from disk (`static/uploads/`).
+    *   Any active claims (pending handshakes) where the user is either the buyer or seller are canceled. The items are returned to the marketplace, and email notifications are sent to the affected counterparties.
+    *   The user's account is marked as inactive (`is_active = False`) and the `deletion_pending_until` column is set to `now + 30 days`.
+    *   The session is cleared, and the user is logged out. Login access is blocked.
+2.  **Phase 2: JIT Anonymization / Cooldown Expiry:**
+    *   If the 30-day cooldown expires, personal data is permanently scrubbed.
+    *   **JIT Anonymization Trigger:** If a user attempts to sign up with a phone or email that matches a pending deletion record *after* the 30-day cooldown has passed, the system runs JIT anonymization (`User.anonymise()`) on the old record to release unique constraints, and then commits the new signup. If the 30 days have not passed, the registration is blocked with a notice of remaining cooldown days.
+    *   **Data Scrubbing (`User.anonymise()`):**
+        *   `name` is overwritten to `"Deleted User"`.
+        *   `email` is scrambled to `deleted_{id}@deleted.reuni`.
+        *   `phone_number` is explicitly set to `None` (SQL NULL) to avoid violating unique constraints.
+        *   `password_hash` is overwritten with a new secure hash of a random token.
+        *   `kg_saved_total` is zeroed out to adhere to data minimization. Relational completed transaction items are kept but decoupled from PII, maintaining accurate institutional circular economy statistics.
+
+---
+
+### 5.7 Secure Password Reset Protocol
+
+Password recovery is handled securely via signing serializers without storing temporary reset tokens in the database:
+
+1.  **Token Generation:**
+    *   When a verified user requests a reset, the system generates a timed signature encoding their email using `URLSafeTimedSerializer`.
+    *   **Dynamic Cryptographic Salt:** The serializer uses the user's *current password hash* as the signature salt.
+    *   The reset link contains this token and expires in 1 hour.
+2.  **Verification & Invalidation:**
+    *   The backend loads the token. If the user changes their password, the database hash is updated.
+    *   If the token is re-used, the signature fails validation because the current password hash in the database no longer matches the salt used to sign the token. This guarantees one-time token use.
+
+---
+
+### 5.8 Keyless Favicon Integration & Local Logo Cache
+
+To maintain the premium look of university sustainability branding on the B2B dashboard without requiring manual logo uploads or API keys:
+
+1.  **Domain Matching:** The partner's domain is extracted from the partner's account profile or institutional email domain.
+2.  **Cache Lookup:** The system looks for a cached file under `app/static/img/logos/{domain}.png`.
+3.  **API Fallback:** If not cached, the system contacts Google's high-res favicon service (`https://www.google.com/s2/favicons?sz=128&domain={domain}`) using a standard User-Agent header, downloads the icon, and writes it to local static logo storage.
+4.  **Graceful Fail:** If the network request fails, the interface gracefully falls back to displaying a stylized colored circle containing the university initials (e.g. "OB" for Oxford Brookes).
+
+---
+
 ## 6. Page-by-Page UI/UX Map & Navigation Matrix
 
 This section maps out every page, button, input form, and redirect flow in the application.
@@ -428,6 +481,7 @@ This section analyzes how easy or difficult it is to reach pages in the system. 
 +----------------------+--------------------+---------------------------------+
 | DIRECT ACCESS        | INDIRECT ACCESS    | HIDDEN / SCOPED ACCESS          |
 | (Always in Navbar)   | (Behind Submenus)  | (Requires Token/State/Role)     |
+|                      |                    | / GDPR / Verification           |
 +----------------------+--------------------+---------------------------------+
 | * Marketplace (/)    | * Profile          | * Partner Registration          |
 | * Sell (/items/new)  | * Settings         |   (/auth/invite/<token>)        |
@@ -435,6 +489,11 @@ This section analyzes how easy or difficult it is to reach pages in the system. 
 | * Student Dashboard  |   (/verify-email)  |   (/partner/dashboard)          |
 |                      | * PIN Page         | * Admin Panel (/admin/partners) |
 |                      |   (/items/id/pin)  | * Edit Listing                  |
+|                      | * Forgot Password  | * Reset Password                |
+|                      |   (/forgot-password)  |   (/reset-password/<token>)     |
+|                      |                    | * Privacy Policy (/privacy)     |
+|                      |                    | * Account Deletion Action       |
+|                      |                    |   (/settings/delete - POST)     |
 +----------------------+--------------------+---------------------------------+
 ```
 
@@ -491,6 +550,18 @@ This section analyzes how easy or difficult it is to reach pages in the system. 
     *   *Flow:* Reached by clicking "Edit Listing" or "Delete" on the item details page. These buttons are only displayed if the viewer is the creator of the listing.
     *   *State Guard:* Access to edit/delete is blocked by the backend if the item has a pending claim (`buyer_id` is set) or has already been sold (`is_sold` is True).
 
+#### 9. Forgot / Reset Password Routes (`/auth/forgot-password` & `/auth/reset-password/<token>`)
+*   **Access Level:** Guest (Unauthenticated)
+*   **Accessibility Type:** **INDIRECT & TIMED**
+*   **Access Paths:**
+    *   *Flow:* Users navigate to `/auth/forgot-password` by clicking the link on the login card. Upon email submission, a link to `/auth/reset-password/<token>` is delivered via SMTP. The serializer link expires after 1 hour.
+
+#### 10. Privacy Policy Route (`/privacy`)
+*   **Access Level:** Public (Guest or Student)
+*   **Accessibility Type:** **DIRECT**
+*   **Access Paths:**
+    *   *Flow:* Reachable via the "Privacy Policy" link in the global page footer.
+
 ---
 
 ### 6.0 Global Layout & Navigation Shell
@@ -501,7 +572,7 @@ Defined in `app/templates/base.html`. Wraps every page view inside a unified hea
     *   Left side: Reuni logo icon (`recycling`) and bold text brand link.
     *   Center: A search bar with a gray magnifying glass icon (`search`) and a text input.
     *   Right side (Unauthenticated): "Log in" plain link and a teal "Sign up" button.
-    *   Right side (Authenticated): A teal "+ Sell" button and a user avatar dropdown menu button (displaying first letter of name, first name, and a downward arrow `expand_more`).
+    *   Right side (Authenticated): A teal "+ Sell" button and a simplified user avatar dropdown trigger button (displaying only the circular avatar badge containing the first letter of their name, reducing desktop layout clutter).
 *   **Mobile Bottom Tab Bar (Viewport width < 768px):**
     *   Four tab targets aligned horizontally: Home (`home` icon), Search (`search` icon button), Sell (`add_circle` icon button), and Profile (avatar or `person` icon).
 *   **Mobile Expandable Search Overlay:**
@@ -576,6 +647,11 @@ Defined in `app/templates/base.html`. Wraps every page view inside a unified hea
     *   **Action:** Tap.
     *   **Client-Side JS:** Removes the class `.navbar__search-expand--open` from the mobile search container.
     *   **Result:** Collapses the mobile search drawer.
+*   **Footer: "Privacy Policy" Link:**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Backend Controller:** `app.privacy()`.
+    *   **Result:** Redirects to the privacy policy page `/privacy`.
 
 ---
 
@@ -595,7 +671,11 @@ Defined in `app/templates/base.html`. Wraps every page view inside a unified hea
     *   Price Range fields (Min/Max inputs).
     *   Quick presets buttons ("Under £5", "Under £10", "Under £20").
     *   Action buttons ("Reset Filters", "Apply Filters").
-5.  **Items Card Grid:** Lists active items. Each card displays the category badge, an eco badge with `kg_saved`, item image, price or green "Free" label, and the seller's avatar initials and name.
+5.  **Items Card Grid:** Lists active items (ordered by available status first, so that items with `buyer_id IS NULL` appear at the top, then sorted by newest). Card styling features:
+    *   **Condition Badge:** Styled contextually (e.g. `.item-card__condition-badge--like-new`) in the body.
+    *   **Dynamic CO₂ Badge:** Displays as `X.Y kg saved` using a leaf icon `eco`.
+    *   **Overlay Scrim:** Renders a semi-transparent scrim with `"Reserved"` if the item has a pending claim (`buyer_id` is set), or `"Sold"` if the handshake is complete.
+    *   **Formatted Seller Name:** Limits screen footprint by rendering the first name followed by uppercase initials of remaining names (e.g. "John Smith" -> "John S.").
 6.  **Pagination Bar:** Navigation buttons ("Prev", page numbers, "Next").
 7.  **Empty State:** Displays when no items match the filters or if the database is empty.
 
@@ -667,19 +747,22 @@ Defined in `app/templates/base.html`. Wraps every page view inside a unified hea
 *   **Access Level:** Guest
 
 #### UI Elements & Visual Layout
-Centered card template layout displaying the registration form fields, followed by a bottom navigation link.
+Centered card template layout displaying the registration form fields, followed by a bottom navigation note stating: *"By signing up, you agree to our Privacy Policy"*.
 
 #### Click Targets & Action Pathways
 *   **"Sign Up" Button:**
     *   **Action:** Click.
     *   **HTTP Method:** POST.
     *   **Database Operations:** Creates a pending user record in the `users` table (`is_verified=False`), generates a hashed 6-digit OTP, sets the OTP expiration (15 minutes), and saves it to the DB.
-    *   **External Service:** Triggers a SMTP mail task sending the plaintext 6-digit code.
     *   **Result:** Sets `verify_email` in session and redirects the user to the verification page `/auth/verify-email`.
 *   **"Log in" Link (Footer):**
     *   **Action:** Click.
     *   **HTTP Method:** GET.
     *   **Result:** Redirects to `/auth/login`.
+*   **"Privacy Policy" Link (Footer):**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/privacy`.
 
 ---
 
@@ -691,25 +774,76 @@ Centered card template layout displaying the registration form fields, followed 
 *   **Access Level:** Guest
 
 #### UI Elements & Visual Layout
-Centered login card with email and password inputs, a submit button, and a footer registration link.
+Centered login card with email and password inputs (and a "Forgot password?" trigger link adjacent to the password label), a submit button, and a footer registration link containing a notice stating: *"By logging in, you agree to our Privacy Policy"*.
 
 #### Click Targets & Action Pathways
 *   **"Log In" Button:**
     *   **Action:** Click.
     *   **HTTP Method:** POST.
     *   **Database Operations:** 
-        *   Checks email matching.
+        *   Checks email matching. Blocks addresses ending in `@deleted.reuni`.
+        *   If account is pending deletion (`deletion_pending_until` is set) or deactivated, blocks login.
         *   If account is locked (due to 5 previous failures), rejects and reloads.
-        *   Verifies hashed password. If incorrect, increments `failed_login_attempts` in database. If attempts reach 5, sets `locked_until` to `now + 15 minutes`.
-        *   If password matches, resets `failed_login_attempts` to 0 and clears `locked_until`.
+        *   Verifies hashed password. If incorrect, increments `failed_login_attempts`. If attempts reach 5, sets `locked_until` to `now + 15 minutes`.
+        *   If password matches, resets attempts and clears lock.
     *   **Result:** 
-        *   If successful and verified: Initializes login session and redirects to target `?next=` page, or default `/` (home page).
-        *   If user email is unverified: Sets `verify_email` in session, flashes warning, and redirects to `/auth/resend-verification`.
-        *   If user account is deactivated: Flashes error, logs out user, and reloads login page.
+        *   If successful and verified: Initializes login session and redirects to target page.
+        *   If unverified: Sets `verify_email` in session and redirects to `/auth/resend-verification`.
+*   **"Forgot password?" Link:**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/auth/forgot-password`.
 *   **"Sign up" Link (Footer):**
     *   **Action:** Click.
     *   **HTTP Method:** GET.
     *   **Result:** Redirects to `/auth/register`.
+*   **"Privacy Policy" Link (Footer):**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/privacy`.
+
+---
+
+### 6.3.1 Forgot Password Page
+
+*   **URL:** `/auth/forgot-password`
+*   **Controller:** `auth.forgot_password()`
+*   **Template:** `app/templates/auth/forgot_password.html`
+*   **Access Level:** Guest (Unauthenticated, rate limited to 3/hour per email)
+
+#### UI Elements & Layout
+Centered authentication card containing a single email text input field, a "Send reset link" button, and a footer "Back to login" link.
+
+#### Click Targets & Action Pathways
+*   **"Send reset link" Button:**
+    *   **Action:** Click.
+    *   **HTTP Method:** POST.
+    *   **Logic:** Checks if the email is associated with a verified user and not pending deletion. If valid, generates a timed reset token using the current password hash as the salt, constructs the reset URL, and dispatches the recovery email.
+    *   **Result:** Redirects to `/auth/login` flashing a generic verification message: *"If an account exists with that email, a reset link has been sent."* to prevent account enumeration.
+*   **"Back to login" Link:**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/auth/login`.
+
+---
+
+### 6.3.2 Reset Password Page
+
+*   **URL:** `/auth/reset-password/<token>`
+*   **Controller:** `auth.reset_password(token)`
+*   **Template:** `app/templates/auth/reset_password.html`
+*   **Access Level:** Guest with valid recovery URL token
+
+#### UI Elements & Layout
+Centered password reset card containing input fields for "New password" and "Confirm new password", a complexity requirements indicator note, and an "Update password" submit button.
+
+#### Click Targets & Action Pathways
+*   **"Update password" Button:**
+    *   **Action:** Click.
+    *   **HTTP Method:** POST.
+    *   **Logic:** Decodes the token using the user's password hash salt. Validates password complexity: at least 8 characters, containing at least one uppercase letter, one lowercase letter, and one digit. Ensures it is different from the current password.
+    *   **Database Operations:** Updates the user's password hash, resets `failed_login_attempts` to 0, and clears `locked_until`.
+    *   **Result:** If successful, flashes: *"Password updated. You can now log in."* and redirects to `/auth/login`. If the token is expired, invalid, or already used, redirects to `/auth/forgot-password` displaying an error.
 
 ---
 
@@ -776,6 +910,14 @@ Centered form card to submit email for a new OTP.
 Vertical profile view displaying user stats, eco metrics, navigation links, and account settings.
 
 #### Click Targets & Action Pathways
+*   **"Admin Panel" Navigation Row (Visible only to administrators):**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/admin/partners`.
+*   **"Partner Dashboard" Navigation Row (Visible to partners and administrators):**
+    *   **Action:** Click.
+    *   **HTTP Method:** GET.
+    *   **Result:** Redirects to `/partner/dashboard`.
 *   **"Dashboard" Navigation Row:**
     *   **Action:** Click.
     *   **HTTP Method:** GET.
@@ -803,7 +945,7 @@ Vertical profile view displaying user stats, eco metrics, navigation links, and 
 *   **Access Level:** Verified Student
 
 #### UI Elements & Layout
-Form details page with disabled input fields for email and university scope, followed by editable forms for phone number and password updates.
+Form details page with disabled fields for email and university domain, followed by forms for phone number updates, password updates, and a "Danger Zone" block for account deletion.
 
 #### Click Targets & Action Pathways
 *   **"Back to Profile" Link:**
@@ -820,6 +962,34 @@ Form details page with disabled input fields for email and university scope, fol
     *   **HTTP Method:** POST.
     *   **Database Operations:** Validates current password match, validates complexity rules for new password, hashes the new password, updates database user record.
     *   **Result:** Flashes a success/error message and redirects back to `/settings`.
+*   **"Delete My Account" Button (Danger Zone trigger):**
+    *   **Action:** Click.
+    *   **Client-Side JS:** Hides the trigger button and reveals the confirmation section `#delete-confirmation-wrap`.
+*   **"Confirm Permanent Deletion" Button (Danger Zone form):**
+    *   **Action:** Click.
+    *   **Client-Side JS:** Validates that the input in `#delete_confirm_text` exactly matches `"DELETE"`. If incorrect, shows an alert and aborts.
+    *   **HTTP Method:** POST.
+    *   **Result:** Triggers deactivation and queues deletion (`/settings/delete`).
+*   **"Cancel" Button (Danger Zone form):**
+    *   **Action:** Click.
+    *   **Client-Side JS:** Hides the confirmation section and shows the original trigger button.
+
+---
+
+### 6.7.1 Delete Account Action
+
+*   **URL:** `/settings/delete`
+*   **Controller:** `app.delete_account()`
+*   **HTTP Method:** POST
+*   **Access Level:** Verified Student
+
+#### Execution Logic
+1.  **Confirmation Check:** Validates that the form parameter `delete_confirm_text` is exactly `"DELETE"`.
+2.  **Role Protection:** Rejects the operation if the user role is `'admin'` or `'partner'` (requires administrative offboarding).
+3.  **Active Claim Release:** Loops through active item claims involving the user (as buyer or seller), returns items to the marketplace by setting `buyer_id = None` (with PIN fields reset), and emails notifications to counterparties.
+4.  **Listing Removal:** Hard-deletes all unsold listings owned by the user (and cancels their associated cancellation records). Reads filenames into memory and deletes the files from `static/uploads/` only after the database transaction successfully commits.
+5.  **Deactivation:** Updates the user record setting `is_active = False` and `deletion_pending_until = now + 30 days`.
+6.  **Logout:** Logs out the user (`logout_user()`), clears the session, flashes a success message, and redirects to `/`.
 
 ---
 
@@ -831,7 +1001,10 @@ Form details page with disabled input fields for email and university scope, fol
 *   **Access Level:** Verified Student
 
 #### UI Elements & Layout
-Main overview of user items, displaying user profile stats followed by three lists: pending handshakes, active listings, and purchases.
+Main overview of user transactions, displaying user statistics followed by three segregated lists:
+1.  **Pending Handshakes:** Active claims (where the user is either the seller or buyer) awaiting PIN validation.
+2.  **Active Listings:** Items posted by the user that are currently available or reserved, but not yet sold.
+3.  **Completed Purchases:** Completed items purchased by the user (`buyer_id = current_user.id` and `is_sold = True`).
 
 #### Click Targets & Action Pathways
 *   **Pending Handshake Card:**
@@ -974,41 +1147,53 @@ Listing modification form pre-populated with current values, showing a thumbnail
 *   **Access Level:** Buyer or Seller of the Item (State Guarded)
 
 #### UI Elements & Visual Layout
-*   Item summary details header.
-*   Two-column main layout displaying the PIN action box and coordinates exchange info, followed by safe exchange tips and cancellation options.
+Modern verification card design containing:
+1.  **Item Context Bar:** Thumbnail/icon of the listing and item title.
+2.  **Verification Title & Instructions:** Dynamic header context (e.g. "Your PIN Code" or "Handshake Verification").
+3.  **Passcode Boxes Input:** A visual 4-digit passcode container. For the enterer, this renders four visual text boxes overlaying a hidden native input text box. JavaScript tracks keyboard input, restricts to numeric entries, and updates the box contents and styling classes.
+4.  **Environmental Impact Banner (`eco-impact-card`):** Highlighted card showing predicted carbon savings (e.g. "By completing this handshake, you save approximately 12.0kg of CO₂").
+5.  **WhatsApp Bypass Card:** Modern contact block showing the counterpart's name and E.164 phone number, with an arrow icon.
+6.  **Safe Exchange Guide Accordion:** A collapsible `<details>` element containing public meeting, inspection, and confirmation guidelines.
+7.  **Cancel Claim Section:** A pill-shaped warning button.
 
 #### Click Targets & Action Pathways
 *   **"Back to Item" Link:**
     *   **Action:** Click.
     *   **HTTP Method:** GET.
     *   **Result:** Redirects to `/items/<item_id>`.
-*   **"Regenerate & Email PIN" Button (Visible only to the PIN holder):**
+*   **"Regenerate & Email PIN" Button (Visible only to PIN holder):**
     *   **Action:** Click.
     *   **HTTP Method:** POST (Form submission).
     *   **Database Operations:** Generates a new 4-digit PIN, updates the hashed code in the database, and resets `pin_attempts` to 0.
-    *   **Result:** Sends new PIN email, caches plaintext PIN in session (so it is visible on screen), flashes success, and reloads `/items/<item_id>/pin`.
-*   **"Confirm PIN" Button (Visible only to the PIN enterer):**
+    *   **Result:** Dispatches a new PIN email, flashes success, and reloads the page.
+*   **Visual Passcode Box Grid (PIN enterer only):**
+    *   **Action:** Click/tap.
+    *   **Client-Side JS:** Programmatically focuses the hidden input field (`#passcode-hidden`) to activate keyboard input.
+*   **"Verify Handshake" Button (PIN enterer only):**
     *   **Action:** Click.
     *   **HTTP Method:** POST.
-    *   **Database Operations:** Compares entered text against database hash.
-        *   *If matching:* Sets `is_sold = True`, adds item `kg_saved` to seller's `kg_saved_total` profile, and clears PIN fields.
-        *   *If mismatch:* Increments `pin_attempts` in database. If attempts reach 3, triggers automatic claim cancellation.
+    *   **Database Operations:** Compares the submitted code against the hashed PIN.
+        *   *If matching:* Sets `is_sold = True`, adds item `kg_saved` to seller's `kg_saved_total`, and clears PIN fields.
+        *   *If mismatch:* Increments `pin_attempts`. If attempts reach 3, triggers automatic claim cancellation.
     *   **Result:**
         *   If matching: Redirects to `/items/<item_id>` displaying transaction complete.
-        *   If mismatch & attempts < 3: Reloads page with warning and remaining attempts.
+        *   If mismatch & attempts < 3: Reloads page displaying remaining attempts.
         *   If attempts reach 3: Automatically cancels claim and redirects to `/items/<item_id>`.
-*   **"Message on WhatsApp" Button:**
+*   **"WhatsApp Bypass" Link Card:**
     *   **Action:** Click.
-    *   **External Navigation:** Opens a new tab pointing to the WhatsApp API with a pre-filled coordination message.
+    *   **Result:** Opens a new browser tab navigating to the WhatsApp API (`https://wa.me/<number>?text=...`) with a pre-filled transaction context coordination message.
+*   **"Safe Exchange Guide" Header:**
+    *   **Action:** Click/tap.
+    *   **Result:** Expands/collapses the accordion guide panel.
 *   **"Cancel Claim" Button:**
     *   **Action:** Click.
     *   **Window Prompt:** Native confirmation dialog: *"Are you sure you want to cancel this claim?"*
-    *   **HTTP Method:** POST (Form submission).
+    *   **HTTP Method:** POST.
     *   **Database Operations:** 
         *   Calculates elapsed hours since `claimed_at`.
         *   If elapsed hours > 24, inserts a late cancellation audit row into the `cancellation_records` table.
         *   Resets the item record claim fields (`buyer_id=None`, `pin_code=None`, etc.).
-    *   **External Service:** Sends cancellation notification email to the other party.
+    *   **External Service:** Sends cancellation notification email to the counterpart.
     *   **Result:** Redirects the buyer to `/`, or the seller to `/items/<item_id>`.
 
 ---
@@ -1045,10 +1230,18 @@ Centered registration form scoped to a university domain.
 *   **Access Level:** Scoped Partner or Global Administrator (Scoped Menu)
 
 #### UI Elements & Visual Layout
-Data display displaying metrics (Items Exchanged, kg Saved, Verified Students) and a categorical breakdown of items.
+Modern institutional portal displaying:
+1.  **Dashboard Header:** Displays the university logo fetched and cached from Google's favicon API. If the cached favicon doesn't exist or download fails, displays a fallback circle showing the university's initials (e.g. "OB" for Oxford Brookes). Displays the formal university name (resolved from the domain mapping) and active domain scope badge.
+2.  **KPI Metrics Card Row:**
+    *   **Waste Diverted:** Shows total kg saved (or tons if >= 1000kg). Shows equivalent tree planting offset statistic (`total_kg / 22`).
+    *   **Circular Exchanges:** Total items sold.
+    *   **Verified Students:** Total registered users in the university domain scope.
+3.  **Category Distribution Card (Column 1):** Lists category items with count, weights in kg, percentage, category icons (e.g. chair, checkroom, laptop_mac) and color-coded horizontal progress bars showing categorical distribution.
+4.  **Live Circulation Log Card (Column 2):** Shows real-time completed transaction timeline of last 5 exchanges with titles, category icons, and relative times (e.g. "2 hours ago", "Yesterday", "1 minute ago").
+5.  **Footer privacy notice:** Explains GDPR logging redaction of names and email addresses.
 
 #### Click Targets & Action Pathways
-This dashboard is read-only. It has no forms, buttons, or navigation links.
+This dashboard is read-only. It has no forms, buttons, or input targets.
 
 ---
 
@@ -1078,6 +1271,23 @@ Admin dashboard containing the invite link generator form and a directory listin
     *   **Database Operations:** Updates the partner user record setting `is_active = False`.
     *   **External Service:** Sends account deactivation email notice.
     *   **Result:** Flashes confirmation message and reloads directory page `/admin/partners`.
+
+---
+
+### 6.16 Privacy Policy Page
+
+*   **URL:** `/privacy`
+*   **Controller:** `app.privacy()`
+*   **Template:** `app/templates/privacy.html`
+*   **Access Level:** Public (Guest or Student)
+
+#### UI Elements & Layout
+Vertical readability container containing:
+1.  **Overview & Controller Contact:** Details the Reuni Application Team as the Data Controller under the UK GDPR.
+2.  **Personal Data & Lawful Basis:** Outlines the collection of Account Identifiers, Verification Details, and Marketplace Activity with their corresponding legal bases.
+3.  **Strict Cookie Policy:** Explicitly states that Reuni does not use any tracking, advertising, or analytical cookies. Only functional session cookies (HTTPOnly, SameSite=Lax, Secure) are utilized to handle login states, CSRF security, and handshake transaction PIN caching.
+4.  **GDPR 30-Day Erasure Queue:** Details the account deactivation, claim cancellation, listing deletion, image scrubbing, and 30-day anonymization cool-down procedures.
+5.  **Subject Access Requests (SAR):** Details user rights under UK GDPR Article 15 and how to submit a SAR via the official support email.
 
 ---
 

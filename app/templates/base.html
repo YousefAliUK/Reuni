@@ -63,8 +63,6 @@
                     <div class="user-dropdown">
                         <button class="user-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
                             <span class="user-dropdown__avatar" aria-hidden="true">{{ current_user.name[0] }}</span>
-                            <span class="user-dropdown__name">{{ current_user.name.split(' ')[0] }}</span>
-                            <span class="material-symbols-outlined user-dropdown__chevron" aria-hidden="true">expand_more</span>
                         </button>
                         <div class="user-dropdown__menu" role="menu">
                             <div class="user-dropdown__header" role="none">
@@ -161,6 +159,7 @@
             </div>
             <nav class="footer__links" aria-label="Footer navigation">
                 <a href="{{ url_for('index') }}">Browse</a>
+                <a href="{{ url_for('privacy') }}">Privacy Policy</a>
                 {% if current_user.is_authenticated %}
                 <a href="{{ url_for('items.list_item') }}">List Item</a>
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>

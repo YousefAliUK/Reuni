@@ -182,7 +182,7 @@ def create_app(config_class=None):
                 pass
 
         page = request.args.get("page", 1, type=int)
-        pagination = query.order_by(Item.created_at.desc()).paginate(
+        pagination = query.order_by(Item.buyer_id.is_(None).desc(), Item.created_at.desc()).paginate(
             page=page, per_page=12, error_out=False
         )
         items = pagination.items
@@ -213,7 +213,13 @@ def create_app(config_class=None):
         )
         my_purchases = (
             Item.query
-            .filter_by(buyer_id=current_user.id)
+            .filter_by(buyer_id=current_user.id, is_sold=True)
+            .order_by(Item.created_at.desc())
+            .all()
+        )
+        my_claims = (
+            Item.query
+            .filter_by(buyer_id=current_user.id, is_sold=False)
             .order_by(Item.created_at.desc())
             .all()
         )
@@ -222,6 +228,7 @@ def create_app(config_class=None):
             "dashboard.html",
             my_listings=my_listings,
             my_purchases=my_purchases,
+            my_claims=my_claims,
         )
 
     # ── Profile / Settings ──
@@ -234,7 +241,7 @@ def create_app(config_class=None):
         total_sold = Item.query.filter_by(
             seller_id=current_user.id, is_sold=True
         ).count()
-        total_bought = Item.query.filter_by(buyer_id=current_user.id).count()
+        total_bought = Item.query.filter_by(buyer_id=current_user.id, is_sold=True).count()
 
         return render_template(
             "profile.html",
@@ -242,7 +249,7 @@ def create_app(config_class=None):
             total_sold=total_sold,
             total_bought=total_bought,
         )
-
+    
     # ── Settings Routes ──
     @app.route("/settings", methods=["GET"])
     @login_required
@@ -352,6 +359,139 @@ def create_app(config_class=None):
             flash("A database error occurred. Please try again.", "danger")
 
         return redirect(url_for("settings"))
+
+    @app.route("/settings/delete", methods=["POST"])
+    @login_required
+    @verified_required
+    def delete_account():
+        # 1. Server-Side Confirmation Check
+        confirm_text = request.form.get("delete_confirm_text", "").strip()
+        if confirm_text != "DELETE":
+            flash("Confirmation text did not match. Account deletion aborted.", "danger")
+            return redirect(url_for("settings"))
+
+        user = current_user
+        user_id = user.id
+
+        # 2. Idempotency Guard (Prevents double submission errors)
+        if user.email.startswith("deleted_") or user.deletion_pending_until is not None:
+            return redirect(url_for("index"))
+
+        # 3. Role Block Guards (Admins and partners must be offboarded via separate workflows)
+        if user.role == "admin":
+            flash("Administrator accounts cannot be deleted directly. Please contact system engineering for admin offboarding.", "danger")
+            return redirect(url_for("settings"))
+        elif user.role == "partner":
+            flash("Partner accounts cannot be deleted directly. Please contact the administrator to offboard your institution.", "danger")
+            return redirect(url_for("settings"))
+
+        from app.models import Item, CancellationRecord
+        from flask_mail import Message
+        from app import mail
+        from datetime import datetime, timezone, timedelta
+
+        # 4. Cancel Claims with Email Notifications to Other Parties
+        # Active claims where the user is the buyer:
+        buyer_claims = Item.query.filter_by(buyer_id=user_id, is_sold=False).all()
+        for item in buyer_claims:
+            # Cancel the claim
+            item.buyer_id = None
+            item.pin_code = None
+            item.pin_expires_at = None
+            item.claimed_at = None
+            item.pin_attempts = 0
+            
+            # Notify the seller
+            try:
+                seller = item.seller
+                if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
+                    msg = Message(
+                        subject=f"A claim on {item.title} has been cancelled",
+                        recipients=[seller.email]
+                    )
+                    msg.body = (
+                        f"Hello {seller.name},\n\n"
+                        f"The claim on the item \"{item.title}\" has been cancelled because the buyer's account has been deactivated for deletion.\n\n"
+                        f"The item is now available back on the marketplace.\n\n"
+                        f"— The Reuni team"
+                    )
+                    mail.send(msg)
+            except Exception as mail_err:
+                app.logger.warning(f"Failed to send deletion claim cancellation email to seller: {mail_err}")
+
+        # Active claims where the user is the seller:
+        seller_claims = Item.query.filter(Item.seller_id == user_id, Item.buyer_id != None, Item.is_sold == False).all()
+        for item in seller_claims:
+            buyer = item.buyer
+            # Cancel the claim
+            item.buyer_id = None
+            item.pin_code = None
+            item.pin_expires_at = None
+            item.claimed_at = None
+            item.pin_attempts = 0
+            
+            # Notify the buyer
+            try:
+                if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
+                    msg = Message(
+                        subject=f"A claim on {item.title} has been cancelled",
+                        recipients=[buyer.email]
+                    )
+                    msg.body = (
+                        f"Hello {buyer.name},\n\n"
+                        f"The claim on the item \"{item.title}\" has been cancelled because the seller's account has been deactivated for deletion.\n\n"
+                        f"— The Reuni team"
+                    )
+                    mail.send(msg)
+            except Exception as mail_err:
+                app.logger.warning(f"Failed to send deletion claim cancellation email to buyer: {mail_err}")
+
+        # 5. Remove Active Listings (Unsold Items)
+        active_listings = Item.query.filter_by(seller_id=user_id, is_sold=False).all()
+        
+        # Deletion ordering guard: read image filenames from memory before deleting row
+        image_filenames_to_delete = [item.image_filename for item in active_listings if item.image_filename]
+        
+        for item in active_listings:
+            # Delete cancellation records of unsold items
+            CancellationRecord.query.filter_by(item_id=item.id).delete()
+            db.session.delete(item)
+
+        # 6. Deactivate and Queue Deletion
+        user.is_active = False
+        user.deletion_pending_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=30)
+
+        # 7. Log Deactivation
+        app.logger.info(f"GDPR Deactivation: User {user_id} deactivated and queued for deletion on {user.deletion_pending_until}")
+
+        try:
+            db.session.commit()
+            
+            # Delete image files from static/uploads ONLY after successful DB transaction
+            for img_filename in image_filenames_to_delete:
+                img_path = os.path.join(app.static_folder, "uploads", img_filename)
+                if os.path.isfile(img_path):
+                    try:
+                        os.remove(img_path)
+                    except Exception as img_err:
+                        app.logger.warning(f"Failed to delete image file {img_filename} from disk during user deletion: {img_err}")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Database error during account deletion queue for user {user_id}: {e}")
+            flash("A database error occurred. Your account could not be deleted.", "danger")
+            return redirect(url_for("settings"))
+
+        # 8. Immediate Logout & Session Clear
+        logout_user()
+        session.clear()
+        
+        flash("Your account has been deactivated and is scheduled for permanent deletion in 30 days.", "success")
+        return redirect(url_for("index"))
+
+    # ── Privacy Policy Route ──
+    @app.route("/privacy", methods=["GET"])
+    def privacy():
+        return render_template("privacy.html")
 
     # ── Permanent session configuration ──
     @app.before_request

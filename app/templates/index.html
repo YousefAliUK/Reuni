@@ -159,32 +159,39 @@
     {% if items %}
     <section class="items-grid" id="marketplace-grid" aria-label="Listed items">
         {% for item in items %}
-        <article class="item-card {% if item.is_sold %}item-card--sold{% endif %}" aria-label="{{ item.title }}">
+        <article class="item-card {% if item.is_sold %}item-card--sold{% elif item.buyer_id %}item-card--reserved{% endif %}" aria-label="{{ item.title }}">
             <!-- Clickable card link -->
             <a href="{{ url_for('items.detail', item_id=item.id) }}" class="item-card__link" aria-label="View {{ item.title }}">
                 <div class="item-card__image-wrap">
                     {% if item.image_filename %}
                     <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                         alt="Photo of {{ item.title }}"
-                         class="item-card__image"
-                         loading="lazy">
+                          alt="Photo of {{ item.title }}"
+                          class="item-card__image"
+                          loading="lazy">
                     {% else %}
                     <div class="item-card__image-placeholder" aria-hidden="true">
                         <span class="material-symbols-outlined">image</span>
                     </div>
                     {% endif %}
                     <div class="item-card__badges-wrap">
-                        <span class="item-card__badge">{{ item.category }}</span>
                         <span class="item-card__points-overlay" aria-label="{{ item.kg_saved or 0 }} kg saved">
                             <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                            {{ item.kg_saved or 0 }} kg
+                            {{ "%.1f"|format(item.kg_saved or 0.0) }} kg saved
                         </span>
                     </div>
+                    
                     {% if item.is_sold %}
-                    <span class="item-card__sold-badge">Sold</span>
+                    <div class="item-card__overlay-scrim item-card__overlay-scrim--sold">
+                        <span class="item-card__overlay-badge item-card__overlay-badge--sold">Sold</span>
+                    </div>
+                    {% elif item.buyer_id %}
+                    <div class="item-card__overlay-scrim item-card__overlay-scrim--reserved">
+                        <span class="item-card__overlay-badge item-card__overlay-badge--reserved">Reserved</span>
+                    </div>
                     {% endif %}
                 </div>
                 <div class="item-card__body">
+                    <span class="item-card__category">{{ item.category }}</span>
                     <h3 class="item-card__title">{{ item.title }}</h3>
                     <div class="item-card__price-row">
                         {% if item.is_free %}
@@ -192,11 +199,19 @@
                         {% else %}
                             <span class="item-card__price">&pound;{{ "%.2f"|format(item.price) }}</span>
                         {% endif %}
+                        <span class="item-card__condition-badge item-card__condition-badge--{{ item.condition|lower|replace(' ', '-') }}">
+                            {{ item.condition }}
+                        </span>
                     </div>
                     <div class="item-card__footer">
                         <span class="item-card__seller">
                             <span class="item-card__seller-avatar" aria-hidden="true">{{ (item.seller.name or 'U')[0] }}</span>
-                            {{ item.seller.name or 'User' }}
+                            {% set name_parts = (item.seller.name or 'User').strip().split() %}
+                            {% if name_parts | length == 1 %}
+                                {{ name_parts[0] }}
+                            {% else %}
+                                {{ name_parts[0] }} {% for p in name_parts[1:] %}{{ p[0]|upper }}.{% if not loop.last %} {% endif %}{% endfor %}
+                            {% endif %}
                         </span>
                     </div>
                 </div>

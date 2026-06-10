@@ -516,3 +516,228 @@ class TestLockoutAndComplexity:
         }, follow_redirects=True)
         assert b"must be at least 8 characters long" in resp3.data
 
+
+class TestPasswordResetTokenUtils:
+
+    def test_generate_and_verify_token_success(self, app):
+        from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+        with app.app_context():
+            token = generate_password_reset_token("user@university.ac.uk", "hash123", "secret")
+            email = verify_password_reset_token(token, "hash123", "secret")
+            assert email == "user@university.ac.uk"
+
+    def test_verify_token_expired(self, app):
+        from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+        with app.app_context():
+            token = generate_password_reset_token("user@university.ac.uk", "hash123", "secret")
+            email = verify_password_reset_token(token, "hash123", "secret", max_age_seconds=-1)
+            assert email is None
+
+    def test_verify_token_tampered(self, app):
+        from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+        with app.app_context():
+            token = generate_password_reset_token("user@university.ac.uk", "hash123", "secret")
+            tampered_token = token + "extra"
+            email = verify_password_reset_token(tampered_token, "hash123", "secret")
+            assert email is None
+
+    def test_verify_token_wrong_hash(self, app):
+        from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+        with app.app_context():
+            token = generate_password_reset_token("user@university.ac.uk", "hash123", "secret")
+            email = verify_password_reset_token(token, "different_hash", "secret")
+            assert email is None
+
+
+class TestForgotPassword:
+
+    def test_forgot_password_page_loads(self, client):
+        """GET /auth/forgot-password should return 200."""
+        resp = client.get("/auth/forgot-password")
+        assert resp.status_code == 200
+        assert b"Reset your password" in resp.data
+
+    @patch("app.routes.auth.mail.send")
+    def test_forgot_password_success(self, mock_send, client, sample_user):
+        """POST /auth/forgot-password with valid email sends reset link."""
+        resp = client.post("/auth/forgot-password", data={
+            "email": "test@university.ac.uk"
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"If an account exists with that email, a reset link has been sent" in resp.data
+        mock_send.assert_called_once()
+        msg = mock_send.call_args[0][0]
+        assert msg.subject == "Password reset for your Reuni account"
+        assert "test@university.ac.uk" in msg.recipients
+        assert "/auth/reset-password/" in msg.body
+
+    @patch("app.routes.auth.mail.send")
+    def test_forgot_password_unregistered_email(self, mock_send, client):
+        """POST /auth/forgot-password with unregistered email flashes neutral message and does not send email."""
+        resp = client.post("/auth/forgot-password", data={
+            "email": "unregistered@university.ac.uk"
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"If an account exists with that email, a reset link has been sent" in resp.data
+        mock_send.assert_not_called()
+
+    @patch("app.routes.auth.mail.send")
+    def test_forgot_password_unverified_email(self, mock_send, client, db_session):
+        """POST /auth/forgot-password with unverified email flashes neutral message and does not send email."""
+        unverified_user = User(
+            email="unverified@university.ac.uk",
+            name="Unverified User",
+            phone_number="+447700100012",
+            is_verified=False
+        )
+        unverified_user.set_password("StrongPass123")
+        db_session.session.add(unverified_user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/forgot-password", data={
+            "email": "unverified@university.ac.uk"
+        }, follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"If an account exists with that email, a reset link has been sent" in resp.data
+        mock_send.assert_not_called()
+
+    def test_forgot_password_rate_limiting(self):
+        """Rate limit should reject the 4th request in an hour."""
+        from app import create_app, limiter
+        from app.config import TestingConfig
+        class RateLimitConfig(TestingConfig):
+            RATELIMIT_ENABLED = True
+        
+        limit_app = create_app(RateLimitConfig)
+        limit_app.config['WTF_CSRF_ENABLED'] = False
+        client = limit_app.test_client()
+        
+        try:
+            for _ in range(3):
+                resp = client.post("/auth/forgot-password", data={"email": "ratelimit@university.ac.uk"})
+                assert resp.status_code == 302
+            resp = client.post("/auth/forgot-password", data={"email": "ratelimit@university.ac.uk"})
+            assert resp.status_code == 429
+        finally:
+            limiter.enabled = False
+
+    def test_authenticated_user_forgot_password_redirect(self, auth_client):
+        """Logged-in user should be redirected to index."""
+        resp = auth_client.get("/auth/forgot-password", follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/")
+
+
+class TestResetPassword:
+
+    def test_reset_password_page_loads(self, client, sample_user):
+        """GET /auth/reset-password/<token> with valid token should render form."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+        
+        resp = client.get(f"/auth/reset-password/{token}")
+        assert resp.status_code == 200
+        assert b"Set a new password" in resp.data
+
+    def test_reset_password_expired_token(self, client, sample_user):
+        """Expired token should redirect to forgot-password with error."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+        with patch("app.routes.auth.verify_password_reset_token", return_value=None):
+            resp = client.get(f"/auth/reset-password/{token}", follow_redirects=True)
+            assert b"This reset link is invalid or has expired." in resp.data
+            assert b"Reset your password" in resp.data
+
+    def test_reset_password_tampered_token(self, client):
+        """Tampered token should redirect to forgot-password with error."""
+        resp = client.get("/auth/reset-password/garbage_token", follow_redirects=True)
+        assert b"This reset link is invalid." in resp.data
+        assert b"Reset your password" in resp.data
+
+    def test_reset_password_success(self, client, sample_user, db_session):
+        """POST /auth/reset-password/<token> with valid data updates password in DB."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        
+        old_hash = sample_user.password_hash
+
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+
+        resp = client.post(f"/auth/reset-password/{token}", data={
+            "new_password": "NewStrongPass123",
+            "confirm_password": "NewStrongPass123"
+        }, follow_redirects=True)
+
+        assert b"Password updated. You can now log in." in resp.data
+        
+        db_session.session.refresh(sample_user)
+        assert sample_user.password_hash != old_hash
+        assert sample_user.check_password("NewStrongPass123") is True
+        
+        resp_reuse = client.get(f"/auth/reset-password/{token}", follow_redirects=True)
+        assert b"This reset link is invalid or has expired" in resp_reuse.data
+
+    def test_reset_password_mismatch(self, client, sample_user):
+        """POST /auth/reset-password/<token> with mismatched passwords re-renders form with error."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+
+        resp = client.post(f"/auth/reset-password/{token}", data={
+            "new_password": "NewStrongPass123",
+            "confirm_password": "MismatchedPass123"
+        }, follow_redirects=True)
+        assert b"Passwords do not match" in resp.data
+        assert b"Set a new password" in resp.data
+
+    def test_reset_password_same_as_current(self, client, sample_user):
+        """POST /auth/reset-password/<token> with same password flashes error."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+
+        resp = client.post(f"/auth/reset-password/{token}", data={
+            "new_password": "StrongPass123",
+            "confirm_password": "StrongPass123"
+        }, follow_redirects=True)
+        assert b"must be different from your current password" in resp.data
+
+    def test_reset_password_complexity(self, client, sample_user):
+        """POST /auth/reset-password/<token> with password failing complexity rules flashes error."""
+        from app.utils.tokens import generate_password_reset_token
+        from flask import current_app
+        with client.application.app_context():
+            token = generate_password_reset_token(
+                sample_user.email, sample_user.password_hash, current_app.config["SECRET_KEY"]
+            )
+
+        resp1 = client.post(f"/auth/reset-password/{token}", data={
+            "new_password": "Sh1",
+            "confirm_password": "Sh1"
+        }, follow_redirects=True)
+        assert b"must be at least 8 characters long" in resp1.data
+
+        resp2 = client.post(f"/auth/reset-password/{token}", data={
+            "new_password": "NoDigitsPassword",
+            "confirm_password": "NoDigitsPassword"
+        }, follow_redirects=True)
+        assert b"must contain at least one uppercase letter, one lowercase letter, and one digit" in resp2.data
+
+

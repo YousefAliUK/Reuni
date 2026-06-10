@@ -60,6 +60,20 @@
             Quick Links
         </h2>
         <nav class="profile-links">
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.admin_partners') }}" class="profile-link">
+                <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+                <span>Admin Panel</span>
+                <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+            </a>
+            {% endif %}
+            {% if current_user.is_partner or current_user.is_admin %}
+            <a href="{{ url_for('partner.partner_dashboard') }}" class="profile-link">
+                <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                <span>Partner Dashboard</span>
+                <span class="material-symbols-outlined profile-link__arrow" aria-hidden="true">chevron_right</span>
+            </a>
+            {% endif %}
             <a href="{{ url_for('dashboard') }}" class="profile-link">
                 <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
                 <span>Dashboard</span>

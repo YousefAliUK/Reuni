@@ -4,25 +4,136 @@ from sqlalchemy import func
 from app import db
 from app.models import Item, User
 from app.utils.decorators import partner_required
+from datetime import datetime, timezone
 
 partner_bp = Blueprint("partner", __name__, url_prefix="/partner")
+
+UNIVERSITY_NAMES = {
+    "brookes.ac.uk": "Oxford Brookes University",
+    "ox.ac.uk": "University of Oxford",
+    "cam.ac.uk": "University of Cambridge",
+    "lse.ac.uk": "London School of Economics",
+    "ucl.ac.uk": "University College London",
+    "imperial.ac.uk": "Imperial College London",
+    "manchester.ac.uk": "University of Manchester",
+    "ed.ac.uk": "University of Edinburgh"
+}
+
+CATEGORY_ICONS = {
+    "Furniture": "chair",
+    "Kitchenware": "local_dining",
+    "Electronics": "laptop_mac",
+    "Sports": "sports_soccer",
+    "Clothing": "checkroom",
+    "Books": "book",
+    "Stationery": "edit",
+    "Other": "extension"
+}
+
+def get_uni_name(domain):
+    """Get formal university name from domain."""
+    if not domain:
+        return "Global Sustainability"
+    name = UNIVERSITY_NAMES.get(domain.lower())
+    if not name:
+        parts = domain.split('.')
+        name = f"{parts[0].capitalize()} University"
+    return name
+
+def get_uni_initials(name):
+    """Get initials from university name for fallback branding emblem."""
+    if not name or name == "Global Sustainability":
+        return "GS"
+    words = [w for w in name.split() if w.lower() not in ["of", "and", "the", "for", "college", "school"]]
+    if len(words) >= 2:
+        return "".join(w[0] for w in words[:3]).upper()
+    return name[:2].upper()
+
+def get_relative_time(dt):
+    """Convert a UTC datetime object to a relative 'time ago' string."""
+    if not dt:
+        return "Just now"
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    diff = now - dt
+    if diff.days > 0:
+        if diff.days == 1:
+            return "Yesterday"
+        return f"{diff.days} days ago"
+    seconds = diff.seconds
+    if seconds >= 3600:
+        hours = seconds // 3600
+        if hours == 1:
+            return "1 hour ago"
+        return f"{hours} hours ago"
+    if seconds >= 60:
+        minutes = seconds // 60
+        if minutes == 1:
+            return "1 minute ago"
+        return f"{minutes} minutes ago"
+    return "Just now"
+
+PUBLIC_DOMAINS = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "reuni.app", "example.com", "localhost"}
+
+def ensure_uni_logo(domain):
+    """Check if university logo is cached, if not fetch and cache it keylessly."""
+    if not domain or domain in PUBLIC_DOMAINS:
+        return None
+        
+    import os
+    from flask import current_app
+    import urllib.request
+    
+    logo_dir = os.path.join(current_app.static_folder, "img", "logos")
+    os.makedirs(logo_dir, exist_ok=True)
+    
+    logo_filename = f"{domain}.png"
+    logo_path = os.path.join(logo_dir, logo_filename)
+    
+    if os.path.exists(logo_path):
+        return f"img/logos/{logo_filename}"
+        
+    # Fetch from Google's high-res favicon service (128x128)
+    url = f"https://www.google.com/s2/favicons?sz=128&domain={domain}"
+    try:
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            with open(logo_path, "wb") as f:
+                f.write(response.read())
+        return f"img/logos/{logo_filename}"
+    except Exception as e:
+        # Silently fall back to initials avatar if download fails
+        return None
+
 
 @partner_bp.route("/dashboard")
 @login_required
 @partner_required
 def partner_dashboard():
-    is_global = (current_user.is_admin and not current_user.partner_university)
+    # Get institution domain dynamically from email if partner_university is not set (e.g. for university admins)
+    user_email_domain = current_user.email.split('@')[1].lower() if current_user.email and '@' in current_user.email else None
+    if user_email_domain in PUBLIC_DOMAINS:
+        user_email_domain = None
+        
+    uni_domain = current_user.partner_university or user_email_domain
+    is_global = (current_user.is_admin and not uni_domain)
     
+    uni_name = get_uni_name(uni_domain) if uni_domain else "Global Sustainability"
+    uni_initials = get_uni_initials(uni_name)
+    logo_url = ensure_uni_logo(uni_domain)
+
     # 1. Total Items Exchanged
     query_items = db.session.query(func.count(Item.id)).filter(Item.is_sold == True)
     if not is_global:
-        query_items = query_items.filter(Item.university_domain == current_user.partner_university)
+        query_items = query_items.filter(Item.university_domain == uni_domain)
     total_items_exchanged = query_items.scalar()
 
     # 2. Total kg Saved
     query_kg = db.session.query(func.sum(Item.kg_saved)).filter(Item.is_sold == True)
     if not is_global:
-        query_kg = query_kg.filter(Item.university_domain == current_user.partner_university)
+        query_kg = query_kg.filter(Item.university_domain == uni_domain)
     total_kg_saved = query_kg.scalar() or 0.0
 
     # 3. Total Verified Students
@@ -31,23 +142,61 @@ def partner_dashboard():
         User.is_verified == True
     )
     if not is_global:
-        query_students = query_students.filter(User.university_domain == current_user.partner_university)
+        query_students = query_students.filter(User.university_domain == uni_domain)
     total_verified_students = query_students.scalar()
 
-    # 4. Items by Category
+    # 4. Items and kg saved by Category
     query_categories = db.session.query(
         Item.category, 
-        func.count(Item.id)
+        func.count(Item.id),
+        func.sum(Item.kg_saved)
     ).filter(Item.is_sold == True)
     if not is_global:
-        query_categories = query_categories.filter(Item.university_domain == current_user.partner_university)
-    items_by_category = query_categories.group_by(Item.category).all()
+        query_categories = query_categories.filter(Item.university_domain == uni_domain)
+    categories_data = query_categories.group_by(Item.category).all()
+
+    categories_list = []
+    total_kg_sum = sum(float(row[2] or 0.0) for row in categories_data)
+    for cat, count, kg in categories_data:
+        kg_val = float(kg or 0.0)
+        pct = (kg_val / total_kg_sum * 100) if total_kg_sum > 0 else 0
+        categories_list.append({
+            "category": cat,
+            "count": count,
+            "kg": kg_val,
+            "percentage": pct,
+            "icon": CATEGORY_ICONS.get(cat, "extension")
+        })
+    categories_list.sort(key=lambda x: x["kg"], reverse=True)
+
+    # 5. Recent Completed Circular Exchanges (Live Circulation Log)
+    query_recent = db.session.query(Item).filter(Item.is_sold == True)
+    if not is_global:
+        query_recent = query_recent.filter(Item.university_domain == uni_domain)
+    recent_items = query_recent.order_by(Item.claimed_at.desc()).limit(5).all()
+
+    recent_exchanges = []
+    for item in recent_items:
+        recent_exchanges.append({
+            "title": item.title,
+            "category": item.category,
+            "kg_saved": float(item.kg_saved),
+            "time_ago": get_relative_time(item.claimed_at),
+            "icon": CATEGORY_ICONS.get(item.category, "extension")
+        })
 
     return render_template(
         "partner/dashboard.html",
         total_items_exchanged=total_items_exchanged,
         total_kg_saved=float(total_kg_saved),
         total_verified_students=total_verified_students,
-        items_by_category=items_by_category,
-        is_global=is_global
+        categories_list=categories_list,
+        recent_exchanges=recent_exchanges,
+        is_global=is_global,
+        uni_name=uni_name,
+        uni_initials=uni_initials,
+        uni_domain=uni_domain,
+        logo_url=logo_url
     )
+
+
