@@ -71,6 +71,7 @@ class TestingConfig(Config):
     
     # Suppress real emails during tests
     MAIL_SUPPRESS_SEND = True
+    PROPAGATE_EXCEPTIONS = False
 
 
 class ProductionConfig(Config):

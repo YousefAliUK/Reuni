@@ -18,6 +18,12 @@ def app():
     _app = create_app(TestingConfig)
     # Disable CSRF for test requests so we don't need tokens in every POST
     _app.config["WTF_CSRF_ENABLED"] = False
+    
+    # Register test route for 500 error testing
+    @_app.route("/test-500-trigger")
+    def test_500_trigger():
+        raise RuntimeError("Test error for 500 page verification")
+    
     return _app
 
 

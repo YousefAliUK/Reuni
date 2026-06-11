@@ -505,6 +505,17 @@ def create_app(config_class=None):
         flash("Image too large. Maximum file size is 5MB.", "danger")
         return redirect(request.referrer or url_for('index'))
 
+    # ── Custom error handlers ──
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        app.logger.error(e, exc_info=True)
+        db.session.rollback()
+        return render_template('errors/500.html'), 500
+
     # ── Security response headers ──
     @app.after_request
     def set_security_headers(response):
