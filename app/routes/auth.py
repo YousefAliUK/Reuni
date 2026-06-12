@@ -42,16 +42,16 @@ def send_otp_email(name: str, email: str, code: str):
     if current_app.config.get("MAIL_SUPPRESS_SEND"):
         return
 
-    api_key = current_app.config.get("MAIL_PASSWORD")
+    api_key = current_app.config.get("BREVO_API_KEY")
     if not api_key:
-        current_app.logger.warning("Brevo API key (MAIL_PASSWORD) is not set; skipping OTP email send")
+        current_app.logger.warning("Brevo API key (BREVO_API_KEY) is not set; skipping OTP email send")
         return
 
     configuration = brevo.Configuration()
     configuration.api_key["api-key"] = api_key
     with brevo.ApiClient(configuration) as api_client:
         api_instance = brevo.TransactionalEmailsApi(api_client)
-        sender_email = current_app.config.get("MAIL_DEFAULT_SENDER", "support@reuni.ac.uk")
+        sender_email = current_app.config.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
         from html import escape as html_escape
 
         safe_name = html_escape(name)
