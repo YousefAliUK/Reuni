@@ -6,8 +6,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
-import brevo
-from brevo.rest import ApiException
+import brevo_python as brevo
+from brevo_python.rest import ApiException
 
 from app import db, mail, limiter
 from app.models import User

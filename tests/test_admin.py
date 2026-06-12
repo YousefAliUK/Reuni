@@ -75,14 +75,14 @@ def test_admin_partner_deactivation(client, app, db_session):
     resp = client.post(f"/admin/partners/{admin_id}/deactivate", follow_redirects=True)
     assert b"You cannot deactivate your own account." in resp.data
     with app.app_context():
-        adm = User.query.get(admin_id)
+        adm = db.session.get(User, admin_id)
         assert adm.is_active is True
 
     # Successful deactivation
     resp = client.post(f"/admin/partners/{partner_id}/deactivate", follow_redirects=True)
     assert b"has been deactivated." in resp.data
     with app.app_context():
-        part = User.query.get(partner_id)
+        part = db.session.get(User, partner_id)
         assert part.is_active is False
 
 def test_admin_global_dashboard(client, app, db_session):
