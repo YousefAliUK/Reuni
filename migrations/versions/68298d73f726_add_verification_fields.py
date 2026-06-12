@@ -24,6 +24,7 @@ def upgrade():
         batch_op.add_column(sa.Column('email_verification_code', sa.String(length=256), nullable=True))
         batch_op.add_column(sa.Column('email_verification_expires_at', sa.DateTime(), nullable=True))
         batch_op.add_column(sa.Column('email_verification_attempts', sa.Integer(), server_default='0', nullable=False))
+        batch_op.alter_column('is_verified', server_default=None)
 
     # ### end Alembic commands ###
 
