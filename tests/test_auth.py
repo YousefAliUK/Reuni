@@ -436,21 +436,18 @@ class TestEmailVerification:
 
 
 class TestOtpEmailSending:
-    @patch("app.routes.auth.brevo.ApiClient")
-    @patch("app.routes.auth.brevo.TransactionalEmailsApi")
-    def test_send_otp_email_suppressed_skips_outbound_call(self, mock_transactional_api, mock_api_client, app):
+    @patch("app.routes.auth.Brevo")
+    def test_send_otp_email_suppressed_skips_outbound_call(self, mock_brevo, app):
         with app.app_context():
             app.config["MAIL_SUPPRESS_SEND"] = True
             app.config["BREVO_API_KEY"] = "test-key"
 
             send_otp_email("Test User", "test@example.com", "123456")
 
-        mock_api_client.assert_not_called()
-        mock_transactional_api.assert_not_called()
+        mock_brevo.assert_not_called()
 
-    @patch("app.routes.auth.brevo.ApiClient")
-    @patch("app.routes.auth.brevo.TransactionalEmailsApi")
-    def test_send_otp_email_missing_api_key_skips_outbound_call(self, mock_transactional_api, mock_api_client, app, caplog):
+    @patch("app.routes.auth.Brevo")
+    def test_send_otp_email_missing_api_key_skips_outbound_call(self, mock_brevo, app, caplog):
         with app.app_context():
             app.config["MAIL_SUPPRESS_SEND"] = False
             app.config["BREVO_API_KEY"] = None
@@ -458,8 +455,7 @@ class TestOtpEmailSending:
             send_otp_email("Test User", "test@example.com", "123456")
 
         assert "Brevo API key (BREVO_API_KEY) is not set; skipping OTP email send" in caplog.text
-        mock_api_client.assert_not_called()
-        mock_transactional_api.assert_not_called()
+        mock_brevo.assert_not_called()
 
 
 class TestLockoutAndComplexity:

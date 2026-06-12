@@ -6,8 +6,9 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
-import brevo_python as brevo
-from brevo_python.rest import ApiException
+from brevo import Brevo
+from brevo.transactional_emails import SendTransacEmailRequestSender, SendTransacEmailRequestToItem
+from brevo.core.api_error import ApiError
 
 from app import db, mail, limiter
 from app.models import User
@@ -47,18 +48,16 @@ def send_otp_email(name: str, email: str, code: str):
         current_app.logger.warning("Brevo API key (BREVO_API_KEY) is not set; skipping OTP email send")
         return
 
-    configuration = brevo.Configuration()
-    configuration.api_key["api-key"] = api_key
-    with brevo.ApiClient(configuration) as api_client:
-        api_instance = brevo.TransactionalEmailsApi(api_client)
-        sender_email = current_app.config.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
-        from html import escape as html_escape
+    client = Brevo(api_key=api_key)
+    sender_email = current_app.config.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
+    from html import escape as html_escape
 
-        safe_name = html_escape(name)
-        safe_code = html_escape(code)
-        send_smtp_email = brevo.SendSmtpEmail(
-            to=[{"email": email, "name": safe_name}],
-            sender={"email": sender_email, "name": "Reuni"},
+    safe_name = html_escape(name)
+    safe_code = html_escape(code)
+    try:
+        client.transactional_emails.send_transac_email(
+            sender=SendTransacEmailRequestSender(email=sender_email, name="Reuni"),
+            to=[SendTransacEmailRequestToItem(email=email, name=safe_name)],
             subject="Your OTP Code",
             html_content=(
                 f"<p>Hi {safe_name},</p>"
@@ -69,10 +68,8 @@ def send_otp_email(name: str, email: str, code: str):
                 f"<p>— The Reuni team</p>"
             ),
         )
-        try:
-            api_instance.send_transac_email(send_smtp_email)
-        except ApiException as e:
-            current_app.logger.error(f"Brevo API error sending OTP email to {email}: {e}")
+    except ApiError as e:
+        current_app.logger.error(f"Brevo API error sending OTP email to {email}: {e}")
 
 
 def resend_key_func():
