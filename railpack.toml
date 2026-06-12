@@ -1,0 +1,2 @@
+[[apt.packages]]
+name = "libpq-dev"
