@@ -32,3 +32,4 @@ app/static/uploads/
 .DS_Store
 Thumbs.db
 .aider*
+/.rules

@@ -310,3 +310,103 @@ class TestGDPRDeletion:
         user = db_session.session.get(User, sample_user.id)
         assert user.email == "test@university.ac.uk"
         assert user.name == "Test User"
+
+    def test_cron_anonymisation_job(self, app, db_session, sample_user, second_user):
+        """Test the background cron anonymisation job cleans up expired accounts, but leaves others intact."""
+        from app.scheduler import anonymise_expired_accounts
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        
+        # User 1: expired cooldown (deactivated, deletion_pending_until in the past)
+        sample_user.is_active = False
+        sample_user.deletion_pending_until = now - timedelta(days=1)
+        
+        # User 2: active cooldown (deactivated, deletion_pending_until in the future)
+        second_user.is_active = False
+        second_user.deletion_pending_until = now + timedelta(days=29)
+        
+        db_session.session.commit()
+
+        # Invoke the job synchronously with the test app instance
+        anonymise_expired_accounts(app)
+
+        # Retrieve users from database to inspect
+        user1 = db_session.session.get(User, sample_user.id)
+        user2 = db_session.session.get(User, second_user.id)
+
+        # Assert User 1 (expired) is fully anonymised
+        assert user1.name == "Deleted User"
+        assert user1.email == f"deleted_{sample_user.id}@deleted.reuni"
+        assert user1.phone_number is None
+        assert user1.university_domain is None
+        assert user1.is_active is False
+        assert user1.deletion_pending_until is None
+
+        # Assert User 2 (unexpired) is intact
+        assert user2.name == "Other User"
+        assert user2.email == "other@university.ac.uk"
+        assert user2.phone_number == "+447700100006"
+        assert user2.university_domain == "university.ac.uk"
+        assert user2.is_active is False
+        assert user2.deletion_pending_until is not None
+
+    def test_delete_account_rate_limiting(self):
+        """Test that POST /settings/delete is rate-limited to 3 requests per hour."""
+        from app import create_app, limiter, db
+        from app.models import User
+        from app.config import TestingConfig
+
+        class RateLimitConfig(TestingConfig):
+            RATELIMIT_ENABLED = True
+
+        limit_app = create_app(RateLimitConfig)
+        limit_app.config["WTF_CSRF_ENABLED"] = False
+        client = limit_app.test_client()
+
+        with limit_app.app_context():
+            user = User(
+                email="ratelimit@university.ac.uk",
+                name="Rate Limit User",
+                phone_number="+447700100015",
+                is_verified=True,
+                university_domain="university.ac.uk",
+            )
+            user.set_password("StrongPass123")
+            db.session.add(user)
+            db.session.commit()
+
+        # Log in the user
+        client.post(
+            "/auth/login",
+            data={"email": "ratelimit@university.ac.uk", "password": "StrongPass123"},
+            follow_redirects=True
+        )
+
+        # Clean up duplicate limits registered on the global limiter due to multiple create_app() calls
+        for k in list(limiter.limit_manager._decorated_limits.keys()):
+            if "delete_account" in k:
+                limits_set = limiter.limit_manager._decorated_limits[k]
+                if len(limits_set) > 1:
+                    first_limit = next(iter(limits_set))
+                    limits_set.clear()
+                    limits_set.add(first_limit)
+
+        limiter.enabled = True
+        try:
+            # 3 requests with wrong confirmation text (rejected by validation, keeping session active)
+            for _ in range(3):
+                resp = client.post(
+                    "/settings/delete",
+                    data={"delete_confirm_text": "NOTDELETE"}
+                )
+                assert resp.status_code in (200, 302)
+            
+            # 4th request should be rate limited
+            resp = client.post(
+                "/settings/delete",
+                data={"delete_confirm_text": "NOTDELETE"}
+            )
+            assert resp.status_code == 429
+        finally:
+            limiter.enabled = False
+

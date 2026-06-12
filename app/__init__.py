@@ -360,7 +360,12 @@ def create_app(config_class=None):
 
         return redirect(url_for("settings"))
 
+    def delete_account_limit_key():
+        from flask_login import current_user
+        return f"delete_account:{current_user.id if current_user.is_authenticated else 'anon'}"
+
     @app.route("/settings/delete", methods=["POST"])
+    @limiter.limit("3 per hour", key_func=delete_account_limit_key)
     @login_required
     @verified_required
     def delete_account():
@@ -538,5 +543,8 @@ def create_app(config_class=None):
     if app.config.get("TESTING"):
         with app.app_context():
             db.create_all()
+
+    from app.scheduler import init_scheduler
+    init_scheduler(app)
 
     return app

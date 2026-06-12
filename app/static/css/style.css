@@ -3479,4 +3479,441 @@ form + .profile-link {
     .partner-dashboard__scope-badge {
         align-self: flex-start;
     }
+}
+
+/* ─── Creative Error Pages ─── */
+.error-wrapper {
+    position: relative;
+    max-width: 540px;
+    margin: var(--space-2xl) auto;
+    padding: var(--space-md);
+}
+
+.ambient-glow {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.18;
+    z-index: -1;
+}
+
+.bg-blob-1 {
+    background: var(--clr-primary);
+    top: -60px;
+    left: -60px;
+    animation: pulseGlowBlob1 8s infinite alternate ease-in-out;
+}
+
+.bg-blob-2 {
+    background: var(--clr-price);
+    bottom: -60px;
+    right: -60px;
+    animation: pulseGlowBlob2 8s infinite alternate ease-in-out;
+}
+
+/* 500 Page custom blob colors */
+.bg-blob-1--500 {
+    background: var(--clr-warning);
+}
+
+.bg-blob-2--500 {
+    background: var(--clr-danger);
+}
+
+.error-card {
+    position: relative;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: var(--space-2xl) var(--space-xl);
+    border-radius: var(--radius-xl);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.03),
+        0 1px 3px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(229, 233, 239, 0.4);
+    animation: floatIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+    overflow: hidden;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.error-card:hover {
+    border-color: rgba(13, 148, 136, 0.35);
+    box-shadow: 
+        0 12px 40px rgba(13, 148, 136, 0.08),
+        0 1px 3px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.error-card--500:hover {
+    border-color: rgba(220, 38, 38, 0.25);
+    box-shadow: 
+        0 12px 40px rgba(220, 38, 38, 0.06),
+        0 1px 3px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.error-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13rem;
+    font-weight: 900;
+    color: var(--clr-primary);
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: -0.05em;
+    user-select: none;
+}
+
+.error-watermark--500 {
+    color: var(--clr-danger);
+    opacity: 0.035;
+}
+
+.error-visual-scene {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto var(--space-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.orbit-center {
+    width: 88px;
+    height: 88px;
+    background: var(--clr-primary-light);
+    color: var(--clr-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(13, 148, 136, 0.2);
+    z-index: 2;
+    animation: pulseGlobe 3s infinite ease-in-out;
+}
+
+.central-icon {
+    font-size: 3rem !important;
+    animation: rotateGlobe 20s infinite linear;
+}
+
+.orbit-track {
+    position: absolute;
+    width: 170px;
+    height: 170px;
+    border: 2px dashed rgba(13, 148, 136, 0.18);
+    border-radius: 50%;
+    animation: spinOrbit 25s infinite linear;
+    z-index: 1;
+    transition: animation-play-state var(--transition);
+}
+
+.error-card:hover .orbit-track {
+    animation-play-state: paused;
+}
+
+.orbiting-item {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    color: var(--clr-text-muted);
+    transition: all var(--transition);
+    cursor: help;
+}
+
+.orbiting-item span {
+    font-size: 1.35rem;
+    transition: transform var(--transition);
+}
+
+.orbiting-item:hover {
+    transform: scale(1.25);
+    color: var(--clr-primary);
+    border-color: var(--clr-primary);
+    box-shadow: 0 0 15px rgba(13, 148, 136, 0.25);
+    z-index: 10;
+}
+
+.orbiting-item:hover span {
+    transform: rotate(15deg);
+}
+
+/* Modern CSS Tooltip */
+.orbiting-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: var(--clr-text);
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all var(--transition);
+    box-shadow: var(--shadow-md);
+}
+
+.orbiting-item:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.item-book {
+    top: -19px;
+    left: calc(50% - 19px);
+}
+
+.item-apparel {
+    bottom: 16px;
+    left: -19px;
+}
+
+.item-box {
+    bottom: 16px;
+    right: -19px;
+}
+
+.missing-piece-marker {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    background: var(--clr-danger);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 800;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--clr-surface);
+    animation: bounceMarker 2s infinite ease-in-out;
+    z-index: 3;
+}
+
+.gear-assembly {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.gear {
+    position: absolute;
+    color: var(--clr-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center;
+}
+
+.gear span {
+    font-size: var(--gear-size) !important;
+}
+
+.gear--primary {
+    --gear-size: 6rem;
+    top: 10px;
+    left: 10px;
+    color: var(--clr-primary);
+    animation: rotateGearPrimaryJammed 6s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.gear--warning {
+    --gear-size: 4rem;
+    bottom: 20px;
+    right: 20px;
+    color: var(--clr-warning);
+    animation: rotateGearWarningJammed 6s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.error-exclamation {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    background: var(--clr-danger);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--clr-surface);
+    animation: flashAlert 1.5s infinite ease-in-out;
+    z-index: 3;
+}
+
+.error-exclamation span {
+    font-size: 1.35rem;
+}
+
+.error-title {
+    font-size: var(--fs-2xl);
+    font-weight: 800;
+    color: var(--clr-text);
+    margin-bottom: var(--space-sm);
+    letter-spacing: -0.02em;
+    z-index: 1;
+    position: relative;
+}
+
+.error-subtitle {
+    font-size: var(--fs-base);
+    color: var(--clr-text-muted);
+    line-height: 1.6;
+    margin-bottom: var(--space-xl);
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 1;
+    position: relative;
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+    z-index: 1;
+    position: relative;
+}
+
+.creative-btn {
+    border-radius: 30px !important;
+    padding: 0.65rem 1.75rem !important;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--transition) !important;
+}
+
+.creative-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.creative-btn:active {
+    transform: translateY(0);
+}
+
+.creative-btn .btn__icon {
+    font-size: 1.2rem !important;
+    transition: transform var(--transition);
+}
+
+.creative-btn:hover .btn__icon {
+    transform: scale(1.15);
+}
+
+/* Animations */
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseGlobe {
+    0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(13, 148, 136, 0.2); }
+    50% { transform: scale(1.05); box-shadow: 0 15px 40px rgba(13, 148, 136, 0.35); }
+}
+
+@keyframes rotateGlobe {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes spinOrbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes bounceMarker {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.12); }
+}
+
+/* Stuttering / Jammed Gear animations for 500 error page */
+@keyframes rotateGearPrimaryJammed {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(45deg); }
+    20% { transform: rotate(38deg); }
+    35% { transform: rotate(120deg); }
+    40% { transform: rotate(115deg); }
+    55% { transform: rotate(190deg); }
+    60% { transform: rotate(185deg); }
+    75% { transform: rotate(270deg); }
+    80% { transform: rotate(262deg); }
+    90% { transform: rotate(360deg); }
+}
+
+@keyframes rotateGearWarningJammed {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(-67.5deg); }
+    20% { transform: rotate(-57deg); }
+    35% { transform: rotate(-180deg); }
+    40% { transform: rotate(-172.5deg); }
+    55% { transform: rotate(-285deg); }
+    60% { transform: rotate(-277.5deg); }
+    75% { transform: rotate(-405deg); }
+    80% { transform: rotate(-393deg); }
+    90% { transform: rotate(-540deg); }
+}
+
+@keyframes flashAlert {
+    0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { transform: scale(1.15); opacity: 0.9; box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+}
+
+@keyframes pulseGlowBlob1 {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.15) translate(15px, 15px); }
+}
+
+@keyframes pulseGlowBlob2 {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.15) translate(-15px, -15px); }
+}
+
+@media (max-width: 480px) {
+    .error-card {
+        padding: var(--space-xl) var(--space-md);
+    }
+    .error-actions {
+        flex-direction: column;
+    }
+    .error-actions .creative-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }

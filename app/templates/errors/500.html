@@ -2,19 +2,40 @@
 {% block title %}Server Error — Reuni{% endblock %}
 
 {% block content %}
-<div class="list-item-container">
-    <h2>
-        <span class="material-symbols-outlined heading-icon" aria-hidden="true">error</span>
-        500 - Server Error
-    </h2>
-    <p class="subtitle">Something went wrong on our end.</p>
+<div class="error-wrapper">
+    <div class="ambient-glow bg-blob-1 bg-blob-1--500"></div>
+    <div class="ambient-glow bg-blob-2 bg-blob-2--500"></div>
     
-    <div class="card">
-        <p>We're sorry, but something went wrong while processing your request. Our team has been notified and we're working to resolve the issue.</p>
-        <a href="{{ url_for('index') }}" class="btn btn--primary">
-            <span class="material-symbols-outlined btn__icon" aria-hidden="true">home</span>
-            Back to Home
-        </a>
+    <div class="error-card error-card--500">
+        <div class="error-watermark error-watermark--500">500</div>
+        
+        <div class="error-visual-scene">
+            <div class="gear-assembly">
+                <div class="gear gear--primary">
+                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                </div>
+                <div class="gear gear--warning">
+                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                </div>
+            </div>
+            <div class="error-exclamation">
+                <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            </div>
+        </div>
+        
+        <h1 class="error-title">Circulation Disruption</h1>
+        <p class="error-subtitle">Something went wrong on our end. Even the best loops experience a hiccup. Our team has been notified and is working to restore balance.</p>
+        
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn btn--primary creative-btn">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">home</span>
+                Back to Home
+            </a>
+            <button onclick="window.location.reload();" class="btn btn--outline creative-btn">
+                <span class="material-symbols-outlined btn__icon" aria-hidden="true">refresh</span>
+                Try Refreshing
+            </button>
+        </div>
     </div>
 </div>
 {% endblock %}
