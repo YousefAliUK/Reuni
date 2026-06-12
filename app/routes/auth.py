@@ -45,14 +45,18 @@ def send_otp_email(name: str, email: str, code: str):
     with brevo.ApiClient(configuration) as api_client:
         api_instance = brevo.TransactionalEmailsApi(api_client)
         sender_email = current_app.config.get("MAIL_DEFAULT_SENDER", "support@reuni.ac.uk")
+        from html import escape as html_escape
+
+        safe_name = html_escape(name)
+        safe_code = html_escape(code)
         send_smtp_email = brevo.SendSmtpEmail(
-            to=[{"email": email, "name": name}],
+            to=[{"email": email, "name": safe_name}],
             sender={"email": sender_email, "name": "Reuni"},
             subject="Your OTP Code",
             html_content=(
-                f"<p>Hi {name},</p>"
+                f"<p>Hi {safe_name},</p>"
                 f"<p>Your 6-digit verification code to activate your Reuni account is:</p>"
-                f"<h2 style='letter-spacing:4px'>{code}</h2>"
+                f"<h2 style='letter-spacing:4px'>{safe_code}</h2>"
                 f"<p>This code expires in 15 minutes.</p>"
                 f"<p>If you didn't create an account, you can safely ignore this email.</p>"
                 f"<p>— The Reuni team</p>"
