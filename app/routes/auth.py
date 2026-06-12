@@ -6,6 +6,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
+import brevo
+from brevo.rest import ApiException
 
 from app import db, mail, limiter
 from app.models import User
@@ -37,22 +39,29 @@ def _normalise_phone(raw: str) -> str:
 
 
 def send_otp_email(name: str, email: str, code: str):
-    msg = Message(
-        subject="Verify your Reuni account",
-        recipients=[email]
-    )
-    msg.body = f"""Hi {name},
+    configuration = brevo.Configuration()
+    configuration.api_key["api-key"] = current_app.config["MAIL_PASSWORD"]
 
-Your 6-digit verification code to activate your Reuni account is:
-
-{code}
-
-This code expires in 15 minutes.
-
-If you didn't create an account, you can safely ignore this email.
-
-— The Reuni team"""
-    mail.send(msg)
+    with brevo.ApiClient(configuration) as api_client:
+        api_instance = brevo.TransactionalEmailsApi(api_client)
+        sender_email = current_app.config.get("MAIL_DEFAULT_SENDER", "support@reuni.ac.uk")
+        send_smtp_email = brevo.SendSmtpEmail(
+            to=[{"email": email, "name": name}],
+            sender={"email": sender_email, "name": "Reuni"},
+            subject="Your OTP Code",
+            html_content=(
+                f"<p>Hi {name},</p>"
+                f"<p>Your 6-digit verification code to activate your Reuni account is:</p>"
+                f"<h2 style='letter-spacing:4px'>{code}</h2>"
+                f"<p>This code expires in 15 minutes.</p>"
+                f"<p>If you didn't create an account, you can safely ignore this email.</p>"
+                f"<p>— The Reuni team</p>"
+            ),
+        )
+        try:
+            api_instance.send_transac_email(send_smtp_email)
+        except ApiException as e:
+            current_app.logger.error(f"Brevo API error sending OTP email to {email}: {e}")
 
 
 def resend_key_func():

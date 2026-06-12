@@ -9,6 +9,7 @@ Werkzeug==3.1.*
 Pillow==11.*
 pytest==8.*
 Flask-Mail==0.10.0
+brevo==1.*
 apscheduler==3.10.*
 
 
