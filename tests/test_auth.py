@@ -4,6 +4,7 @@ Covers registration, login, logout, and edge cases.
 """
 
 from app.models import User
+from app.routes.auth import send_otp_email
 from unittest.mock import patch
 
 
@@ -434,6 +435,33 @@ class TestEmailVerification:
         assert resp.headers["Location"].endswith("/auth/resend-verification")
 
 
+class TestOtpEmailSending:
+    @patch("app.routes.auth.brevo.ApiClient")
+    @patch("app.routes.auth.brevo.TransactionalEmailsApi")
+    def test_send_otp_email_suppressed_skips_outbound_call(self, mock_transactional_api, mock_api_client, app):
+        with app.app_context():
+            app.config["MAIL_SUPPRESS_SEND"] = True
+            app.config["MAIL_PASSWORD"] = "test-key"
+
+            send_otp_email("Test User", "test@example.com", "123456")
+
+        mock_api_client.assert_not_called()
+        mock_transactional_api.assert_not_called()
+
+    @patch("app.routes.auth.brevo.ApiClient")
+    @patch("app.routes.auth.brevo.TransactionalEmailsApi")
+    def test_send_otp_email_missing_api_key_skips_outbound_call(self, mock_transactional_api, mock_api_client, app, caplog):
+        with app.app_context():
+            app.config["MAIL_SUPPRESS_SEND"] = False
+            app.config["MAIL_PASSWORD"] = None
+
+            send_otp_email("Test User", "test@example.com", "123456")
+
+        assert "Brevo API key (MAIL_PASSWORD) is not set; skipping OTP email send" in caplog.text
+        mock_api_client.assert_not_called()
+        mock_transactional_api.assert_not_called()
+
+
 class TestLockoutAndComplexity:
 
     def test_account_lockout_login(self, client, db_session):
@@ -739,5 +767,4 @@ class TestResetPassword:
             "confirm_password": "NoDigitsPassword"
         }, follow_redirects=True)
         assert b"must contain at least one uppercase letter, one lowercase letter, and one digit" in resp2.data
-
 
