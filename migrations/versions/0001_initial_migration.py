@@ -47,7 +47,7 @@ def upgrade():
         'items',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('title', sa.String(length=140), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
+        sa.Column('description', sa.Text(), sa.CheckConstraint('length(description) <= 2000'), nullable=True),
         sa.Column('category', sa.String(length=60), nullable=False),
         sa.Column('condition', sa.String(length=20), nullable=False),
         sa.Column('price', sa.Float(), nullable=True),
