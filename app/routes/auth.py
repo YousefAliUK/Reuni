@@ -39,9 +39,16 @@ def _normalise_phone(raw: str) -> str:
 
 
 def send_otp_email(name: str, email: str, code: str):
-    configuration = brevo.Configuration()
-    configuration.api_key["api-key"] = current_app.config["MAIL_PASSWORD"]
+    if current_app.config.get("MAIL_SUPPRESS_SEND"):
+        return
 
+    api_key = current_app.config.get("MAIL_PASSWORD")
+    if not api_key:
+        current_app.logger.warning("Brevo API key (MAIL_PASSWORD) is not set; skipping OTP email send")
+        return
+
+    configuration = brevo.Configuration()
+    configuration.api_key["api-key"] = api_key
     with brevo.ApiClient(configuration) as api_client:
         api_instance = brevo.TransactionalEmailsApi(api_client)
         sender_email = current_app.config.get("MAIL_DEFAULT_SENDER", "support@reuni.ac.uk")
