@@ -8,35 +8,19 @@
     {% if not current_user.is_authenticated %}
     <section class="hero" aria-label="Welcome to Reuni"
              style="background-image: url('{{ url_for('static', filename='images/hero_photo.jpg') }}')">
-        <div class="hero__overlay"></div>
-        <div class="hero__content">
+        <div class="hero__scrim"></div>
+        <div class="hero__card">
             <h1 class="hero__title">
                 Give your stuff a<br><span class="hero__accent">second life</span>
             </h1>
             <p class="hero__subtitle">
-                Buy and sell pre-loved items on your campus.<br>Save money, reduce waste, build community.
+                Buy and sell pre-loved items on your campus. Save money, reduce waste, build community.
             </p>
-            <div class="hero__ctas">
-                <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Get Started — it's free</a>
-                <a href="#marketplace-grid" class="hero__browse-link">
-                    Browse items
-                    <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
-                </a>
-            </div>
-            <div class="hero__trust">
-                <div class="hero__trust-item">
-                    <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-                    Campus-verified
-                </div>
-                <div class="hero__trust-item">
-                    <span class="material-symbols-outlined" aria-hidden="true">money_off</span>
-                    Zero fees
-                </div>
-                <div class="hero__trust-item">
-                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                    Eco-friendly
-                </div>
-            </div>
+            <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg hero__cta">Get Started — it's free</a>
+            <a href="#marketplace-grid" class="hero__browse-link">
+                Browse items
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+            </a>
         </div>
     </section>
     {% endif %}
