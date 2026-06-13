@@ -547,4 +547,9 @@ def create_app(config_class=None):
     from app.scheduler import init_scheduler
     init_scheduler(app)
 
+    if not app.testing and not app.debug:
+        with app.app_context():
+            from flask_migrate import upgrade
+            upgrade()
+
     return app
