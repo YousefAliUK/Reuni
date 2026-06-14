@@ -8,6 +8,8 @@ from app.models import User
 from app.utils.decorators import admin_required
 from app.utils.tokens import generate_partner_invite_token
 
+from app.utils.email_validation import extract_university_domain
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 @admin_bp.route("/partners", methods=["GET"])
@@ -22,6 +24,12 @@ def admin_partners():
 @admin_required
 def generate_invite():
     university_domain = request.form.get("university_domain", "").strip().lower()
+    
+    # If a full email address was entered, extract the domain portion
+    if "@" in university_domain:
+        extracted = extract_university_domain(university_domain)
+        if extracted:
+            university_domain = extracted
     
     if not re.match(r"^[a-zA-Z0-9.-]+\.ac\.uk$", university_domain):
         flash("Please enter a valid .ac.uk university domain.", "danger")

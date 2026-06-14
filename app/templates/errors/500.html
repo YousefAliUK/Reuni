@@ -2,37 +2,20 @@
 {% block title %}Server Error — Reuni{% endblock %}
 
 {% block content %}
-<div class="error-wrapper">
-    <div class="ambient-glow bg-blob-1 bg-blob-1--500"></div>
-    <div class="ambient-glow bg-blob-2 bg-blob-2--500"></div>
-    
-    <div class="error-card error-card--500">
-        <div class="error-watermark error-watermark--500">500</div>
-        
-        <div class="error-visual-scene">
-            <div class="gear-assembly">
-                <div class="gear gear--primary">
-                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
-                </div>
-                <div class="gear gear--warning">
-                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
-                </div>
-            </div>
-            <div class="error-exclamation">
-                <span class="material-symbols-outlined" aria-hidden="true">warning</span>
-            </div>
-        </div>
-        
-        <h1 class="error-title">Circulation Disruption</h1>
-        <p class="error-subtitle">Something went wrong on our end. Even the best loops experience a hiccup. Our team has been notified and is working to restore balance.</p>
-        
-        <div class="error-actions">
-            <a href="{{ url_for('index') }}" class="btn btn--primary creative-btn">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">home</span>
+<div style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
+    <div style="max-width: 480px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
+        <div style="font-family: var(--font-mono); font-size: 72px; font-weight: 800; color: var(--color-danger-muted); line-height: 1;">500</div>
+        <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">Server Error</h1>
+        <p style="font-size: 14px; color: var(--color-ink-secondary); line-height: var(--lead-body); margin: 0;">
+            Something went wrong on our end. Even the best loops experience a hiccup. Our team has been notified and is working to restore balance.
+        </p>
+        <div style="margin-top: var(--space-2); display: flex; gap: var(--space-3);">
+            <a href="{{ url_for('index') }}" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600;">
+                <span class="material-symbols-outlined" style="margin-right: 8px;">home</span>
                 Back to Home
             </a>
-            <button onclick="window.location.reload();" class="btn btn--outline creative-btn">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">refresh</span>
+            <button onclick="window.location.reload();" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary);">
+                <span class="material-symbols-outlined" style="margin-right: 8px;">refresh</span>
                 Try Refreshing
             </button>
         </div>

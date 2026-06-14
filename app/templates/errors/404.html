@@ -2,42 +2,17 @@
 {% block title %}Page Not Found — Reuni{% endblock %}
 
 {% block content %}
-<div class="error-wrapper">
-    <div class="ambient-glow bg-blob-1"></div>
-    <div class="ambient-glow bg-blob-2"></div>
-    
-    <div class="error-card">
-        <div class="error-watermark">404</div>
-        
-        <div class="error-visual-scene">
-            <div class="orbit-center">
-                <span class="material-symbols-outlined central-icon" aria-hidden="true">recycling</span>
-            </div>
-            <div class="orbit-track">
-                <div class="orbiting-item item-book" data-tooltip="Textbooks">
-                    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-                </div>
-                <div class="orbiting-item item-apparel" data-tooltip="Clothing">
-                    <span class="material-symbols-outlined" aria-hidden="true">apparel</span>
-                </div>
-                <div class="orbiting-item item-box" data-tooltip="Essentials">
-                    <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
-                </div>
-            </div>
-            <div class="missing-piece-marker">?</div>
-        </div>
-        
-        <h1 class="error-title">Lost in Circulation?</h1>
-        <p class="error-subtitle">The page you requested could not be found. It might have been recycled, moved, or never existed in our loop.</p>
-        
-        <div class="error-actions">
-            <a href="{{ url_for('index') }}" class="btn btn--primary creative-btn">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">home</span>
+<div style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
+    <div style="max-width: 480px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
+        <div style="font-family: var(--font-mono); font-size: 72px; font-weight: 800; color: var(--color-primary-muted); line-height: 1;">404</div>
+        <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">Page Not Found</h1>
+        <p style="font-size: 14px; color: var(--color-ink-secondary); line-height: var(--lead-body); margin: 0;">
+            The page you requested could not be found. It might have been recycled, moved, or never existed in our loop.
+        </p>
+        <div style="margin-top: var(--space-2);">
+            <a href="{{ url_for('index') }}" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600;">
+                <span class="material-symbols-outlined" style="margin-right: 8px;">home</span>
                 Back to Home
-            </a>
-            <a href="{{ url_for('index') }}" class="btn btn--outline creative-btn">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">search</span>
-                Browse Items
             </a>
         </div>
     </div>

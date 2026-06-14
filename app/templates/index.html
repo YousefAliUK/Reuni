@@ -1,309 +1,450 @@
 {% extends "base.html" %}
 {% block title %}Reuni — Campus Marketplace{% endblock %}
+{% block mobile_title %}Marketplace{% endblock %}
 
 {% block content %}
-<div id="marketplace-app">
+<div id="marketplace-app" style="width: 100%;">
 
-    <!-- ─── Hero (logged-out users only) ─── -->
+    <!-- ─── SECTION A: HERO STRIP (Logged-out) / STATS BAR (Logged-in) ─── -->
     {% if not current_user.is_authenticated %}
-    <section class="hero" aria-label="Welcome to Reuni"
-             style="background-image: url('{{ url_for('static', filename='images/hero_photo.jpg') }}')">
-        <div class="hero__scrim"></div>
-        <div class="hero__card">
-            <h1 class="hero__title">
-                Give your stuff a<br><span class="hero__accent">second life</span>
-            </h1>
-            <p class="hero__subtitle">
-                Buy and sell pre-loved items on your campus. Save money, reduce waste, build community.
+    <section class="slim-hero" aria-label="Welcome to Reuni">
+        <div style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="slim-hero__title">
+                <span class="material-symbols-outlined" aria-hidden="true" style="color: #ffffff;">eco</span>
+                <span>Campus items. Real kg saved. Give your stuff a second life.</span>
+            </div>
+            <p class="slim-hero__subtitle" style="margin: 0; color: rgba(255, 255, 255, 0.9);">
+                Student-to-student. In person. No fees.
             </p>
-            <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg hero__cta">Get Started — it's free</a>
-            <a href="#marketplace-grid" class="hero__browse-link">
-                Browse items
-                <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
-            </a>
+        </div>
+        <a href="{{ url_for('auth.register') }}" class="slim-hero__cta">Register for free</a>
+    </section>
+    {% else %}
+    <section class="live-stats-bar" aria-label="Your Campus Statistics">
+        <div class="stat-chip-blueprint">
+            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">eco</span>
+            <span><span class="stat-value">{{ "%.1f"|format(current_user.kg_saved_total) }}</span> kg saved</span>
+        </div>
+        <div class="stat-chip-blueprint">
+            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">package</span>
+            <span><span class="stat-value">{{ current_user.items|length }}</span> listed</span>
+        </div>
+        <div class="stat-chip-blueprint">
+            {% set purchases_count = current_user.purchases | selectattr('is_sold') | list | length %}
+            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">shopping_bag</span>
+            <span><span class="stat-value">{{ purchases_count }}</span> bought</span>
         </div>
     </section>
     {% endif %}
 
-    <!-- ─── Category Pills + Filters ─── -->
-    <section class="marketplace-controls" aria-label="Filter items">
-        <form method="GET" action="{{ url_for('index') }}" class="marketplace-form" id="filter-form">
+    <!-- ─── SECTION B: SEARCH BAR ─── -->
+    <section aria-label="Search items" class="search-section">
+        <form method="GET" action="{{ url_for('index') }}" style="display: flex; gap: var(--space-2);">
             {% if active_category %}
-            <input type="hidden" name="category" value="{{ active_category }}">
+                <input type="hidden" name="category" value="{{ active_category }}">
             {% endif %}
-            {% if search_query %}
-            <input type="hidden" name="q" value="{{ search_query }}">
-            {% endif %}
-
-            <!-- Pills row: Filter button + categories + search tag -->
-            <div class="pills-row">
-                <button type="button" class="filter-icon-btn" id="filter-toggle" aria-expanded="false" aria-controls="filters-panel" title="Filters">
-                    <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-                    {% if price_type != 'all' or min_price or max_price %}
-                    <span class="filter-indicator"></span>
-                    {% endif %}
-                </button>
-
-                <nav class="category-pills" aria-label="Filter by category">
-                    <a href="{{ url_for('index', q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
-                       class="pill {% if not active_category %}pill--active{% endif %}"
-                       aria-current="{% if not active_category %}true{% else %}false{% endif %}">
-                        All
-                    </a>
-                    {% for cat in categories %}
-                    <a href="{{ url_for('index', category=cat, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}"
-                       class="pill {% if active_category == cat %}pill--active{% endif %}"
-                       aria-current="{% if active_category == cat %}true{% else %}false{% endif %}">
-                        {{ cat }}
-                    </a>
-                    {% endfor %}
-                </nav>
-
-                {% if search_query %}
-                <div class="search-active-tag">
-                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 0.85rem;">search</span>
-                    "{{ search_query }}"
-                    <a href="{{ url_for('index', category=active_category, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="search-active-tag__clear" aria-label="Clear search">
-                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                    </a>
-                </div>
-                {% endif %}
+            <input type="hidden" name="price_type" value="{{ price_type }}">
+            <input type="hidden" name="min_price" value="{{ min_price }}">
+            <input type="hidden" name="max_price" value="{{ max_price }}">
+            
+            <div style="position: relative; flex: 1;">
+                <span class="material-symbols-outlined" style="position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 18px;">search</span>
+                <input
+                    type="search"
+                    name="q"
+                    placeholder="Search listings — textbooks, furniture, electronics…"
+                    value="{{ search_query }}"
+                    style="width: 100%; height: 48px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 44px; padding-right: var(--space-4); font-size: var(--type-body); color: var(--color-ink-primary); box-sizing: border-box;"
+                    aria-label="Search items"
+                >
             </div>
-
-            <!-- Collapsible Filters Panel -->
-            <div class="filters-panel" id="filters-panel">
-                <div class="filters-panel__grid">
-                    <!-- Price Type Group -->
-                    <div class="filter-group">
-                        <span class="filter-group__title">Price Classification</span>
-                        <div class="filter-group__options">
-                            <label class="radio-label">
-                                <input type="radio" name="price_type" value="all" {% if price_type == 'all' or not price_type %}checked{% endif %}>
-                                <span>All Prices</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="price_type" value="free" {% if price_type == 'free' %}checked{% endif %}>
-                                <span>Free Only</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="price_type" value="paid" {% if price_type == 'paid' %}checked{% endif %}>
-                                <span>Paid Only</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Custom Price Range Inputs -->
-                    <div class="filter-group">
-                        <span class="filter-group__title">Price Range (&pound;)</span>
-                        <div class="price-range-inputs">
-                            <input
-                                type="number"
-                                name="min_price"
-                                placeholder="Min"
-                                min="0"
-                                step="0.01"
-                                value="{{ min_price }}"
-                                class="price-input"
-                                aria-label="Minimum price"
-                            >
-                            <span class="range-divider">to</span>
-                            <input
-                                type="number"
-                                name="max_price"
-                                placeholder="Max"
-                                min="0"
-                                step="0.01"
-                                value="{{ max_price }}"
-                                class="price-input"
-                                aria-label="Maximum price"
-                            >
-                        </div>
-                    </div>
-
-                    <!-- Quick Range Presets -->
-                    <div class="filter-group">
-                        <span class="filter-group__title">Quick Presets</span>
-                        <div class="price-presets">
-                            <button type="button" class="preset-btn" data-min="0" data-max="5">Under &pound;5</button>
-                            <button type="button" class="preset-btn" data-min="0" data-max="10">Under &pound;10</button>
-                            <button type="button" class="preset-btn" data-min="0" data-max="20">Under &pound;20</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="filters-panel__actions">
-                    <a href="{{ url_for('index', category=active_category, q=search_query) }}" class="btn btn--outline btn--sm">Reset Filters</a>
-                    <button type="submit" class="btn btn--primary btn--sm">Apply Filters</button>
-                </div>
-            </div>
+            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); padding: 0 var(--space-6); background: var(--color-primary);">Search</button>
         </form>
     </section>
 
-    <!-- ─── Items Grid ─── -->
-    {% if items %}
-    <section class="items-grid" id="marketplace-grid" aria-label="Listed items">
-        {% for item in items %}
-        <article class="item-card {% if item.is_sold %}item-card--sold{% elif item.buyer_id %}item-card--reserved{% endif %}" aria-label="{{ item.title }}">
-            <!-- Clickable card link -->
-            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="item-card__link" aria-label="View {{ item.title }}">
-                <div class="item-card__image-wrap">
-                    {% if item.image_filename %}
-                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                          alt="Photo of {{ item.title }}"
-                          class="item-card__image"
-                          loading="lazy">
-                    {% else %}
-                    <div class="item-card__image-placeholder" aria-hidden="true">
-                        <span class="material-symbols-outlined">image</span>
-                    </div>
-                    {% endif %}
-                    <div class="item-card__badges-wrap">
-                        <span class="item-card__points-overlay" aria-label="{{ item.kg_saved or 0 }} kg saved">
-                            <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                            {{ "%.1f"|format(item.kg_saved or 0.0) }} kg saved
-                        </span>
-                    </div>
-                    
-                    {% if item.is_sold %}
-                    <div class="item-card__overlay-scrim item-card__overlay-scrim--sold">
-                        <span class="item-card__overlay-badge item-card__overlay-badge--sold">Sold</span>
-                    </div>
-                    {% elif item.buyer_id %}
-                    <div class="item-card__overlay-scrim item-card__overlay-scrim--reserved">
-                        <span class="item-card__overlay-badge item-card__overlay-badge--reserved">Reserved</span>
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="item-card__body">
-                    <span class="item-card__category">{{ item.category }}</span>
-                    <h3 class="item-card__title">{{ item.title }}</h3>
-                    <div class="item-card__price-row">
-                        {% if item.is_free %}
-                            <span class="item-card__price item-card__price--free">Free</span>
-                        {% else %}
-                            <span class="item-card__price">&pound;{{ "%.2f"|format(item.price) }}</span>
-                        {% endif %}
-                        <span class="item-card__condition-badge item-card__condition-badge--{{ item.condition|lower|replace(' ', '-') }}">
-                            {{ item.condition }}
-                        </span>
-                    </div>
-                    <div class="item-card__footer">
-                        <span class="item-card__seller">
-                            <span class="item-card__seller-avatar" aria-hidden="true">{{ (item.seller.name or 'U')[0] }}</span>
-                            {% set name_parts = (item.seller.name or 'User').strip().split() %}
-                            {% if name_parts | length == 1 %}
-                                {{ name_parts[0] }}
-                            {% else %}
-                                {{ name_parts[0] }} {% for p in name_parts[1:] %}{{ p[0]|upper }}.{% if not loop.last %} {% endif %}{% endfor %}
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-            </a>
-        </article>
+    <!-- ─── Mobile Only Active Filter Scroll Strip + Filters Drawer Trigger ─── -->
+    <div class="mobile-filters-trigger-strip">
+        <!-- Price Chips -->
+        <a href="{{ url_for('index', price_type='all', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'all' or not price_type %}filter-chip--active{% endif %}">All</a>
+        <a href="{{ url_for('index', price_type='free', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'free' %}filter-chip--active{% endif %}">Free</a>
+        <a href="{{ url_for('index', price_type='paid', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'paid' %}filter-chip--active{% endif %}">Paid</a>
+        
+        <!-- Category Chips -->
+        {% for cat in categories %}
+            <a href="{{ url_for('index', price_type=price_type, category=cat, q=search_query) }}" class="filter-chip {% if active_category == cat %}filter-chip--active{% endif %}">{{ cat }}</a>
         {% endfor %}
-    </section>
+        
+        <!-- Filters drawer trigger -->
+        <button type="button" class="filter-chip filter-chip--trigger" id="mobile-filter-drawer-open">
+            <span class="material-symbols-outlined" style="font-size: 16px;">filter_list</span>
+            Filters
+        </button>
+    </div>
 
-    <!-- Pagination -->
-    {% if pagination and pagination.pages > 1 %}
-    <nav class="pagination" aria-label="Pagination Navigation">
-        <ul class="pagination__list">
-            {% if pagination.has_prev %}
-            <li class="pagination__item">
-                <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">
-                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; margin-right: 0.25rem;">chevron_left</span>
-                    Prev
-                </a>
-            </li>
-            {% endif %}
+    <!-- ─── MARKETPLACE BODY LAYOUT ─── -->
+    <div class="marketplace-layout">
 
-            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    {% if page_num == pagination.page %}
-                    <li class="pagination__item">
-                        <span class="pagination__link pagination__link--active" aria-current="page">{{ page_num }}</span>
-                    </li>
-                    {% else %}
-                    <li class="pagination__item">
-                        <a href="{{ url_for('index', page=page_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">{{ page_num }}</a>
+        <!-- ─── SECTION C: FILTER SIDEBAR (Desktop Left) ─── -->
+        <aside class="sticky-sidebar">
+            <form method="GET" action="{{ url_for('index') }}" id="sidebar-filter-form" style="display: flex; flex-direction: column; gap: var(--space-6);">
+                {% if search_query %}
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                {% endif %}
+
+                <!-- Price Type Group -->
+                <div class="filter-group">
+                    <span class="filter-group__title-blueprint">Price Type</span>
+                    <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                            <input type="radio" name="price_type" value="all" {% if price_type == 'all' or not price_type %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
+                            <span>All items</span>
+                        </label>
+                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                            <input type="radio" name="price_type" value="free" {% if price_type == 'free' %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
+                            <span>Free only</span>
+                        </label>
+                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                            <input type="radio" name="price_type" value="paid" {% if price_type == 'paid' %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
+                            <span>Paid only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Category Group -->
+                <div class="filter-group">
+                    <span class="filter-group__title-blueprint">Category</span>
+                    <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                            <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
+                            <span>All Categories</span>
+                        </label>
+                        {% for cat in categories %}
+                        {% set cat_weight_map = {'Furniture': '12.0', 'Kitchenware': '4.0', 'Electronics': '3.0', 'Sports': '2.5', 'Clothing': '1.5', 'Books': '0.8', 'Stationery': '0.3', 'Other': '1.0'} %}
+                        {% set weight = cat_weight_map.get(cat, '1.0') %}
+                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                            <input type="radio" name="category" value="{{ cat }}" {% if active_category == cat %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
+                            <span>{{ cat }} <span style="font-family: var(--font-mono); color: var(--color-ink-tertiary); font-size: 12px;">({{ weight }} kg)</span></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Price Range Group (if paid or all) -->
+                {% if price_type != 'free' %}
+                <div class="filter-group">
+                    <span class="filter-group__title-blueprint">Price Range</span>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <div style="position: relative; flex: 1;">
+                            <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
+                            <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;" aria-label="Minimum price">
+                        </div>
+                        <span style="color: var(--color-ink-tertiary); font-size: var(--type-small);">to</span>
+                        <div style="position: relative; flex: 1;">
+                            <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
+                            <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;" aria-label="Maximum price">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Apply Button -->
+                <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-size: var(--type-small); width: 100%; background: var(--color-primary);">Apply Filters</button>
+
+                <!-- Clear link -->
+                <a href="{{ url_for('index', q=search_query) }}" style="text-align: center; font-size: 13px; color: var(--color-ink-tertiary); text-decoration: none; display: block;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-tertiary)'">Clear All</a>
+            </form>
+        </aside>
+
+        <!-- ─── SECTION D: LISTINGS GRID (Right) ─── -->
+        <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="results-count" style="font-size: var(--type-small); color: var(--color-ink-tertiary);">
+                    Showing {{ items|length }} items
+                </span>
+            </div>
+
+            {% if items %}
+            <section class="listings-grid-blueprint" id="marketplace-grid" aria-label="Available listings">
+                {% for item in items %}
+                <article class="blueprint-card" aria-label="{{ item.title }}" style="--card-index: {% if loop.index0 < 10 %}{{ loop.index0 }}{% else %}10{% endif %};">
+                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; color: inherit;">
+                        <!-- Image wrapper -->
+                        <div class="blueprint-card__img-wrap">
+                            {% if item.image_filename %}
+                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="blueprint-card__img" loading="lazy">
+                            {% else %}
+                                <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: var(--color-surface-raised); color: var(--color-ink-tertiary);">
+                                    <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Overlay badges -->
+                            {% if item.buyer_id %}
+                                <span class="blueprint-badge-tr">Claimed</span>
+                            {% endif %}
+                            {% if item.is_free %}
+                                <span class="blueprint-badge-tl">Free</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="blueprint-card__body" style="padding: var(--space-4); display: flex; flex-direction: column; flex: 1; gap: var(--space-2);">
+                            <!-- Row 1: Chips -->
+                            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                                <span style="font-size: var(--type-micro); padding: 4px 8px; background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
+                                    {{ item.category }}
+                                </span>
+                                <span style="font-size: var(--type-micro); padding: 4px 8px; background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
+                                    {{ item.condition }}
+                                </span>
+                            </div>
+
+                            <!-- Row 2: Title -->
+                            <h3 class="blueprint-card__title" style="font-size: var(--type-body); font-weight: 600; color: var(--color-ink-primary); line-height: var(--lead-title); margin: 0; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em;">
+                                {{ item.title }}
+                            </h3>
+
+                            <!-- Row 3: Price + kg_saved -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: var(--space-2);">
+                                {% if item.is_free %}
+                                    <span class="blueprint-card__price" style="font-family: var(--font-sans); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-success);">Free</span>
+                                {% else %}
+                                    <span class="blueprint-card__price" style="font-family: var(--font-mono); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary);">£{{ "%.2f"|format(item.price) }}</span>
+                                {% endif %}
+
+                                <span class="blueprint-card__kg" style="display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: var(--type-small); color: var(--color-primary); font-weight: 600;">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">eco</span>
+                                    {{ "%.1f"|format(item.kg_saved) }} kg saved
+                                </span>
+                            </div>
+
+                            <!-- Row 4: Context CTA -->
+                            <div style="margin-top: var(--space-3);">
+                                {% if item.buyer_id %}
+                                    <span class="btn btn--block blueprint-card__cta" style="background: var(--color-surface-raised); color: var(--color-ink-tertiary); cursor: not-allowed; border: none; height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%;">Claimed</span>
+                                {% elif current_user.is_authenticated %}
+                                    <span class="btn btn--block blueprint-card__cta" style="background: var(--color-accent); color: #ffffff; height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%;">View details</span>
+                                {% else %}
+                                    <span class="btn btn--block btn--outline blueprint-card__cta" style="height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%; border-color: var(--color-primary); color: var(--color-primary);">Login to Claim</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </article>
+                {% endfor %}
+            </section>
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav class="pagination" aria-label="Pagination Navigation" style="display: flex; justify-content: center; margin-top: var(--space-6); width: 100%;">
+                <!-- Desktop Pagination -->
+                <ul class="pagination__list pagination__list--desktop" style="display: flex; gap: var(--space-2); list-style: none; padding: 0;">
+                    {% if pagination.has_prev %}
+                    <li>
+                        <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span>
+                        </a>
                     </li>
                     {% endif %}
-                {% else %}
-                <li class="pagination__item pagination__item--ellipsis" aria-hidden="true">…</li>
-                {% endif %}
-            {% endfor %}
 
-            {% if pagination.has_next %}
-            <li class="pagination__item">
-                <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link">
-                    Next
-                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem; margin-left: 0.25rem;">chevron_right</span>
-                </a>
-            </li>
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                            <li>
+                                <span class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-primary); color: #ffffff; font-weight: 700;">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li>
+                                <a href="{{ url_for('index', page=page_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--color-ink-tertiary);">…</li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li>
+                        <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- Mobile Pagination -->
+                <div class="pagination__mobile" style="display: none; width: 100%; gap: var(--space-3);">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">← Prev</a>
+                    {% else %}
+                        <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>← Prev</button>
+                    {% endif %}
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Next →</a>
+                    {% else %}
+                        <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>Next →</button>
+                    {% endif %}
+                </div>
+            </nav>
             {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-    {% else %}
-    <section class="empty-state" aria-label="No items found">
-        <span class="material-symbols-outlined empty-state__icon" aria-hidden="true">inventory_2</span>
-        {% if search_query or active_category %}
-            <p>No items match your search.</p>
-            <a href="{{ url_for('index') }}" class="btn btn--outline">Clear Filters</a>
-        {% else %}
-            <p>No items listed yet. List an item to give it a second life.</p>
-            {% if current_user.is_authenticated %}
-                <a href="{{ url_for('items.list_item') }}" class="btn btn--primary">
-                    <span class="material-symbols-outlined btn__icon" aria-hidden="true">add</span>
-                    List an Item
-                </a>
+
             {% else %}
-                <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Sign Up to List</a>
+            <!-- Empty state -->
+            <section class="empty-state" aria-label="No items found" style="text-align: center; padding: var(--space-12) var(--space-6); background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card);">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 48px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4); display: block;">inventory_2</span>
+                <h3 style="font-size: var(--type-title); font-weight: 600; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-2);">Nothing found</h3>
+                <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin: 0; margin-bottom: var(--space-6);">Try adjusting your filters or search terms.</p>
+                <a href="{{ url_for('index') }}" class="btn btn--outline" style="border-color: var(--color-primary); color: var(--color-primary);">Clear Filters</a>
+            </section>
             {% endif %}
-        {% endif %}
-    </section>
-    {% endif %}
 
+        </div>
+    </div>
 </div>
+
+<!-- ─── Mobile Filters Drawer Slide-up menu ─── -->
+<div class="mobile-drawer-backdrop" id="mobile-filter-drawer-backdrop" style="z-index: 600;"></div>
+<aside class="mobile-drawer" id="mobile-filter-drawer" style="z-index: 700; width: 100%; max-height: 90vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; top: auto; bottom: 0; transform: translateY(100%); transition: transform var(--duration-normal) var(--ease-out-expo);" aria-label="Filter Options Menu">
+    <!-- Header -->
+    <div class="mobile-filter-drawer__header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--container-pad-x); border-bottom: 1px solid var(--color-border); background: var(--color-surface); height: 56px; box-sizing: border-box; flex-shrink: 0;">
+        <button type="button" id="mobile-filter-drawer-close" style="background: transparent; border: none; display: flex; align-items: center; gap: 8px; color: var(--color-ink-primary); font-size: var(--type-body); font-weight: 500; cursor: pointer; padding: 0;">
+            <span class="material-symbols-outlined" style="font-size: 20px;">arrow_back</span>
+            <span>Back</span>
+        </button>
+        <span style="font-weight: 700; font-size: var(--type-body-lg); color: var(--color-ink-primary);">Filters</span>
+        <a href="{{ url_for('index', q=search_query) }}" style="font-size: var(--type-small); color: var(--color-ink-secondary); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-secondary)'">Clear all</a>
+    </div>
+    
+    <!-- Scrollable content -->
+    <div style="overflow-y: auto; flex: 1; padding: var(--space-6) var(--container-pad-x) var(--space-12);">
+        <form method="GET" action="{{ url_for('index') }}" id="mobile-filter-form" style="display: flex; flex-direction: column; gap: var(--space-6);">
+            {% if search_query %}
+                <input type="hidden" name="q" value="{{ search_query }}">
+            {% endif %}
+
+            <!-- Price Type Group -->
+            <div class="filter-group">
+                <span class="filter-group__title-blueprint">Price Type</span>
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                        <input type="radio" name="price_type" value="all" {% if price_type == 'all' or not price_type %}checked{% endif %} style="accent-color: var(--color-primary);">
+                        <span>All items</span>
+                    </label>
+                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                        <input type="radio" name="price_type" value="free" {% if price_type == 'free' %}checked{% endif %} style="accent-color: var(--color-primary);">
+                        <span>Free only</span>
+                    </label>
+                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                        <input type="radio" name="price_type" value="paid" {% if price_type == 'paid' %}checked{% endif %} style="accent-color: var(--color-primary);">
+                        <span>Paid only</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Category Group -->
+            <div class="filter-group">
+                <span class="filter-group__title-blueprint">Category</span>
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                        <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %} style="accent-color: var(--color-primary);">
+                        <span>All Categories</span>
+                    </label>
+                    {% for cat in categories %}
+                    {% set cat_weight_map = {'Furniture': '12.0', 'Kitchenware': '4.0', 'Electronics': '3.0', 'Sports': '2.5', 'Clothing': '1.5', 'Books': '0.8', 'Stationery': '0.3', 'Other': '1.0'} %}
+                    {% set weight = cat_weight_map.get(cat, '1.0') %}
+                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
+                        <input type="radio" name="category" value="{{ cat }}" {% if active_category == cat %}checked{% endif %} style="accent-color: var(--color-primary);">
+                        <span>{{ cat }} <span style="font-family: var(--font-mono); color: var(--color-ink-tertiary); font-size: 12px;">({{ weight }} kg)</span></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Price Range Group -->
+            <div class="filter-group">
+                <span class="filter-group__title-blueprint">Price Range</span>
+                <div style="display: flex; align-items: center; gap: var(--space-2);">
+                    <div style="position: relative; flex: 1;">
+                        <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
+                        <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
+                    </div>
+                    <span style="color: var(--color-ink-tertiary); font-size: var(--type-small);">to</span>
+                    <div style="position: relative; flex: 1;">
+                        <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
+                        <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawer actions (sticky footer on mobile) -->
+            <div class="filter-drawer-actions" style="position: sticky; bottom: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-3) 0 0 0; z-index: 10; margin-top: auto;">
+                <button type="submit" id="mobile-filter-apply-btn" class="btn btn--primary" style="height: 56px; border-radius: var(--radius-md); background: var(--color-primary); width: 100%; display: flex; align-items: center; justify-content: center; font-weight: 600; border: none;">Apply — {{ items|length }} results</button>
+            </div>
+        </form>
+    </div>
+</aside>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const toggleBtn = document.getElementById('filter-toggle');
-        const panel = document.getElementById('filters-panel');
+        // Mobile Filter Drawer Logic
+        const filterBtn = document.getElementById('mobile-filter-drawer-open');
+        const filterDrawer = document.getElementById('mobile-filter-drawer');
+        const filterBackdrop = document.getElementById('mobile-filter-drawer-backdrop');
+        const filterClose = document.getElementById('mobile-filter-drawer-close');
+        
+        function openFilterDrawer() {
+            if (filterDrawer && filterBackdrop) {
+                filterBackdrop.classList.add('mobile-drawer-backdrop--open');
+                filterDrawer.style.transform = 'translateY(0)';
+            }
+        }
+        
+        function closeFilterDrawer() {
+            if (filterDrawer && filterBackdrop) {
+                filterBackdrop.classList.remove('mobile-drawer-backdrop--open');
+                filterDrawer.style.transform = 'translateY(100%)';
+            }
+        }
+        
+        if (filterBtn) filterBtn.addEventListener('click', openFilterDrawer);
+        if (filterClose) filterClose.addEventListener('click', closeFilterDrawer);
+        if (filterBackdrop) filterBackdrop.addEventListener('click', closeFilterDrawer);
 
-        if (toggleBtn && panel) {
-            toggleBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const isOpen = panel.classList.toggle('filters-panel--open');
-                toggleBtn.setAttribute('aria-expanded', isOpen);
-            });
+        // Media query listener to display mobile filter strip
+        function handleViewportChange(e) {
+            const mobileStrip = document.querySelector('.mobile-filters-trigger-strip');
+            if (mobileStrip) {
+                mobileStrip.style.display = e.matches ? 'flex' : 'none';
+            }
+        }
+        const mql = window.matchMedia('(max-width: 1023px)');
+        mql.addEventListener('change', handleViewportChange);
+        handleViewportChange(mql); // Initial run
 
-            document.addEventListener('click', function (e) {
-                if (!panel.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)) {
-                    panel.classList.remove('filters-panel--open');
-                    toggleBtn.setAttribute('aria-expanded', 'false');
-                }
+        // 3. Dynamic results counter update on mobile filter form changes
+        const mobileForm = document.getElementById('mobile-filter-form');
+        const applyBtn = document.getElementById('mobile-filter-apply-btn');
+        if (mobileForm && applyBtn) {
+            mobileForm.addEventListener('change', function() {
+                const formData = new FormData(mobileForm);
+                const params = new URLSearchParams(formData).toString();
+                fetch('/?' + params)
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const countEl = doc.querySelector('.results-count');
+                        if (countEl) {
+                            const countText = countEl.textContent.trim().replace(/\D+/g, '');
+                            applyBtn.textContent = `Apply — ${countText} results`;
+                        }
+                    });
             });
         }
-
-        // Quick presets button handlers
-        const presets = document.querySelectorAll('.preset-btn');
-        const minInput = document.querySelector('input[name="min_price"]');
-        const maxInput = document.querySelector('input[name="max_price"]');
-        const paidRadio = document.querySelector('input[value="paid"]');
-
-        presets.forEach(btn => {
-            btn.addEventListener('click', function () {
-                minInput.value = btn.getAttribute('data-min');
-                maxInput.value = btn.getAttribute('data-max');
-                if (paidRadio) {
-                    paidRadio.checked = true;
-                }
-                document.getElementById('filter-form').submit();
-            });
-        });
     });
 </script>
 {% endblock %}

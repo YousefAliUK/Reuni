@@ -51,8 +51,18 @@ def test_admin_invite_generation(client, app, db_session):
     assert b"Invitation link generated successfully." in resp.data
     assert b"/auth/invite/" in resp.data
 
+    # Valid email address (should extract domain and succeed)
+    resp = client.post("/admin/partners/invite", data={"university_domain": "staff.member@brookes.ac.uk"})
+    assert resp.status_code == 200
+    assert b"Invitation link generated successfully." in resp.data
+    assert b"/auth/invite/" in resp.data
+
     # Invalid domain
     resp = client.post("/admin/partners/invite", data={"university_domain": "invalid-domain.com"}, follow_redirects=True)
+    assert b"Please enter a valid .ac.uk university domain." in resp.data
+
+    # Invalid email address
+    resp = client.post("/admin/partners/invite", data={"university_domain": "staff.member@invalid-domain.com"}, follow_redirects=True)
     assert b"Please enter a valid .ac.uk university domain." in resp.data
 
 def test_admin_partner_deactivation(client, app, db_session):

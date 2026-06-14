@@ -1,6 +1,6 @@
 # Reuni — Product Specification
 
-> **Version:** 1.2 · **Date:** 4 June 2026
+> **Version:** 1.3 · **Date:** 13 June 2026
 > **Author:** Yousef / AI Assistant · **University:** Oxford Brookes (`brookes.ac.uk`)
 > **Mission:** A hyper-local campus circular-economy platform supporting UN SDG 12 — Responsible Consumption & Production
 
@@ -44,20 +44,23 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
 | Backend          | Python 3.x, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Migrate, Flask-Limiter, Flask-Mail   |
 | Database         | SQLite (dev/test) → PostgreSQL (prod)                                                                       |
-| Frontend         | Jinja2 templates + Vue 3 (CDN, no build step)                                                               |
-| CSS              | Vanilla CSS design system (Inter / Plus Jakarta Sans font, WCAG AA accessible)                              |
+| Frontend         | Jinja2 templates, Vanilla CSS + JS (no build step)                                                          |
+| CSS              | Vanilla CSS design system (Plus Jakarta Sans font, WCAG AA accessible)                                      |
 | Image processing | Pillow (resize, EXIF strip, format validation, JPEG compilation)                                            |
 | Auth & Timers    | Session-based via Flask-Login, passwords hashed with Werkzeug (scrypt), tokens timed with `itsdangerous`     |
+| Email            | Brevo SDK (transactional OTP emails) + Flask-Mail (all other transactional emails)                           |
+| Background Jobs  | APScheduler `BackgroundScheduler` (nightly GDPR anonymisation cron at 2 AM)                                 |
 
 ### 2.2 Current Feature Set (Built)
 
 #### User Authentication & Access Control
 - ✅ **Domain-restricted registration:** Signups restricted to allowed university `.ac.uk` email domains (configured in app, defaulting to `brookes.ac.uk`).
-- ✅ **Email OTP verification:** Dual-phase signups sending a 6-digit OTP code to the student email (using Flask-Mail). The code is securely hashed in the DB, expires in 15 minutes, and has a max 5-attempt verification limit.
+- ✅ **Email OTP verification:** Dual-phase signups sending a 6-digit OTP code to the student email (via Brevo API). The code is securely hashed in the DB, expires in 15 minutes, and has a max 5-attempt verification limit.
 - ✅ **Brute-force account lockout:** Track failed login attempts and lock user accounts for 15 minutes after 5 consecutive failed logins.
-- ✅ **Rate limiting:** Limiter middleware protects auth-sensitive routes (login capped at 10/min, resend-verification at 10/hour).
+- ✅ **Rate limiting:** Limiter middleware protects auth-sensitive routes (login capped at 10/min, resend-verification at 10/hour, forgot-password at 3/hour).
 - ✅ **Open redirect prevention:** Login redirects check and reject external absolute URLs to prevent phishing.
 - ✅ **Session hijacking security:** Permanent sessions last 7 days with secure attributes (`HttpOnly`, `SameSite=Lax`, and `Secure` cookies enforced in non-development modes).
+- ✅ **Forgot password / Password reset:** Self-service password reset via a time-limited signed email link (1-hour expiry via `itsdangerous`). Token is salted with the user's current password hash — automatically invalidated once the password changes. Rate-limited to 3 requests per hour per email address.
 
 #### Marketplace & Listing Management
 - ✅ **Item Listing & Uploads:** Students can list items with titles, descriptions (max 2000 chars), categories, conditions, prices, or mark them as free.
@@ -89,13 +92,31 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
   - Total verified student accounts at their university.
   - Categorical distribution breakdown of successfully exchanged items.
 - ✅ **Partner Session Security:** Automatic session validation enforcing a hard 7-day session expiry (partner role is logged out and redirected to login).
+- ✅ **Partner Dashboard Enhancements:** Dashboard shows a live circulation log (5 most recent exchanges with relative timestamps), category distribution with icons, and automatically fetches and caches university logos from the Google Favicon API.
+
+#### Account Management & GDPR
+- ✅ **Account Settings:** Authenticated users can update their phone number (uniqueness-enforced, E.164 normalisation) and change their password (complexity policy: 8+ chars, mixed case, digit required) from a dedicated settings page.
+- ✅ **GDPR Account Deletion (Right to Erasure):** Users can permanently delete their account from the settings page. On submission:
+  - All active claims (as buyer and seller) are atomically cancelled with email notifications to the other parties.
+  - All unsold listings and their uploaded images are immediately deleted.
+  - Account is deactivated (`is_active=False`) and queued for anonymisation with a **30-day cooling-off period** (`deletion_pending_until`).
+  - User is immediately logged out and the session is cleared.
+  - Rate-limited to 3 requests per hour per user ID to prevent abuse.
+  - Admin and partner accounts are blocked from self-deletion (require offboarding workflows).
+- ✅ **Nightly GDPR Anonymisation Job:** An APScheduler `BackgroundScheduler` cron runs at **2:00 AM nightly** querying for deactivated accounts whose 30-day cooling-off period has expired, and calls `User.anonymise()` on each: replaces name, email, phone, and password hash with anonymised values, zeroes `kg_saved_total`, and clears all verification fields. Sold items retain their `kg_saved` and `university_domain` for ESG data integrity.
+- ✅ **Privacy Policy Page:** A dedicated `/privacy` route rendering a full privacy policy covering data collected, retention periods, user rights, and GDPR contact information.
+
+#### User Interface & Experience
+- ✅ **Custom Error Pages:** Branded 404 (Not Found) and 500 (Internal Server Error) pages that match the application's design system, with helpful navigation back to the marketplace.
+- ✅ **Deactivated Account Guard:** A `before_request` hook checks on every request whether the logged-in user's account has been deactivated; if so, they are immediately logged out and redirected.
+- ✅ **JIT Registration Cleanup:** If a user with a deletion-pending account tries to re-register with the same email or phone after the cooling-off period has elapsed (before the nightly cron runs), the system anonymises the old account just-in-time so the re-registration can proceed.
 
 #### Security, Auditing & Quality Assurance
 - ✅ **CSRF Protection:** Enabled globally on all POST forms via Flask-WTF.
 - ✅ **SQL Injection Prevention:** Parameterized SQL queries enforced through SQLAlchemy ORM.
 - ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy`. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
-- ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, and deactivation events.
-- ✅ **136 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, and index pagination.
+- ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, deactivation events, and GDPR actions.
+- ✅ **189 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
 
 ---
 
@@ -107,73 +128,91 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 
 #### Color Palette
 
-| Token            | Light Mode             | Dark Mode              | Usage                                      |
-| ---------------- | ---------------------- | ---------------------- | ------------------------------------------ |
-| `--primary`      | `#0D9488` (Teal 600)   | `#70B8AE` (Muted Teal) | CTAs, links, kg_saved badges               |
-| `--primary-soft` | `#CCFBF1` (Teal 100)   | `#134E4A` (Teal 900)   | Subtle highlights, status banners          |
-| `--accent`       | `#F97316` (Orange 500) | `#FB923C` (Orange 400) | Boost tokens, claim buttons, notifications |
-| `--danger`       | `#EF4444` (Red 500)    | `#F87171` (Red 400)    | Delete, error states                       |
-| `--bg`           | `#F8FAFC` (Slate 50)   | `#0F172A` (Slate 900)  | Page background                            |
-| `--surface`      | `#FFFFFF`              | `#1E293B` (Slate 800)  | Cards, modals                              |
-| `--text`         | `#1E293B` (Slate 800)  | `#F1F5F9` (Slate 100)  | Body text                                  |
-| `--text-muted`   | `#64748B` (Slate 500)  | `#94A3B8` (Slate 400)  | Secondary text, timestamps                 |
+> **CSS variable naming convention:** All tokens use the `--color-*` prefix in the actual stylesheet (e.g. `--color-primary`, not `--primary`).
 
-> **Why teal + coral?** Teal says sustainability without the cliché "green = eco." Coral creates warmth and urgency on CTAs. This combo is proven with the same demographic — Olio and Too Good To Go use near-identical palettes in the UK market.
+| CSS Token              | Light Mode             | Dark Mode              | Usage                                          |
+| ---------------------- | ---------------------- | ---------------------- | ---------------------------------------------- |
+| `--color-primary`      | `#0D9488` (Teal 600)   | `#70B8AE` (Teal 300)   | CTAs, links, kg_saved badges, primary actions  |
+| `--color-primary-muted`| `#CCFBF1` (Teal 100)   | `rgba(13,148,136,0.15)`| Chip backgrounds, tag fills                    |
+| `--color-accent`       | `#F97316` (Orange 500) | `#FB923C` (Orange 400) | Claim buttons, urgency states                  |
+| `--color-danger`       | `#EF4444` (Red 500)    | `#F87171` (Red 400)    | Delete, error states, late cancellation        |
+| `--color-success`      | `#22C55E` (Green 500)  | `#4ADE80` (Green 400)  | Completed transactions, verified badges        |
+| `--color-warning`      | `#F59E0B` (Amber 500)  | `#FBBF24` (Amber 400)  | PIN expiry warnings, pending states            |
+| `--color-bg`           | `#F8FAFC` (Slate 50)   | `#0F172A` (Slate 900)  | Page background                                |
+| `--color-surface`      | `#FFFFFF`              | `#1E293B` (Slate 800)  | Cards, modals, sidebars                        |
+| `--color-surface-raised`| `#F1F5F9` (Slate 100) | `#334155` (Slate 700)  | Nested surfaces, input fills                   |
+| `--color-ink-primary`  | `#0F172A` (Slate 900)  | `#F1F5F9` (Slate 100)  | Headlines, labels                              |
+| `--color-ink-secondary`| `#475569` (Slate 600)  | `#94A3B8` (Slate 400)  | Body text, descriptions                        |
+| `--color-ink-tertiary` | `#94A3B8` (Slate 400)  | `#475569` (Slate-600)  | Timestamps, metadata, placeholders             |
+
+> **Why teal + orange?** Teal communicates sustainability without the cliché green. Orange creates urgency on CTAs. This combo is proven with the same demographic — Olio and Too Good To Go use near-identical palettes in the UK market.
 
 #### Typography
 
-| Role           | Font              | Weight        | Size     |
-| -------------- | ----------------- | ------------- | -------- |
-| Headings       | Plus Jakarta Sans | 700 (Bold)    | 1.5–2rem |
-| Body           | Plus Jakarta Sans | 400 (Regular) | 1rem     |
-| Captions       | Plus Jakarta Sans | 500 (Medium)  | 0.75rem  |
-| kg_saved badge | Plus Jakarta Sans | 700 (Bold)    | 1.25rem  |
+| Role                | Font              | Weight             | Size (CSS token)          |
+| ------------------- | ----------------- | ------------------ | ------------------------- |
+| Display / Hero      | Plus Jakarta Sans | 800                | `--type-display` (clamp)  |
+| Section headers     | Plus Jakarta Sans | 700                | `--type-title` (clamp)    |
+| Body text           | Plus Jakarta Sans | 400                | `--type-body` (0.9375rem) |
+| Labels / metadata   | Plus Jakarta Sans | 500                | `--type-small` (0.8125rem)|
+| Timestamps / tags   | Plus Jakarta Sans | 400                | `--type-micro` (0.6875rem)`|
+| kg_saved / PINs     | **JetBrains Mono**| 600–700 (Semibold) | Matches body size         |
 
-Load from Google Fonts: `<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap">`
+Loaded from Google Fonts: `Plus Jakarta Sans` (wght@400;500;600;700;800) + `JetBrains Mono` (wght@400;500;600;700;800)
 
-> **Why Plus Jakarta Sans?** Same readability as Inter but rounder, warmer letterforms. Feels like a community app, not a corporate dashboard.
+> **Why JetBrains Mono for numbers?** Monospace rendering aligns digits in columns and gives kg values, PINs, and timestamps a data-precise feel that distinguishes them from prose copy.
 
 #### Component Patterns
 
-| Component     | Style                                                                  |
-| ------------- | ---------------------------------------------------------------------- |
-| Cards         | `border-radius: 12px`, subtle `box-shadow`, no borders                 |
-| Buttons       | `border-radius: 8px`, 44×44px minimum tap target, hover lift animation |
-| Inputs        | `border-radius: 8px`, 2px border, focus glow in `--primary`            |
-| Status badges | Pill-shaped (`border-radius: 999px`), coloured by state                |
-| Modals        | Centred overlay with backdrop blur, slide-up on mobile                 |
-| Notifications | Toast-style, slides in from top-right (desktop) / top (mobile)         |
+| Component      | Style                                                                               |
+| -------------- | ----------------------------------------------------------------------------------- |
+| Cards          | `border-radius: 12px` (`--radius-lg`), subtle `box-shadow`, no borders             |
+| Buttons        | `border-radius: 10px` (`--radius-md`), 44×44px min tap target, hover lift animation|
+| Inputs         | `border-radius: 10px`, 1.5px border, focus ring via `--color-primary` glow         |
+| Status badges  | Pill-shaped (`border-radius: 999px`), coloured by state                             |
+| Modals/Drawers | `border-radius: 16px` (`--radius-xl`), backdrop blur, slide-in from right (mobile) |
+| Flash messages | Inline alert banners rendered below the navbar, category-coloured (success/danger/warning/info). Not toast-style — no slide animations. |
+| Icons          | Google Material Symbols (outlined style), all decorative icons use `aria-hidden="true"` |
 
 ---
 
 ### 2.4a Mobile-First & PWA Strategy
 
-No native app. The web app is designed mobile-first and wrapped as a PWA:
+No native app. The web app is designed mobile-first with a responsive layout. PWA features are planned for Phase 2:
 
-#### Progressive Web App (PWA)
+#### Progressive Web App (PWA) — Planned (Phase 2)
 
-- `manifest.json` → enables "Add to Home Screen" → launches fullscreen (URL bar hidden)
-- Reuni icon on phone home screen, looks and feels like a native app
-- Service worker caches static assets for faster loads (Phase 2: offline mode)
+> **Not yet implemented.** No `manifest.json` or service worker exists in the codebase.
+
+- **Planned:** `manifest.json` → enables "Add to Home Screen" → launches fullscreen (URL bar hidden)
+- **Planned:** Service worker caches static assets for faster loads; offline mode for browsing
 - Zero app store friction — students just visit the URL
 
-#### Camera Integration
+#### Camera Integration — Planned (Phase 2)
 
-```html
-<input type="file" accept="image/*" capture="camera" />
-```
+> **Not yet implemented.** The current image upload input uses `accept="image/*"` only — no `capture` attribute. Students upload existing photos from their device.
 
-Opens the phone camera directly from the browser.
+- **Planned:** Add `capture="camera"` to open the phone camera directly when listing items on mobile.
 
-#### Responsive Layout
+#### Responsive Layout — Current Implementation
 
-| Screen                  | Layout                          | Navigation                                                     |
-| ----------------------- | ------------------------------- | -------------------------------------------------------------- |
-| **Mobile** (<768px)     | Single column, full-width cards | Bottom tab bar (Home, Search, ➕ List, Notifications, Profile) |
-| **Tablet** (768–1024px) | 2-column grid                   | Bottom tab bar                                                 |
-| **Desktop** (>1024px)   | 3-column grid with sidebar      | Top navbar                                                     |
+| Screen                   | Layout                              | Navigation                                                   |
+| ------------------------ | ----------------------------------- | ------------------------------------------------------------ |
+| **Mobile** (<1024px)     | Single column, full-width cards     | Bottom tab bar (Home, Search, ➕ Sell, Profile) — **4 tabs** |
+| **Desktop** (≥1024px)    | Sidebar (240px) + content area      | Sticky top navbar + persistent left sidebar                  |
 
-> **Mobile-first rule:** Design for phone first, then `@media (min-width: 768px)` adds desktop layout. Never the other way around.
+**Mobile bottom tab bar (4 items, fixed at bottom of screen):**
+- **Home** → `/` (marketplace browse)
+- **Search** → opens a full-screen search overlay (not a new page)
+- **Sell** → `/items/new` (or `/auth/login` if unauthenticated)
+- **Profile** → `/profile` (shows first initial avatar if logged in, or `/auth/login` if not)
+
+**Desktop sidebar links (authenticated users only):**
+My Dashboard → Browse Items → List an Item → My Profile → ESG Dashboard (partners/admin only) → Admin Panel (admin only) → Settings → Sign Out
+
+**Mobile hamburger drawer:** A slide-in drawer from the right (triggered by ☰ button in the navbar) mirrors the sidebar links for authenticated users.
+
+> **Mobile-first rule:** Design for phone first, then `@media (min-width: 1024px)` enables the sidebar layout. The breakpoint is 1024px, not 768px.
 
 ---
 
@@ -493,8 +532,10 @@ Once Reuni has hundreds of users and proven data across multiple universities:
 
 ### 5.3 GDPR Compliance
 
-- **Planned:** Privacy policy page, cookie consent (if applicable)
-- **Planned:** "Delete my account" button (right to erasure)
+- ✅ **Privacy policy page:** `/privacy` — covers data collected, retention, user rights, and GDPR contact.
+- ✅ **"Delete my account" (right to erasure):** Full two-phase deletion: immediate deactivation + claim cleanup → 30-day cooling-off → nightly anonymisation job at 2 AM.
+- ✅ **Data anonymisation:** `User.anonymise()` wipes all PII on the user record. Sold items retain `kg_saved` and `university_domain` for ESG integrity (data minimisation).
+- **Planned:** Cookie consent banner (if analytics or non-essential cookies are introduced).
 - **Data stored:** Email, name, phone_number, hashed password, transaction and cancellation history
 - **No:** GPS tracking, advertising IDs, third-party data sharing
 
@@ -508,7 +549,9 @@ Once Reuni has hundreds of users and proven data across multiple universities:
 | ------------------------- | ------------------ | ----------------------------------------------------- |
 | Login attempts            | Max 10 per minute  | **Built** (IP + Email keying, blocks via rate limits) |
 | Verification Resends      | Max 10 per hour    | **Built** (Email keying, blocks spam)                 |
+| Forgot password requests  | Max 3 per hour     | **Built** (Email keying, prevents reset spam)         |
 | PIN handshakes resend     | Max 3 per hour     | **Built** (Protects email relays)                     |
+| Account deletion requests | Max 3 per hour     | **Built** (User ID keying, prevents abuse)            |
 | Item listings per account | Max 5 per 24 hours | **Planned**                                           |
 | Reports per account       | Max 3 per 24 hours | **Planned**                                           |
 
@@ -735,11 +778,13 @@ New tables:
 | Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and Strict-Transport-Security (STS)       |
 | CSP configuration  | Strict `Content-Security-Policy` header restricting assets, scripts, styles, and fonts to trusted sources |
 | Ownership checks   | Edit/delete routes verify `seller_id == current_user.id`                                                  |
-| Session management | Flask-Login handles secure session cookies; hard 7-day timeout for partner sessions.                      |
-| Email OTP validation| 6-digit OTP verified via secure hash comparison, 15m expiration, locked after 5 failed attempts           |
-| Account Lockout    | Temporary 15-minute account lockout after 5 consecutive failed login attempts                             |
-| Rate Limiting      | Middleware controls sensitive entry points (login rate, OTP verification resend, PIN resend limits)       |
-| DB migrations      | Flask-Migrate (Alembic) — version-controlled schema changes                                               |
+| Session management    | Flask-Login handles secure session cookies; hard 7-day timeout for partner sessions.                         |
+| Email OTP validation  | 6-digit OTP verified via secure hash comparison, 15m expiration, locked after 5 failed attempts              |
+| Account Lockout       | Temporary 15-minute account lockout after 5 consecutive failed login attempts                                |
+| Rate Limiting         | Middleware controls all sensitive entry points (login, OTP resend, forgot password, PIN resend, account delete) |
+| Password reset tokens | `itsdangerous` signed tokens, 1-hour expiry, salted with current password hash (auto-invalidated on change)  |
+| Account deletion      | Two-phase GDPR deletion: immediate deactivation → 30-day cooldown → nightly anonymisation at 2 AM           |
+| DB migrations         | Flask-Migrate (Alembic) — version-controlled schema changes                                                  |
 
 ### Planned (Production)
 
@@ -757,6 +802,6 @@ New tables:
 | University off-season (summer) — run marketplace or shut down? | **Run normally, freeze leaderboard.** Marketplace stays open, rankings pause.                                              |
 | Multi-university data isolation?                               | **Schema-ready** (`university_domain` column on both users and items). No cross-university data leakage by default.        |
 | Payment integration?                                           | **Not needed for MVP.** All transactions are in-person cash/bank transfer. Platform shows price, doesn't process payments. |
-| Email notifications?                                           | **Implemented** via Flask-Mail for registration verification codes, transaction PIN handshakes, claims cancellation alerts, and partner account actions. |
+| Email notifications?                                           | **Implemented** via Brevo API (OTP verification) and Flask-Mail (password reset links, PIN handshakes, claim cancellation alerts, GDPR deletion claim cancellations, partner welcome/deactivation emails). |
 | Real-time chat?                                                | **Permanently deferred.** WhatsApp bypass handles all communication needs. Building chat is technical debt with no ROI.    |
 | QR Code Handshake?                                             | **Deferred to Phase 2.** An alternative option where the PIN holder displays a QR code encoding the PIN, which the other party scans to confirm physical exchange. |

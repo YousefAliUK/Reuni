@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Reuni — A hyper-local campus circular economy marketplace.">
+    <meta name="description" content="Reuni — A hyper-local campus circular economy circular economy platform.">
     <title>{% block title %}Reuni{% endblock %}</title>
 
-    <!-- Google Fonts — Plus Jakarta Sans -->
+    <!-- Google Fonts — Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Material Symbols (outlined) for icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
@@ -17,84 +17,136 @@
     <!-- App Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <!-- Inline Dark Theme Check to prevent light flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        .navbar__desktop-links {
+            display: flex;
+            gap: var(--space-6);
+            align-items: center;
+        }
+        @media (max-width: 1024px) {
+            .navbar__desktop-links {
+                display: none !important;
+            }
+        }
+    </style>
+
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% if current_user.is_authenticated %}authenticated-mobile-layout{% else %}unauthenticated-mobile-layout{% endif %}">
 
     <!-- Skip-to-content link for screen readers -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
+    <!-- Mobile Top Bar (< 1024px — replaces desktop navbar per blueprint §2.4a) -->
+    <div class="mobile-top-bar">
+        <div class="mobile-top-bar__left">
+            {% if request.endpoint == 'index' or request.endpoint == 'dashboard' or request.endpoint == 'profile' or request.endpoint == 'settings' %}
+                <button type="button" id="mobile-hamburger-btn" class="mobile-back-btn" aria-label="Open navigation menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            {% else %}
+                <button type="button" onclick="if(document.referrer.includes(window.location.host)){history.back()}else{window.location.href='{{ url_for('index') }}'}" class="mobile-back-btn" aria-label="Back">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+            {% endif %}
+        </div>
+        <div class="mobile-top-bar__center">
+            <span class="mobile-page-title">
+                {% block mobile_title %}Marketplace{% endblock %}
+            </span>
+        </div>
+        <div class="mobile-top-bar__right" style="display: flex; align-items: center; gap: 8px;">
+            {% if request.endpoint == 'dashboard' %}
+                <a href="{{ url_for('items.list_item') }}" style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-primary); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" aria-label="List Item">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                </a>
+            {% endif %}
+            <button type="button" class="theme-toggle-btn" id="mobile-theme-toggle" aria-label="Toggle theme">
+                <span class="material-symbols-outlined" id="mobile-theme-toggle-icon" style="font-size: 20px;">light_mode</span>
+            </button>
+        </div>
+    </div>
+
     <!-- ─── Navbar ─── -->
     <nav class="navbar" aria-label="Main navigation">
-        <div class="container navbar__inner">
+        <div class="container navbar__inner" style="max-width: var(--container-max); padding: 0 var(--container-pad-x); display: flex; align-items: center; justify-content: space-between; height: 64px;">
             <!-- Brand -->
-            <a href="{{ url_for('index') }}" class="navbar__brand" aria-label="Reuni home">
+            <a href="{{ url_for('index') }}" class="navbar__brand" aria-label="Reuni home" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
                 <div class="navbar__brand-logo">
                     <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
                 </div>
-                <span class="navbar__brand-text">Reuni</span>
+                <span class="navbar__brand-text" style="font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--color-ink-primary);">Reuni</span>
             </a>
 
-            <!-- Center: Search -->
+            <!-- Center: Nav links (desktop) -->
             <div class="navbar__center">
-                <form method="GET" action="{{ url_for('index') }}" class="navbar__search" id="navbar-search-form">
-                    <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
-                    <input
-                        type="search"
-                        name="q"
-                        class="navbar__search-input"
-                        placeholder="Search items..."
-                        value="{{ request.args.get('q', '') }}"
-                        aria-label="Search items"
-                        autocomplete="off"
-                    >
-                </form>
+                <div class="navbar__desktop-links">
+                    <a href="{{ url_for('index') }}" style="font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--color-ink-secondary); transition: color var(--transition); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-secondary)'">Browse</a>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('items.list_item') }}" style="font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--color-ink-secondary); transition: color var(--transition); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-secondary)'">List Item</a>
+                        <a href="{{ url_for('dashboard') }}" style="font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--color-ink-secondary); transition: color var(--transition); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-secondary)'">Dashboard</a>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Right: Actions -->
             <div class="navbar__actions">
+                <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme" style="margin-right: var(--space-2); width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); background: transparent; border: none; cursor: pointer; color: var(--color-ink-secondary);">
+                    <span class="material-symbols-outlined" id="theme-toggle-icon" style="font-size: 20px;">light_mode</span>
+                </button>
+
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('items.list_item') }}" class="navbar__sell-btn" title="Sell an item">
-                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                        <span class="navbar__sell-text">Sell</span>
-                    </a>
 
                     <!-- User dropdown -->
                     <div class="user-dropdown">
-                        <button class="user-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
-                            <span class="user-dropdown__avatar" aria-hidden="true">{{ current_user.name[0] }}</span>
-                        </button>
-                        <div class="user-dropdown__menu" role="menu">
-                            <div class="user-dropdown__header" role="none">
-                                <strong>{{ current_user.name }}</strong>
-                                <span>{{ current_user.email }}</span>
-                            </div>
-                            <div class="user-dropdown__eco" role="none">
-                                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                                <span>{{ "%.1f"|format(current_user.kg_saved_total) }} kg CO₂ saved</span>
-                            </div>
-                            <hr class="user-dropdown__divider" role="none">
+                        <button class="user-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu" style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; cursor: pointer; padding: 4px; border-radius: var(--radius-full);">
+                            <span class="user-dropdown__avatar" aria-hidden="true" style="background: var(--color-primary-muted); color: var(--color-primary); width: 32px; height: 32px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">{{ current_user.name[0]|upper }}</span>
+                            
                             {% if current_user.is_admin %}
-                                <a href="{{ url_for('admin.admin_partners') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="role-chip" style="background: var(--color-danger); color: #ffffff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); text-transform: uppercase;">Admin</span>
+                            {% elif current_user.is_partner %}
+                                <span class="role-chip" style="background: var(--color-primary-muted); color: var(--color-primary); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); text-transform: uppercase;">Partner</span>
+                            {% endif %}
+                        </button>
+                        <div class="user-dropdown__menu" role="menu" style="background: var(--color-surface); border-color: var(--color-border); box-shadow: var(--shadow-raised);">
+                            <div class="user-dropdown__header" role="none">
+                                <strong style="color: var(--color-ink-primary);">{{ current_user.name }}</strong>
+                                <span style="color: var(--color-ink-secondary);">{{ current_user.email }}</span>
+                            </div>
+                            <div class="user-dropdown__eco" role="none" style="background: var(--color-primary-muted); color: var(--color-primary);">
+                                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                                <span style="font-family: var(--font-mono); font-weight: 600;">{{ "%.1f"|format(current_user.kg_saved_total) }} kg CO₂ saved</span>
+                            </div>
+                            <hr class="user-dropdown__divider" role="none" style="border-color: var(--color-border);">
+                            {% if current_user.is_admin %}
+                                <a href="{{ url_for('admin.admin_partners') }}" class="user-dropdown__item" role="menuitem" style="color: var(--color-ink-secondary);">
                                     <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
                                     Admin Panel
                                 </a>
                             {% endif %}
                             {% if current_user.is_partner or current_user.is_admin %}
-                                <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem">
+                                <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem" style="color: var(--color-ink-secondary);">
                                     <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
                                     Partner Dashboard
                                 </a>
                             {% endif %}
-                            <a href="{{ url_for('dashboard') }}" class="user-dropdown__item" role="menuitem">
+                            <a href="{{ url_for('dashboard') }}" class="user-dropdown__item" role="menuitem" style="color: var(--color-ink-secondary);">
                                 <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
                                 Dashboard
                             </a>
-                            <a href="{{ url_for('profile') }}" class="user-dropdown__item" role="menuitem">
+                            <a href="{{ url_for('profile') }}" class="user-dropdown__item" role="menuitem" style="color: var(--color-ink-secondary);">
                                 <span class="material-symbols-outlined" aria-hidden="true">person</span>
                                 Profile
                             </a>
-                            <a href="{{ url_for('settings') }}" class="user-dropdown__item" role="menuitem">
+                            <a href="{{ url_for('settings') }}" class="user-dropdown__item" role="menuitem" style="color: var(--color-ink-secondary);">
                                 <span class="material-symbols-outlined" aria-hidden="true">settings</span>
                                 Settings
                             </a>
@@ -108,16 +160,18 @@
                         </div>
                     </div>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="navbar__auth-link">Log in</a>
-                    <a href="{{ url_for('auth.register') }}" class="navbar__signup-btn">Sign up</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--ghost" style="font-family: var(--font-sans); font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 16px; border-radius: var(--radius-md); color: var(--color-primary); border: 1px solid transparent; background: transparent; transition: all var(--transition); margin-right: var(--space-2);" onmouseover="this.style.borderColor='var(--color-primary)'; this.style.background='var(--color-primary-muted)'" onmouseout="this.style.borderColor='transparent'; this.style.background='transparent'">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary" style="font-family: var(--font-sans); font-size: 14px; font-weight: 600; text-decoration: none; padding: 8px 16px; border-radius: var(--radius-md); background: var(--color-primary); color: #ffffff; box-shadow: var(--shadow-card); transition: background var(--transition);" onmouseover="this.style.background='var(--color-primary-hover)'" onmouseout="this.style.background='var(--color-primary)'">Register</a>
                 {% endif %}
+
+                <!-- Hamburger removed from desktop navbar; it lives in the mobile-top-bar -->
             </div>
         </div>
 
         <!-- Mobile search expansion -->
-        <div class="navbar__search-expand" id="mobile-search-bar">
+        <div class="navbar__search-expand" id="mobile-search-bar" style="background: var(--color-surface); box-shadow: var(--shadow-raised);">
             <form method="GET" action="{{ url_for('index') }}" class="navbar__search-expand-form">
-                <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
+                <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true" style="color: var(--color-ink-tertiary);">search</span>
                 <input
                     type="search"
                     name="q"
@@ -126,6 +180,7 @@
                     value="{{ request.args.get('q', '') }}"
                     aria-label="Search items"
                     autocomplete="off"
+                    style="background: var(--color-surface-raised); border-color: var(--color-border); font-family: var(--font-sans);"
                 >
                 <button type="button" class="navbar__search-expand-close" id="mobile-search-close" aria-label="Close search">
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
@@ -135,79 +190,233 @@
     </nav>
 
     <!-- ─── Flash Messages ─── -->
-    <div class="container">
+    <div class="container" style="max-width: var(--container-max); padding: 0 var(--container-pad-x); margin-top: var(--space-4);">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert--{{ category }}" role="alert">{{ message }}</div>
+                    {% set clean_category = 'danger' if category in ['error', 'danger'] else category %}
+                    <div class="alert-blueprint alert-blueprint--{{ clean_category }}" role="alert">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
 
-    <!-- ─── Main Content ─── -->
-    <main id="main-content" class="container main-content">
-        {% block content %}{% endblock %}
-    </main>
+    <!-- ─── Main Content Grid / Sidebar Shell ─── -->
+    {% if current_user.is_authenticated %}
+    <div class="container" style="max-width: var(--container-max); padding: 0 var(--container-pad-x);">
+        <div class="authenticated-layout">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar-nav" aria-label="Sidebar navigation">
+                <a href="{{ url_for('dashboard') }}" class="sidebar-nav__link {% if request.endpoint == 'dashboard' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+                    <span>My Dashboard</span>
+                </a>
+                <a href="{{ url_for('index') }}" class="sidebar-nav__link {% if request.endpoint == 'index' and not request.args.get('category') %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    <span>Browse Items</span>
+                </a>
+                <a href="{{ url_for('items.list_item') }}" class="sidebar-nav__link {% if request.endpoint == 'items.list_item' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                    <span>List an Item</span>
+                </a>
+                <a href="{{ url_for('profile') }}" class="sidebar-nav__link {% if request.endpoint == 'profile' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                    <span>My Profile</span>
+                </a>
+                {% if current_user.is_partner or current_user.is_admin %}
+                <a href="{{ url_for('partner.partner_dashboard') }}" class="sidebar-nav__link {% if request.endpoint == 'partner.partner_dashboard' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                    <span>ESG Dashboard</span>
+                </a>
+                {% endif %}
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.admin_partners') }}" class="sidebar-nav__link {% if request.endpoint == 'admin.admin_partners' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+                    <span>Admin Panel</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('settings') }}" class="sidebar-nav__link {% if request.endpoint == 'settings' %}sidebar-nav__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                    <span>Settings</span>
+                </a>
+                
+                <hr class="user-dropdown__divider" style="margin: var(--space-4) 0; border-color: var(--color-border);">
+                
+                <form method="POST" action="{{ url_for('auth.logout') }}" style="width: 100%;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="sidebar-nav__link sidebar-nav__link--danger" style="width: 100%; border: none; background: transparent; cursor: pointer; text-align: left; justify-content: flex-start;">
+                        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-danger);">logout</span>
+                        <span style="color: var(--color-danger);">Sign Out</span>
+                    </button>
+                </form>
+                <!-- Sidebar Footer: kg counter per blueprint -->
+                <div style="margin-top: auto; padding-top: var(--space-4); border-top: 1px solid var(--color-border); font-size: 13px; color: var(--color-ink-tertiary); display: flex; align-items: center; gap: var(--space-2);">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px; color: var(--color-primary);">eco</span>
+                    <span style="font-family: var(--font-mono);">
+                        {% if campus_total_kg %}{{ "%.1f"|format(campus_total_kg) }}{% else %}0.0{% endif %}kg saved at Brookes
+                    </span>
+                </div>
+            </aside>
+    {% endif %}
+            
+            <main id="main-content" class="main-content {% if not current_user.is_authenticated %}container{% endif %}" style="{% if current_user.is_authenticated %}padding: var(--space-6) var(--space-6) var(--space-12); width: 100%; box-sizing: border-box; min-width: 0;{% else %}max-width: var(--container-max); padding: var(--space-6) var(--container-pad-x) var(--space-12);{% endif %}">
+                {% block content %}{% endblock %}
+            </main>
+            
+    {% if current_user.is_authenticated %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ─── Footer ─── -->
-    <footer class="footer" role="contentinfo">
-        <div class="container footer__inner">
-            <div class="footer__brand">
-                <span class="material-symbols-outlined footer__icon" aria-hidden="true">recycling</span>
-                <span class="footer__name">Reuni</span>
+    <footer class="footer" role="contentinfo" style="background: var(--color-surface-raised); border-top: 1px solid var(--color-border); padding: var(--space-6) var(--container-pad-x);">
+        <div class="container footer__inner" style="max-width: var(--container-max); padding: 0; display: flex; flex-direction: row; justify-content: space-between; align-items: center; font-size: 13px; color: var(--color-ink-secondary);">
+            <div class="footer__brand" style="display: flex; align-items: center; gap: var(--space-2);">
+                <span style="color: var(--color-ink-secondary);">© 2026 Reuni &middot; Oxford Brookes &middot; SDG 12</span>
             </div>
-            <nav class="footer__links" aria-label="Footer navigation">
-                <a href="{{ url_for('index') }}">Browse</a>
-                <a href="{{ url_for('privacy') }}">Privacy Policy</a>
-                {% if current_user.is_authenticated %}
-                <a href="{{ url_for('items.list_item') }}">List Item</a>
-                <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                {% else %}
-                <a href="{{ url_for('auth.login') }}">Log In</a>
-                <a href="{{ url_for('auth.register') }}">Sign Up</a>
-                {% endif %}
+            <nav class="footer__links" aria-label="Footer navigation" style="display: flex; gap: var(--space-4);">
+                <a href="{{ url_for('privacy') }}" style="color: var(--color-ink-secondary); text-decoration: none;">Privacy Policy</a>
             </nav>
-            <p class="footer__copy">&copy; 2026 Reuni &middot; Supporting UN SDG 12: Responsible Consumption &amp; Production</p>
+            <div class="footer__impact" style="display: flex; align-items: center; gap: var(--space-2);">
+                <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: var(--type-body-lg);">eco</span>
+                <span style="font-family: var(--font-mono); font-weight: 700; color: var(--color-primary);">
+                    {% if campus_total_kg %}
+                        {{ "%.1f"|format(campus_total_kg) }} kg saved
+                    {% else %}
+                        0.0 kg saved
+                    {% endif %}
+                </span>
+            </div>
         </div>
     </footer>
 
     <!-- ─── Mobile Bottom Tab Bar ─── -->
-    <nav class="mobile-tabs" aria-label="Mobile navigation">
+    {% if current_user.is_authenticated %}
+    <nav class="mobile-tabs" aria-label="Mobile navigation" style="background: var(--color-surface); border-top: 1px solid var(--color-border);">
         <a href="{{ url_for('index') }}" class="mobile-tabs__item {% if request.endpoint == 'index' %}mobile-tabs__item--active{% endif %}">
             <span class="material-symbols-outlined" aria-hidden="true">home</span>
             <span>Home</span>
         </a>
-        <button type="button" class="mobile-tabs__item" id="mobile-tab-search" aria-label="Search">
+        <button type="button" id="mobile-tab-search-btn" class="mobile-tabs__item">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
             <span>Search</span>
         </button>
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('items.list_item') }}" class="mobile-tabs__item mobile-tabs__item--sell">
-            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-            <span>Sell</span>
+        <a href="{{ url_for('items.list_item') }}" class="mobile-tabs__item mobile-tabs__item--list-circle" aria-label="List Item">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
         </a>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="mobile-tabs__item mobile-tabs__item--sell">
-            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-            <span>Sell</span>
-        </a>
-        {% endif %}
-        {% if current_user.is_authenticated %}
         <a href="{{ url_for('profile') }}" class="mobile-tabs__item {% if request.endpoint == 'profile' %}mobile-tabs__item--active{% endif %}">
-            <span class="user-dropdown__avatar mobile-tabs__avatar" aria-hidden="true">{{ current_user.name[0] }}</span>
-            <span>Profile</span>
+            <span class="user-dropdown__avatar {% if request.endpoint == 'profile' %}mobile-tabs__avatar--active{% endif %}" style="width: 24px; height: 24px; font-size: 11px; font-weight: 600; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-full); background: var(--color-primary-muted); color: var(--color-primary);">{{ current_user.name[0]|upper }}</span>
+            <span style="margin-top: 2px;">Profile</span>
         </a>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="mobile-tabs__item">
-            <span class="material-symbols-outlined" aria-hidden="true">person</span>
-            <span>Profile</span>
-        </a>
-        {% endif %}
     </nav>
+    {% endif %}
 
+    <!-- Mobile Navigation Drawer -->
+    <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
+    <aside class="mobile-drawer" id="mobile-drawer" aria-label="Mobile navigation menu">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+            <span style="font-weight: 700; font-size: var(--type-title); color: var(--color-ink-primary);">Menu</span>
+            <button class="theme-toggle-btn" id="mobile-drawer-close" aria-label="Close menu">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <nav style="display: flex; flex-direction: column; gap: var(--space-2);">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="sidebar-nav__link {% if request.endpoint == 'dashboard' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">dashboard</span>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('index') }}" class="sidebar-nav__link {% if request.endpoint == 'index' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">search</span>
+                    Browse
+                </a>
+                <a href="{{ url_for('items.list_item') }}" class="sidebar-nav__link {% if request.endpoint == 'items.list_item' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">add_circle</span>
+                    List Item
+                </a>
+                <a href="{{ url_for('profile') }}" class="sidebar-nav__link {% if request.endpoint == 'profile' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">person</span>
+                    Profile
+                </a>
+                {% if current_user.is_partner or current_user.is_admin %}
+                <hr class="user-dropdown__divider" style="margin: var(--space-2) 0; border-color: var(--color-border);">
+                <a href="{{ url_for('partner.partner_dashboard') }}" class="sidebar-nav__link {% if request.endpoint == 'partner.partner_dashboard' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">analytics</span>
+                    ESG Dashboard
+                </a>
+                {% endif %}
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.admin_partners') }}" class="sidebar-nav__link {% if request.endpoint == 'admin.admin_partners' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">admin_panel_settings</span>
+                    Admin Panel
+                </a>
+                {% endif %}
 
-    <!-- Dropdown + mobile search + mobile tabs -->
+                <hr class="user-dropdown__divider" style="margin: var(--space-2) 0; border-color: var(--color-border);">
+
+                <a href="{{ url_for('settings') }}" class="sidebar-nav__link {% if request.endpoint == 'settings' %}sidebar-nav__link--active{% endif %}" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">settings</span>
+                    Settings
+                </a>
+                
+                <hr class="user-dropdown__divider" style="margin: var(--space-4) 0; border-color: var(--color-border);">
+                
+                <form method="POST" action="{{ url_for('auth.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="sidebar-nav__link sidebar-nav__link--danger" style="width: 100%; border: none; background: transparent; cursor: pointer; text-align: left; display: flex; align-items: center; height: 48px; border-radius: var(--radius-md);">
+                        <span class="material-symbols-outlined" style="margin-right: 12px; color: var(--color-danger);">logout</span>
+                        <span style="color: var(--color-danger);">Sign Out</span>
+                    </button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('index') }}" class="sidebar-nav__link" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">search</span>
+                    Browse Items
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="sidebar-nav__link" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">login</span>
+                    Log In
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="sidebar-nav__link" style="height: 48px; display: flex; align-items: center; border-radius: var(--radius-md);">
+                    <span class="material-symbols-outlined" style="margin-right: 12px;">person_add</span>
+                    Sign Up
+                </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- Mobile Full-Screen Search Overlay -->
+    <div class="mobile-search-overlay" id="mobile-search-overlay">
+        <div class="mobile-search-overlay__header">
+            <button type="button" id="mobile-search-overlay-close" aria-label="Close search">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <form method="GET" action="{{ url_for('index') }}" class="mobile-search-overlay__form">
+                <input
+                    type="search"
+                    name="q"
+                    id="mobile-search-overlay-input"
+                    placeholder="Search listings — textbooks, furniture, electronics…"
+                    value="{{ request.args.get('q', '') }}"
+                    aria-label="Search items"
+                    autocomplete="off"
+                >
+                <button type="submit" class="mobile-search-overlay__submit-btn">Search</button>
+            </form>
+        </div>
+        <div class="mobile-search-recent" id="mobile-search-recent" style="display: none;">
+            <div class="mobile-search-recent__header">
+                <span class="mobile-search-recent__title">Recent Searches</span>
+                <button type="button" class="mobile-search-recent__clear" id="mobile-search-clear-btn">Clear</button>
+            </div>
+            <div class="mobile-search-recent__list" id="mobile-search-recent-list">
+                <!-- Chips inserted by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Dropdown + mobile search + mobile drawer + theme handler -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // User dropdown
@@ -225,25 +434,133 @@
                 });
             }
 
-            // Mobile search expand (from top bar or bottom tab)
-            const searchBar = document.getElementById('mobile-search-bar');
-            const searchClose = document.getElementById('mobile-search-close');
-            function openMobileSearch() {
-                if (searchBar) {
-                    searchBar.classList.add('navbar__search-expand--open');
-                    searchBar.querySelector('input').focus();
+            // Dark Mode Toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+            
+            function updateThemeUI(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                
+                const themeToggleIcon = document.getElementById('theme-toggle-icon');
+                if (themeToggleIcon) {
+                    themeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
+                }
+                
+                const mobileThemeToggleIcon = document.getElementById('mobile-theme-toggle-icon');
+                if (mobileThemeToggleIcon) {
+                    mobileThemeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
                 }
             }
-            function closeMobileSearch() {
-                if (searchBar) {
-                    searchBar.classList.remove('navbar__search-expand--open');
-                }
+            
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            updateThemeUI(currentTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    updateThemeUI(next);
+                });
             }
-            if (searchClose) searchClose.addEventListener('click', closeMobileSearch);
+            if (mobileThemeToggle) {
+                mobileThemeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    updateThemeUI(next);
+                });
+            }
 
-            // Bottom tab search button
-            const searchBtn = document.getElementById('mobile-tab-search');
-            if (searchBtn) searchBtn.addEventListener('click', openMobileSearch);
+            // Mobile Navigation Drawer
+            const hamburgerBtn = document.getElementById('mobile-hamburger-btn');
+            const drawer = document.getElementById('mobile-drawer');
+            const backdrop = document.getElementById('mobile-drawer-backdrop');
+            const drawerClose = document.getElementById('mobile-drawer-close');
+            
+            function openDrawer() {
+                if (drawer && backdrop) {
+                    backdrop.classList.add('mobile-drawer-backdrop--open');
+                    drawer.classList.add('mobile-drawer--open');
+                }
+            }
+            
+            function closeDrawer() {
+                if (drawer && backdrop) {
+                    backdrop.classList.remove('mobile-drawer-backdrop--open');
+                    drawer.classList.remove('mobile-drawer--open');
+                }
+            }
+            
+            if (hamburgerBtn) hamburgerBtn.addEventListener('click', openDrawer);
+            if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+            if (backdrop) backdrop.addEventListener('click', closeDrawer);
+
+            // Mobile search overlay
+            const searchOverlay = document.getElementById('mobile-search-overlay');
+            const searchOverlayClose = document.getElementById('mobile-search-overlay-close');
+            const searchOverlayInput = document.getElementById('mobile-search-overlay-input');
+            const searchTabBtn = document.getElementById('mobile-tab-search-btn');
+            const searchClearBtn = document.getElementById('mobile-search-clear-btn');
+            const searchRecentList = document.getElementById('mobile-search-recent-list');
+            const searchRecentContainer = document.getElementById('mobile-search-recent');
+            const searchOverlayForm = searchOverlay?.querySelector('form');
+
+            function openSearchOverlay() {
+                if (searchOverlay) {
+                    searchOverlay.classList.add('mobile-search-overlay--open');
+                    searchOverlayInput.focus();
+                    renderRecentSearches();
+                }
+            }
+
+            function closeSearchOverlay() {
+                if (searchOverlay) {
+                    searchOverlay.classList.remove('mobile-search-overlay--open');
+                }
+            }
+
+            function renderRecentSearches() {
+                if (!searchRecentList || !searchRecentContainer) return;
+                const searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                if (searches.length === 0) {
+                    searchRecentContainer.style.display = 'none';
+                    return;
+                }
+                searchRecentContainer.style.display = 'block';
+                searchRecentList.innerHTML = '';
+                searches.forEach(search => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'recent-search-chip';
+                    btn.innerHTML = `<span class="material-symbols-outlined">history</span><span>${search}</span>`;
+                    btn.addEventListener('click', () => {
+                        searchOverlayInput.value = search;
+                        searchOverlayForm.submit();
+                    });
+                    searchRecentList.appendChild(btn);
+                });
+            }
+
+            if (searchTabBtn) searchTabBtn.addEventListener('click', openSearchOverlay);
+            if (searchOverlayClose) searchOverlayClose.addEventListener('click', closeSearchOverlay);
+
+            if (searchOverlayForm) {
+                searchOverlayForm.addEventListener('submit', () => {
+                    const query = searchOverlayInput.value.trim();
+                    if (query) {
+                        let searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                        searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
+                        localStorage.setItem('recent_searches', JSON.stringify(searches));
+                    }
+                });
+            }
+
+            if (searchClearBtn) {
+                searchClearBtn.addEventListener('click', () => {
+                    localStorage.removeItem('recent_searches');
+                    renderRecentSearches();
+                });
+            }
         });
     </script>
 

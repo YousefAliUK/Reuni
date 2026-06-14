@@ -1,181 +1,301 @@
 {% extends "base.html" %}
-{% block title %}Settings — Reuni{% endblock %}
+{% block title %}Account Settings — Reuni{% endblock %}
 
 {% block content %}
-<div class="list-item-container">
+<div style="max-width: 640px; margin: 0 auto; padding-top: var(--space-10); padding-bottom: var(--space-20);">
     <!-- Back link -->
-    <a href="{{ url_for('profile') }}" class="back-link" aria-label="Go back to profile">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+    <a href="{{ url_for('profile') }}" class="sidebar-nav__link" style="display: inline-flex; align-items: center; width: auto; margin-bottom: var(--space-6); text-decoration: none; padding-left: 0;">
+        <span class="material-symbols-outlined" style="margin-right: 8px;">arrow_back</span>
         Back to Profile
     </a>
 
-    <h2>
-        <span class="material-symbols-outlined heading-icon" aria-hidden="true">settings</span>
-        Settings
-    </h2>
-    <p class="subtitle">Manage your account information, phone number, and password.</p>
+    <h1 style="font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1);">Account Settings</h1>
+    <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin-top: 0; margin-bottom: var(--space-8);">Manage your account information, phone number, and password.</p>
 
-    <!-- Email & University (Read-Only) -->
-    <div class="form form--compact" style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--clr-border);">
-        <div class="form__group">
-            <label>Email Address</label>
-            <div style="padding: 0.6rem 0.75rem; background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius); color: var(--clr-text-muted);">
-                {{ current_user.email }}
-            </div>
-            <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
-                Email cannot be changed.
-            </small>
-        </div>
-
-        <div class="form__group">
-            <label>University / Institution</label>
-            <div style="padding: 0.6rem 0.75rem; background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius); color: var(--clr-text-muted);">
-                {{ current_user.university_domain }}
-            </div>
-        </div>
-    </div>
-
-    <!-- Phone Number Form -->
-    <section style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--clr-border);">
-        <h3 style="margin-bottom: 1rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-text);">
-            <span class="material-symbols-outlined" style="color: var(--clr-primary);" aria-hidden="true">phone</span>
-            Phone Number Settings
-        </h3>
-        <form method="POST" action="{{ url_for('settings_phone') }}" class="form form--compact">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form__group">
-                <label for="phone_number">Phone Number (required for listing or buying items)</label>
-                <input type="tel" id="phone_number" name="phone_number" 
-                       value="{{ current_user.phone_number or '' }}" 
-                       placeholder='e.g. "+447912345678" or "07912345678"'
-                       required>
-                <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
-                    Must start with + and country code, or local 07 for UK.
-                </small>
-            </div>
-            <button type="submit" class="btn btn--primary">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">save</span>
-                Update Phone Number
-            </button>
-        </form>
-    </section>
-
-    <!-- Password Change Form -->
-    <section>
-        <h3 style="margin-bottom: 1rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-text);">
-            <span class="material-symbols-outlined" style="color: var(--clr-primary);" aria-hidden="true">lock</span>
-            Change Password
-        </h3>
-        <form method="POST" action="{{ url_for('settings_password') }}" class="form form--compact">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form__group">
-                <label for="current_password">Current Password</label>
-                <input type="password" id="current_password" name="current_password" required>
-            </div>
-            <div class="form__group">
-                <label for="new_password">New Password</label>
-                <input type="password" id="new_password" name="new_password" required>
-                <small style="color: var(--clr-text-muted); font-size: var(--fs-xs); display: block; margin-top: 0.25rem;">
-                    Min 8 characters, at least 1 uppercase letter, 1 lowercase letter, and 1 digit.
-                </small>
-            </div>
-            <div class="form__group">
-                <label for="confirm_password">Confirm New Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-            </div>
-            <button type="submit" class="btn btn--primary">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">lock_reset</span>
-                Change Password
-            </button>
-        </form>
-    </section>
-
-    <!-- Danger Zone: Delete Account -->
-    <section style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--clr-border);">
-        <h3 style="margin-bottom: 0.5rem; font-size: var(--fs-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--clr-danger, #dc2626);">
-            <span class="material-symbols-outlined" style="color: var(--clr-danger, #dc2626);" aria-hidden="true">warning</span>
-            Danger Zone
-        </h3>
-        <p class="subtitle" style="margin-bottom: 1rem;">Permanently delete your account and all associated data.</p>
+    <div style="display: flex; flex-direction: column; gap: var(--space-6);">
         
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-lg); padding: var(--space-md); margin-bottom: 1.5rem;">
-            <p style="color: #991b1b; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 0.5rem; line-height: 1.5;">
-                Important Notice regarding UK GDPR Deletion:
-            </p>
-            <ul style="color: #991b1b; font-size: var(--fs-xs); padding-left: 1.2rem; line-height: 1.5; margin-bottom: 0;">
-                <li>Your account will be immediately deactivated and scheduled for deletion.</li>
-                <li>Your active listings will be permanently removed from the marketplace.</li>
-                <li>All active exchange claims and pending handshake PINs will be cancelled.</li>
-                <li>After a 30-day cool-down period, all personal data (name, email, phone) will be permanently anonymised.</li>
-                <li>Completed transaction history is retained anonymously for institutional ESG auditing.</li>
-            </ul>
-        </div>
-
-        <!-- Trigger Button -->
-        <button type="button" id="btn-show-delete-confirm" class="btn btn--danger">
-            <span class="material-symbols-outlined btn__icon" aria-hidden="true">delete_forever</span>
-            Delete My Account
-        </button>
-
-        <!-- Confirmation Section (Hidden by default) -->
-        <div id="delete-confirmation-wrap" style="display: none; margin-top: 1rem;">
-            <form method="POST" action="{{ url_for('delete_account') }}" class="form form--compact" onsubmit="return validateDeleteConfirm();">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <!-- SECTION 1 — Account Info (read-only display) -->
+        <div style="background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-lg); padding: var(--space-6);">
+            <h2 style="font-size: var(--type-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--color-ink-tertiary); margin-top: 0; margin-bottom: var(--space-4);">Account</h2>
+            
+            <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <div>
+                    <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Email Address</label>
+                    <div style="padding: var(--space-3); background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-ink-secondary); display: flex; align-items: center; justify-content: space-between;">
+                        <span>{{ current_user.email }}</span>
+                        {% if current_user.is_verified %}
+                            <span style="font-size: var(--type-micro); background: var(--color-success-muted); color: var(--color-success); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-weight: 600;">Verified ✓</span>
+                        {% else %}
+                            <span style="font-size: var(--type-micro); background: var(--color-warning-muted); color: var(--color-warning); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-weight: 600;">Unverified</span>
+                        {% endif %}
+                    </div>
+                    <small style="color: var(--color-ink-tertiary); font-size: var(--type-micro); display: block; margin-top: var(--space-1);">Email cannot be changed.</small>
+                </div>
                 
-                <div class="form__group">
-                    <label for="delete_confirm_text" style="color: var(--clr-text); font-weight: 600;">
-                        To confirm, type <strong style="color: var(--clr-danger, #dc2626);">DELETE</strong> in the box below:
-                    </label>
-                    <input type="text" id="delete_confirm_text" name="delete_confirm_text" placeholder="Type DELETE" required autocomplete="off" style="border: 1px solid #fecaca; padding: 0.6rem 0.75rem; border-radius: var(--radius); width: 100%; max-width: 300px;">
+                <div>
+                    <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">University / Institution</label>
+                    <div style="padding: var(--space-3); background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-ink-secondary);">
+                        {{ current_user.university_domain }}
+                    </div>
                 </div>
 
-                <div style="display: flex; gap: var(--space-md); margin-top: 1rem;">
-                    <button type="submit" class="btn" style="background: var(--clr-danger, #dc2626); color: white; border: none;">
-                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">delete_forever</span>
-                        Confirm Permanent Deletion
-                    </button>
-                    <button type="button" class="btn btn--outline" id="btn-cancel-delete">
-                        Cancel
-                    </button>
+                <div>
+                    <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Role</label>
+                    <div style="padding: var(--space-3); background: var(--color-surface-raised); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-ink-secondary);">
+                        {% if current_user.is_admin %}
+                            Admin
+                        {% elif current_user.is_partner %}
+                            Partner
+                        {% else %}
+                            Student
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2 — Phone Number -->
+        <div style="background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-lg); padding: var(--space-6);">
+            <h2 style="font-size: var(--type-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--color-ink-tertiary); margin-top: 0; margin-bottom: var(--space-4);">Phone Number Settings</h2>
+            
+            <form method="POST" action="{{ url_for('settings_phone') }}" style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label for="phone_number" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Phone Number (required for listing or buying items)</label>
+                    <div style="display: flex; gap: var(--space-2);">
+                        <input type="tel" id="phone_number" name="phone_number" 
+                               value="{{ current_user.phone_number or '' }}" 
+                               placeholder='e.g. "+447912345678" or "07912345678"'
+                               required
+                               style="flex: 1; height: 48px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md);">Update</button>
+                    </div>
+                    <small style="color: var(--color-ink-tertiary); font-size: var(--type-micro); display: block; margin-top: var(--space-2);">
+                        Used for WhatsApp contact exchange after a claim. Must start with + and country code, or local 07 for UK.
+                    </small>
                 </div>
             </form>
         </div>
 
-        <!-- Right of Access (SAR) Info Note -->
-        <p style="margin-top: 1.5rem; font-size: var(--fs-xs); color: var(--clr-text-muted); line-height: 1.4;">
-            To request a copy of your personal data under the UK GDPR (Article 15 Subject Access Request), please contact our support team at <a href="mailto:support@reuni.org" style="color: var(--clr-primary); text-decoration: underline;">support@reuni.org</a>. We will respond to your request within 30 days.
-        </p>
-    </section>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var btnShow = document.getElementById('btn-show-delete-confirm');
-            var btnCancel = document.getElementById('btn-cancel-delete');
-            var wrap = document.getElementById('delete-confirmation-wrap');
+        <!-- SECTION 3 — Change Password -->
+        <div style="background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-lg); padding: var(--space-6);">
+            <h2 style="font-size: var(--type-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--color-ink-tertiary); margin-top: 0; margin-bottom: var(--space-4);">Password</h2>
             
-            if (btnShow && wrap) {
-                btnShow.addEventListener('click', function() {
-                    wrap.style.display = 'block';
-                    btnShow.style.display = 'none';
-                });
-            }
-            if (btnCancel && btnShow && wrap) {
-                btnCancel.addEventListener('click', function() {
-                    wrap.style.display = 'none';
-                    btnShow.style.display = 'inline-flex';
-                    document.getElementById('delete_confirm_text').value = '';
-                });
-            }
-        });
+            <form method="POST" action="{{ url_for('settings_password') }}" style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label for="current_password" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Current Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="current_password" name="current_password" required
+                               style="width: 100%; height: 48px; padding: 0 40px 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('current_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="new_password" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">New Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="new_password" name="new_password" required
+                               style="width: 100%; height: 48px; padding: 0 40px 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                    <!-- Strength bar -->
+                    <div style="margin-top: 8px;">
+                        <div style="display: flex; gap: 4px; height: 4px; background: var(--color-surface-raised); border-radius: 2px; overflow: hidden;">
+                            <div id="strength-bar-1" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                            <div id="strength-bar-2" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                            <div id="strength-bar-3" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                        </div>
+                        <span id="strength-label" style="font-size: 11px; color: var(--color-ink-tertiary); display: block; margin-top: 4px;">Strength: too short</span>
+                    </div>
+                    <small style="color: var(--color-ink-tertiary); font-size: var(--type-micro); display: block; margin-top: var(--space-2);">
+                        Min 8 characters, at least 1 uppercase letter, 1 lowercase letter, and 1 digit.
+                    </small>
+                </div>
+                
+                <div>
+                    <label for="confirm_password" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Confirm New Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="confirm_password" name="confirm_password" required
+                               style="width: 100%; height: 48px; padding: 0 40px 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); width: 100%; margin-top: var(--space-2);">Change Password</button>
+            </form>
+        </div>
 
-        function validateDeleteConfirm() {
-            var val = document.getElementById('delete_confirm_text').value.trim();
-            if (val !== 'DELETE') {
-                alert('Please type DELETE exactly to confirm.');
-                return false;
-            }
-            return true;
-        }
-    </script>
+        <!-- SECTION 4 — Danger Zone (DELETE ACCOUNT) -->
+        <div style="background: var(--color-danger-muted); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-lg); padding: var(--space-6);">
+            <h2 style="font-size: var(--type-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--color-danger); margin-top: 0; margin-bottom: var(--space-4);">Danger Zone</h2>
+            
+            <p style="font-size: var(--type-body); color: var(--color-ink-secondary); line-height: var(--lead-body); margin-bottom: var(--space-4);">
+                Deleting your account will cancel all active claims and remove your listings.
+                ESG transaction data is retained (anonymised). Account deletion is irreversible after 30 days.
+            </p>
+            
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-6);">
+                <p style="color: var(--color-danger); font-size: var(--type-small); font-weight: 600; margin-top: 0; margin-bottom: var(--space-2);">
+                    Important Notice regarding UK GDPR Deletion:
+                </p>
+                <ul style="color: var(--color-ink-secondary); font-size: 13px; padding-left: var(--space-4); margin: 0; display: flex; flex-direction: column; gap: var(--space-1);">
+                    <li>Your account will be immediately deactivated and scheduled for deletion.</li>
+                    <li>Your active listings will be permanently removed from the marketplace.</li>
+                    <li>All active exchange claims and pending handshake PINs will be cancelled.</li>
+                    <li>After a 30-day cool-down period, all personal data will be permanently anonymised.</li>
+                    <li>Completed transaction history is retained anonymously for institutional ESG auditing.</li>
+                </ul>
+            </div>
+
+            <!-- Trigger Button -->
+            <button type="button" id="btn-show-delete-confirm" class="btn" style="background: var(--color-danger); color: #ffffff; height: 44px; border-radius: var(--radius-md); border: none;">
+                <span class="material-symbols-outlined" style="margin-right: var(--space-2);">delete_forever</span>
+                Delete My Account
+            </button>
+            
+            <!-- Confirmation Section (Hidden by default) -->
+            <div id="delete-confirmation-wrap" style="display: none; margin-top: var(--space-4);">
+                <form method="POST" action="{{ url_for('delete_account') }}" style="display: flex; flex-direction: column; gap: var(--space-4);" onsubmit="return validateDeleteConfirm();">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div>
+                        <label for="delete_confirm_text" style="display: block; font-size: var(--type-small); font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-2);">
+                            To confirm, type <strong style="color: var(--color-danger);">DELETE</strong> in the box below:
+                        </label>
+                        <input type="text" id="delete_confirm_text" name="delete_confirm_text" placeholder="Type DELETE" required autocomplete="off"
+                               style="height: 48px; padding: 0 var(--space-3); border: 1px solid var(--color-danger); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body); width: 200px;">
+                    </div>
+                    
+                    <div style="display: flex; gap: var(--space-3);">
+                        <button type="submit" id="btn-delete-submit" class="btn" style="background: var(--color-danger); color: white; border: none; height: 44px; border-radius: var(--radius-md);" disabled>
+                            Confirm Permanent Deletion
+                        </button>
+                        <button type="button" class="btn btn--outline" id="btn-cancel-delete" style="height: 44px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary);">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Right of Access (SAR) Info Note -->
+            <p style="margin-top: var(--space-6); font-size: var(--type-micro); color: var(--color-ink-tertiary); line-height: var(--lead-body);">
+                To request a copy of your personal data under the UK GDPR (Article 15 Subject Access Request), please contact our support team at <a href="mailto:support@reuni.org" style="color: var(--color-primary); text-decoration: underline;">support@reuni.org</a>. We will respond to your request within 30 days.
+            </p>
+        </div>
+
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Danger Zone Toggling
+        var btnShow = document.getElementById('btn-show-delete-confirm');
+        var btnCancel = document.getElementById('btn-cancel-delete');
+        var wrap = document.getElementById('delete-confirmation-wrap');
+        var deleteInput = document.getElementById('delete_confirm_text');
+        var deleteSubmit = document.getElementById('btn-delete-submit');
+        
+        if (btnShow && wrap) {
+            btnShow.addEventListener('click', function() {
+                wrap.style.display = 'block';
+                btnShow.style.display = 'none';
+                deleteInput.focus();
+            });
+        }
+        if (btnCancel && btnShow && wrap) {
+            btnCancel.addEventListener('click', function() {
+                wrap.style.display = 'none';
+                btnShow.style.display = 'inline-flex';
+                deleteInput.value = '';
+                if (deleteSubmit) deleteSubmit.disabled = true;
+            });
+        }
+
+        if (deleteInput && deleteSubmit) {
+            deleteInput.addEventListener('input', function() {
+                if (deleteInput.value.trim() === 'DELETE') {
+                    deleteSubmit.disabled = false;
+                } else {
+                    deleteSubmit.disabled = true;
+                }
+            });
+        }
+
+        // Password Strength Indicator
+        var newPasswordInput = document.getElementById('new_password');
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function() {
+                var val = newPasswordInput.value;
+                var score = 0;
+                if (val.length >= 8) score++;
+                if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+                if (/[0-9]/.test(val)) score++;
+                
+                var bar1 = document.getElementById('strength-bar-1');
+                var bar2 = document.getElementById('strength-bar-2');
+                var bar3 = document.getElementById('strength-bar-3');
+                var label = document.getElementById('strength-label');
+                
+                if (bar1 && bar2 && bar3 && label) {
+                    // Reset colors
+                    bar1.style.background = 'var(--color-surface-raised)';
+                    bar2.style.background = 'var(--color-surface-raised)';
+                    bar3.style.background = 'var(--color-surface-raised)';
+                    
+                    if (val.length === 0) {
+                        label.textContent = 'Strength: too short';
+                    } else if (score === 1) {
+                        bar1.style.background = 'var(--color-danger)';
+                        label.textContent = 'Strength: weak';
+                    } else if (score === 2) {
+                        bar1.style.background = 'var(--color-warning)';
+                        bar2.style.background = 'var(--color-warning)';
+                        label.textContent = 'Strength: medium';
+                    } else if (score === 3) {
+                        bar1.style.background = 'var(--color-success)';
+                        bar2.style.background = 'var(--color-success)';
+                        bar3.style.background = 'var(--color-success)';
+                        label.textContent = 'Strength: strong';
+                    }
+                }
+            });
+        }
+    });
+
+    function togglePasswordVisibility(id) {
+        var input = document.getElementById(id);
+        if (!input) return;
+        var triggerBtn = input.nextElementSibling;
+        if (!triggerBtn) return;
+        var icon = triggerBtn.querySelector('.material-symbols-outlined');
+        if (!icon) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+        }
+    }
+
+    function validateDeleteConfirm() {
+        var val = document.getElementById('delete_confirm_text').value.trim();
+        if (val !== 'DELETE') {
+            alert('Please type DELETE exactly to confirm.');
+            return false;
+        }
+        return true;
+    }
+</script>
 {% endblock %}

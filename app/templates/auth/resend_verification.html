@@ -2,21 +2,38 @@
 {% block title %}Resend Verification Code — Reuni{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Resend Verification Code</h2>
-    <p style="margin-bottom: 1.5rem; color: var(--text-light); text-align: center;">
+<div class="auth-container" style="max-width: 440px; margin: var(--space-12) auto; background: var(--color-surface); padding: var(--space-8); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); display: flex; flex-direction: column; align-items: center; text-align: center;">
+
+    <!-- Icon -->
+    <div style="width: 48px; height: 48px; margin-bottom: var(--space-4); color: var(--color-primary); display: flex; align-items: center; justify-content: center;">
+        <span class="material-symbols-outlined" style="font-size: 48px;">mail</span>
+    </div>
+
+    <!-- Title -->
+    <h2 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin-bottom: var(--space-2);">Resend Verification Code</h2>
+
+    <p style="margin-bottom: var(--space-6); color: var(--color-ink-secondary); font-size: 14px; line-height: var(--lead-body);">
         Enter your university email address below to request a new 6-digit verification code.
     </p>
-    <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="form">
+
+    <form method="POST" action="{{ url_for('auth.resend_verification') }}" style="width: 100%; text-align: left;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form__group">
-            <label for="email">University Email</label>
-            <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required>
+        
+        <div style="margin-bottom: var(--space-6);">
+            <label for="email" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-2);">University Email</label>
+            <div style="position: relative;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">mail</span>
+                <input type="email" id="email" name="email" placeholder="you@brookes.ac.uk" required
+                       style="width: 100%; height: 48px; padding: 0 16px 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body); transition: border-color var(--transition);">
+            </div>
         </div>
-        <button type="submit" class="btn btn--primary btn--block">Send Code</button>
+
+        <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">Send Code</button>
     </form>
-    <p class="auth-container__footer">
-        Remembered your code or verified? <a href="{{ url_for('auth.login') }}">Log in</a>
-    </p>
+
+    <div style="margin-top: var(--space-6); font-size: 14px;">
+        Remembered your code or verified? <a href="{{ url_for('auth.login') }}" style="color: var(--color-primary); font-weight: 600;">Log in</a>
+    </div>
+
 </div>
 {% endblock %}

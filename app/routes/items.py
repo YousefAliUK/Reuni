@@ -103,7 +103,14 @@ def cancel_claim(item):
 def detail(item_id):
     """Display the full detail page for an item."""
     item = db.get_or_404(Item, item_id)
-    return render_template("items/detail.html", item=item)
+    has_cancelled_before = False
+    if current_user.is_authenticated:
+        has_cancelled_before = CancellationRecord.query.filter_by(
+            item_id=item.id,
+            cancelled_by_id=current_user.id,
+            cancelled_by_role="buyer"
+        ).first() is not None
+    return render_template("items/detail.html", item=item, has_cancelled_before=has_cancelled_before)
 
 
 # ──────────────────────────────────────────────
@@ -352,6 +359,17 @@ def buy_item(item_id):
         return redirect(url_for("settings"))
     item = db.get_or_404(Item, item_id)
 
+    # Check if this user previously cancelled a claim on this item (anti-griefing)
+    has_cancelled_before = CancellationRecord.query.filter_by(
+        item_id=item.id,
+        cancelled_by_id=current_user.id,
+        cancelled_by_role="buyer"
+    ).first() is not None
+
+    if has_cancelled_before:
+        flash("You cancelled a previous claim on this item. You cannot claim it again.", "danger")
+        return redirect(url_for("items.detail", item_id=item.id))
+
     if item.seller_id == current_user.id:
         flash("You can't buy your own item.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
@@ -497,6 +515,8 @@ def confirm_pin(item_id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during auto-cancel in confirm_pin: {e}")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return jsonify({"success": False, "expired": True, "error": "The claim has expired. The item is available again.", "redirect_url": url_for("items.detail", item_id=item.id)}), 400
         flash("The claim has expired. The item is available again.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
@@ -510,15 +530,21 @@ def confirm_pin(item_id):
                 cancel_claim(item)
                 db.session.commit()
                 session.pop(f"pin_{item.id}", None)
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+                    return jsonify({"success": False, "cancelled": True, "error": "Too many wrong attempts. The claim has been cancelled.", "redirect_url": url_for("items.detail", item_id=item.id)}), 400
                 flash("Too many wrong attempts. The claim has been cancelled.", "danger")
                 return redirect(url_for("items.detail", item_id=item.id))
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error updating pin attempts: {e}")
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+                return jsonify({"success": False, "error": "A database error occurred. Please try again."}), 500
             flash("A database error occurred. Please try again.", "danger")
             return redirect(url_for("items.pin_page", item_id=item.id))
         remaining = 3 - item.pin_attempts
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return jsonify({"success": False, "error": f"Wrong PIN. {remaining} attempt{'s' if remaining != 1 else ''} remaining.", "remaining_attempts": remaining}), 400
         flash(f"Wrong PIN. {remaining} attempt{'s' if remaining != 1 else ''} remaining.", "danger")
         return redirect(url_for("items.pin_page", item_id=item.id))
 
@@ -539,8 +565,18 @@ def confirm_pin(item_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Database error during PIN confirmation: {e}")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return jsonify({"success": False, "error": "A database error occurred while completing the transaction. Please try again."}), 500
         flash("A database error occurred while completing the transaction. Please try again.", "danger")
         return redirect(url_for("items.pin_page", item_id=item.id))
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+        return jsonify({
+            "success": True,
+            "kg_saved": item.kg_saved,
+            "total_kg": seller.kg_saved_total,
+            "redirect_url": url_for("items.detail", item_id=item.id)
+        })
 
     flash(
         f"Handshake complete. \"{item.title}\" is now sold. "

@@ -507,7 +507,7 @@ def forgot_password():
         if email:
             if email.endswith("@deleted.reuni") or email.startswith("deleted_"):
                 flash("If an account exists with that email, a reset link has been sent.", "info")
-                return redirect(url_for("auth.login"))
+                return redirect(url_for("auth.forgot_password", success=1, email=email))
 
             user = User.query.filter_by(email=email).first()
             if user and user.is_verified and user.deletion_pending_until is None:
@@ -536,7 +536,7 @@ Your password will not change unless you click the link above.
                     current_app.logger.warning(f"Failed to send password reset email to {email}: {e}")
 
         flash("If an account exists with that email, a reset link has been sent.", "info")
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("auth.forgot_password", success=1, email=email))
 
     return render_template("auth/forgot_password.html")
 

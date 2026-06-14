@@ -1,146 +1,364 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Reuni{% endblock %}
+{% block mobile_title %}My Dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard">
-    <!-- ─── Stats Header ─── -->
-    <div class="dashboard__header">
-        <div class="dashboard__avatar">{{ current_user.name[0] }}</div>
-        <div class="dashboard__user-info">
-            <h1>{{ current_user.name }}</h1>
-            <p class="dashboard__email">{{ current_user.email }}</p>
+<div style="max-width: 1320px; margin: 0 auto; padding-top: var(--space-6); padding-bottom: var(--space-16); display: flex; flex-direction: column; gap: var(--space-8);">
+    
+    <!-- ─── Page Title Row ─── -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">My Dashboard</h1>
+        <a href="{{ url_for('items.list_item') }}" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+            List an Item
+        </a>
+    </div>
+
+    <!-- ─── SECTION 1: Asymmetric Impact Summary Cards (Desktop Only) ─── -->
+    <div class="stats-grid hide-on-mobile" style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
+        <style>
+            @media (min-width: 768px) {
+                .stats-grid {
+                    grid-template-columns: 1.5fr 1fr 1fr !important;
+                }
+            }
+        </style>
+
+        <!-- CARD A — kg Saved (LARGEST, visually dominant) -->
+        <div style="background: var(--color-primary-muted); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+            <div>
+                <span style="font-family: var(--font-mono); font-size: 42px; font-weight: 800; color: var(--color-primary); display: block; line-height: 1;">
+                    {{ "%.1f"|format(current_user.kg_saved_total) }}
+                </span>
+                <span style="font-size: 14px; font-weight: 600; color: var(--color-primary); display: block; margin-top: 4px;">kg saved from landfill</span>
+            </div>
+            <span style="font-size: 12px; color: var(--color-ink-tertiary);">Oxford Brookes total: {{ "%.1f"|format(campus_total_kg or 0) }} kg</span>
         </div>
-        <div class="dashboard__stats">
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">eco</span>
-                <div>
-                    <span class="stat-card__value">{{ "%.1f"|format(current_user.kg_saved_total) }}</span>
-                    <span class="stat-card__label">kg Saved</span>
-                </div>
+
+        <!-- CARD B — Items Listed -->
+        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+            <div>
+                <span style="font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--color-ink-primary); display: block; line-height: 1;">
+                    {{ my_listings | length }}
+                </span>
+                <span style="font-size: 13px; color: var(--color-ink-secondary); display: block; margin-top: 4px;">items listed</span>
             </div>
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">storefront</span>
-                <div>
-                    <span class="stat-card__value">{{ my_listings | length }}</span>
-                    <span class="stat-card__label">Listings</span>
-                </div>
+            {% set active_count = my_listings | rejectattr('is_sold') | list | length %}
+            {% set sold_count = my_listings | selectattr('is_sold') | list | length %}
+            <span style="font-size: 12px; color: var(--color-ink-tertiary);">{{ active_count }} active &middot; {{ sold_count }} sold</span>
+        </div>
+
+        <!-- CARD C — Items Purchased -->
+        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+            <div>
+                <span style="font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--color-ink-primary); display: block; line-height: 1;">
+                    {{ my_purchases | length }}
+                </span>
+                <span style="font-size: 13px; color: var(--color-ink-secondary); display: block; margin-top: 4px;">items purchased</span>
             </div>
-            <div class="stat-card">
-                <span class="material-symbols-outlined stat-card__icon" aria-hidden="true">shopping_bag</span>
-                <div>
-                    <span class="stat-card__value">{{ my_purchases | length }}</span>
-                    <span class="stat-card__label">Purchases</span>
-                </div>
+            <span style="font-size: 12px; color: var(--color-ink-tertiary);">Successfully claimed</span>
+        </div>
+    </div>
+
+    <!-- MOBILE IMPACT STRIP (Mobile Only) -->
+    <div class="show-on-mobile" style="width: 100%;">
+        <div class="mobile-impact-strip" style="background: var(--color-primary); padding: 20px 16px; border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: var(--space-4); color: #ffffff; width: 100%; box-sizing: border-box; box-shadow: var(--shadow-card);">
+            <div>
+                <span style="font-family: var(--font-mono); font-size: 38px; font-weight: 800; color: #ffffff; display: block; line-height: 1;">
+                    {{ "%.1f"|format(current_user.kg_saved_total) }}kg
+                </span>
+                <span style="font-size: 14px; opacity: 0.8; color: #ffffff; display: block; margin-top: 4px;">saved from landfill</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 0; width: 100%;">
+            <div style="display: flex; gap: var(--space-4); font-size: 12px; font-weight: 500;">
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">sell</span>
+                    <span style="font-family: var(--font-mono); font-weight: 700;">{{ my_listings | length }}</span> listed
+                </span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">shopping_bag</span>
+                    <span style="font-family: var(--font-mono); font-weight: 700;">{{ my_purchases | length }}</span> bought
+                </span>
             </div>
         </div>
     </div>
 
-    <!-- ─── Pending Handshakes ─── -->
+    <!-- ─── SECTION 2: Active Claim / Pending Action (Conditional) ─── -->
     {% set pending_as_seller = my_listings | selectattr('buyer_id') | rejectattr('is_sold') | list %}
     {% set pending_as_buyer = my_claims %}
     {% set pending_items = pending_as_seller + pending_as_buyer %}
     {% if pending_items %}
-    <section class="dashboard__section dashboard__section--pending">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">handshake</span>
+    <div style="background: var(--color-warning-muted); border: 1px solid var(--color-warning); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; flex-direction: column; gap: var(--space-3);">
+        <h2 style="font-size: 15px; font-weight: 600; color: var(--color-ink-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined" style="color: var(--color-warning);">handshake</span>
             Pending Handshakes
         </h2>
-        <div class="dashboard__list">
+        <div style="display: flex; flex-direction: column; gap: var(--space-2);">
             {% for item in pending_items %}
-            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="dash-item dash-item--pending">
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
-                <div class="dash-item__info">
-                    <strong class="dash-item__title">{{ item.title }}</strong>
-                    <span class="dash-item__meta">
-                        {{ item.category }} &middot;
-                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
-                    </span>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: var(--color-surface); padding: var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border); flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: var(--space-3);">
+                        {% if item.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-md);">
+                        {% else %}
+                            <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary);">image</span>
+                        {% endif %}
+                        <div>
+                            <strong style="font-size: 14px; color: var(--color-ink-primary); display: block;">{{ item.title }}</strong>
+                            <span style="font-size: 12px; color: var(--color-ink-secondary);">
+                                {% if item.buyer_id == current_user.id %}
+                                    Awaiting pickup &middot; Seller: {{ item.seller.name }}
+                                {% else %}
+                                    Claimed by {{ item.buyer.name if item.buyer else "someone" }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: var(--space-3);">
+                        <span style="font-size: var(--type-micro); background: var(--color-warning-muted); color: var(--color-warning); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Awaiting PIN</span>
+                        <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn" style="background: var(--color-accent); color: #ffffff; height: 32px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 12px; font-weight: 600; border: none; text-decoration: none;">
+                            View PIN handshake →
+                        </a>
+                    </div>
                 </div>
-                <span class="status-badge status-badge--pending">Awaiting PIN</span>
-            </a>
             {% endfor %}
         </div>
-    </section>
+    </div>
     {% endif %}
 
-    <!-- ─── My Listings ─── -->
-    <section class="dashboard__section">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">storefront</span>
-            My Listings
-        </h2>
+    <!-- ─── SECTION 3: Tabbed Item Lists ─── -->
+    <div>
+        <!-- Underline Tabs -->
+        <div style="display: flex; border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-4);">
+            <button type="button" id="tab-btn-listings" onclick="switchTab('listings')" style="padding: var(--space-2) var(--space-4); border: none; background: transparent; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--color-ink-primary); border-bottom: 2px solid var(--color-primary); cursor: pointer; transition: all var(--duration-fast);">
+                My Listings ({{ my_listings | length }})
+            </button>
+            <button type="button" id="tab-btn-purchases" onclick="switchTab('purchases')" style="padding: var(--space-2) var(--space-4); border: none; background: transparent; font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--color-ink-tertiary); border-bottom: 2px solid transparent; cursor: pointer; transition: all var(--duration-fast);">
+                My Purchases ({{ my_purchases | length }})
+            </button>
+        </div>
 
-        {% if my_listings %}
-        <div class="dashboard__list">
-            {% for item in my_listings %}
-            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="dash-item {% if item.is_sold %}dash-item--sold{% endif %}">
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
-                <div class="dash-item__info">
-                    <strong class="dash-item__title">{{ item.title }}</strong>
-                    <span class="dash-item__meta">
-                        {{ item.category }} &middot;
-                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
-                    </span>
+        <!-- LISTINGS CONTENT -->
+        <div id="tab-content-listings" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            {% if my_listings %}
+                <!-- Desktop listings -->
+                <div class="hide-on-mobile" style="display: flex; flex-direction: column; gap: var(--space-1);">
+                    {% for item in my_listings %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--color-border); {% if item.is_sold %}opacity: 0.7;{% endif %}">
+                            <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                {% if item.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-md);">
+                                {% else %}
+                                    <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary);">image</span>
+                                {% endif %}
+                                <div>
+                                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="font-size: 15px; font-weight: 600; color: var(--color-ink-primary); text-decoration: none;">{{ item.title }}</a>
+                                    <div style="display: flex; gap: var(--space-1); margin-top: 4px; align-items: center;">
+                                        <span style="font-size: var(--type-micro); background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm); text-transform: uppercase;">{{ item.category }}</span>
+                                        <span style="font-size: var(--type-micro); background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm); text-transform: uppercase;">{{ item.condition }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: var(--space-6);">
+                                <div style="text-align: right;">
+                                    <div style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--color-ink-primary);">
+                                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--color-primary); font-family: var(--font-mono); font-weight: 500;">
+                                        {{ item.kg_saved }} kg saved
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                    {% if item.is_sold %}
+                                        <span style="font-size: var(--type-micro); background: var(--color-success-muted); color: var(--color-success); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Sold ✓</span>
+                                    {% elif item.buyer_id %}
+                                        <span style="font-size: var(--type-micro); background: var(--color-warning-muted); color: var(--color-warning); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Claimed</span>
+                                    {% else %}
+                                        <span style="font-size: var(--type-micro); background: var(--color-primary-muted); color: var(--color-primary); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-                <div class="dash-item__status">
-                    {% if item.is_sold %}
-                        <span class="status-badge status-badge--sold">Sold</span>
-                        <span class="dash-item__buyer">to {{ item.buyer.name if item.buyer else "someone" }}</span>
-                    {% else %}
-                        <span class="status-badge status-badge--active">Active</span>
+
+                <!-- Mobile 72px listings rows -->
+                <div class="show-on-mobile" style="display: flex; flex-direction: column; width: 100%;">
+                    {% for item in my_listings %}
+                        <div class="mobile-dashboard-row" style="height: 72px; display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                                {% if item.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0;">
+                                {% else %}
+                                    <div style="width: 52px; height: 52px; border-radius: var(--radius-md); background: var(--color-surface-raised); display: flex; align-items: center; justify-content: center; color: var(--color-ink-tertiary); flex-shrink: 0;">
+                                        <span class="material-symbols-outlined" style="font-size: 24px;">image</span>
+                                    </div>
+                                {% endif %}
+                                <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; height: 52px;">
+                                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;">{{ item.title }}</a>
+                                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                                        <span style="font-size: 11px; color: var(--color-ink-tertiary); background: var(--color-surface-raised); padding: 1px 4px; border-radius: var(--radius-sm);">{{ item.condition }}</span>
+                                        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-ink-secondary);">
+                                            {% if item.is_free %}Free{% else %}£{{ "%.2f"|format(item.price) }}{% endif %}
+                                        </span>
+                                        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-primary);">🌿{{ "%.1f"|format(item.kg_saved) }}kg</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0; margin-left: 8px; display: flex; align-items: center;">
+                                {% if item.is_sold %}
+                                    <span style="font-size: 12px; color: var(--color-success); font-weight: 600;">Sold ✓</span>
+                                {% elif item.buyer_id %}
+                                    <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--buy" style="height: 32px; padding: 0 12px; font-size: 12px; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; margin: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--color-accent); color: #ffffff; border: none;">
+                                        PIN →
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="height: 32px; padding: 0 12px; font-size: 12px; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; justify-content: center;">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% if my_listings | length >= 1 %}
+                        <a href="{{ url_for('items.list_item') }}" class="btn btn--outline" style="width: 100%; height: 48px; margin-top: var(--space-4); display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--color-primary); color: var(--color-primary);">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                            List another item
+                        </a>
                     {% endif %}
                 </div>
-                <span class="dash-item__points">
-                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                    {{ item.kg_saved }} kg
-                </span>
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="dashboard__empty">
-            <p>You haven't listed anything yet.</p>
-            <a href="{{ url_for('items.list_item') }}" class="btn btn--primary btn--sm">
-                <span class="material-symbols-outlined btn__icon" aria-hidden="true">add</span>
-                List Your First Item
-            </a>
-        </div>
-        {% endif %}
-    </section>
-
-    <!-- ─── My Purchases ─── -->
-    <section class="dashboard__section">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">shopping_bag</span>
-            My Purchases
-        </h2>
-
-        {% if my_purchases %}
-        <div class="dashboard__list">
-            {% for item in my_purchases %}
-            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="dash-item">
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                     alt="{{ item.title }}" class="dash-item__img" loading="lazy">
-                <div class="dash-item__info">
-                    <strong class="dash-item__title">{{ item.title }}</strong>
-                    <span class="dash-item__meta">
-                        {{ item.category }} &middot;
-                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
-                        &middot; from {{ item.seller.name }}
-                    </span>
+            {% else %}
+                <div style="text-align: center; padding: var(--space-10); color: var(--color-ink-tertiary);">
+                    <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 8px;">sell</span>
+                    <p style="margin: 0 0 var(--space-4) 0; font-size: var(--type-body);">You haven't listed anything yet.</p>
+                    <a href="{{ url_for('items.list_item') }}" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); text-decoration: none;">List Your First Item</a>
                 </div>
-                <span class="status-badge status-badge--purchased">Purchased</span>
-            </a>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% else %}
-        <div class="dashboard__empty">
-            <p>You haven't bought any items yet. Browse the marketplace to find items.</p>
-            <a href="{{ url_for('index') }}" class="btn btn--outline btn--sm">Browse Items</a>
+
+        <!-- PURCHASES CONTENT -->
+        <div id="tab-content-purchases" style="display: none; flex-direction: column; gap: var(--space-1);">
+            {% if my_purchases %}
+                <!-- Desktop purchases -->
+                <div class="hide-on-mobile" style="display: flex; flex-direction: column; gap: var(--space-1);">
+                    {% for item in my_purchases %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) 0; border-bottom: 1px solid var(--color-border); {% if item.is_sold %}opacity: 0.7;{% endif %}">
+                            <div style="display: flex; align-items: center; gap: var(--space-3);">
+                                {% if item.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-md);">
+                                {% else %}
+                                    <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary);">image</span>
+                                {% endif %}
+                                <div>
+                                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="font-size: 15px; font-weight: 600; color: var(--color-ink-primary); text-decoration: none;">{{ item.title }}</a>
+                                    <div style="display: flex; gap: var(--space-1); margin-top: 4px; align-items: center;">
+                                        <span style="font-size: var(--type-micro); background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm); text-transform: uppercase;">{{ item.category }}</span>
+                                        <span style="font-size: var(--type-micro); background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm);">from {{ item.seller.name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: var(--space-6);">
+                                <div style="text-align: right;">
+                                    <div style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--color-ink-primary);">
+                                        {% if item.is_free %}Free{% else %}&pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--color-primary); font-family: var(--font-mono); font-weight: 500;">
+                                        {{ item.kg_saved }} kg saved
+                                    </div>
+                                </div>
+
+                                <div>
+                                    {% if item.is_sold %}
+                                        <span style="font-size: var(--type-micro); background: var(--color-success-muted); color: var(--color-success); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Purchased</span>
+                                    {% else %}
+                                        <span style="font-size: var(--type-micro); background: var(--color-warning-muted); color: var(--color-warning); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600;">Awaiting Handshake</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Mobile 72px purchases rows -->
+                <div class="show-on-mobile" style="display: flex; flex-direction: column; width: 100%;">
+                    {% for item in my_purchases %}
+                        <div class="mobile-dashboard-row" style="height: 72px; display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-border); width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                                {% if item.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0;">
+                                {% else %}
+                                    <div style="width: 52px; height: 52px; border-radius: var(--radius-md); background: var(--color-surface-raised); display: flex; align-items: center; justify-content: center; color: var(--color-ink-tertiary); flex-shrink: 0;">
+                                        <span class="material-symbols-outlined" style="font-size: 24px;">image</span>
+                                    </div>
+                                {% endif %}
+                                <div style="min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; height: 52px;">
+                                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;">{{ item.title }}</a>
+                                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                                        <span style="font-size: 11px; color: var(--color-ink-tertiary); background: var(--color-surface-raised); padding: 1px 4px; border-radius: var(--radius-sm);">from {{ item.seller.name }}</span>
+                                        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-ink-secondary);">
+                                            {% if item.is_free %}Free{% else %}£{{ "%.2f"|format(item.price) }}{% endif %}
+                                        </span>
+                                        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-primary);">🌿{{ "%.1f"|format(item.kg_saved) }}kg</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0; margin-left: 8px; display: flex; align-items: center;">
+                                {% if item.is_sold %}
+                                    <span style="font-size: 12px; color: var(--color-success); font-weight: 600;">Bought ✓</span>
+                                {% else %}
+                                    <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--buy" style="height: 32px; padding: 0 12px; font-size: 12px; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; margin: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--color-accent); color: #ffffff; border: none;">
+                                        PIN →
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: var(--space-10); color: var(--color-ink-tertiary);">
+                    <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 8px;">shopping_bag</span>
+                    <p style="margin: 0 0 var(--space-4) 0; font-size: var(--type-body);">You haven't bought any items yet. Browse the marketplace to find items.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); text-decoration: none;">Browse Items</a>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
-    </section>
+    </div>
+
 </div>
+
+<script>
+    function switchTab(tab) {
+        const btnListings = document.getElementById('tab-btn-listings');
+        const btnPurchases = document.getElementById('tab-btn-purchases');
+        const contentListings = document.getElementById('tab-content-listings');
+        const contentPurchases = document.getElementById('tab-content-purchases');
+        
+        if (tab === 'listings') {
+            btnListings.style.color = 'var(--color-ink-primary)';
+            btnListings.style.borderBottomColor = 'var(--color-primary)';
+            btnListings.style.fontWeight = '600';
+            
+            btnPurchases.style.color = 'var(--color-ink-tertiary)';
+            btnPurchases.style.borderBottomColor = 'transparent';
+            btnPurchases.style.fontWeight = '500';
+            
+            contentListings.style.display = 'flex';
+            contentPurchases.style.display = 'none';
+        } else {
+            btnPurchases.style.color = 'var(--color-ink-primary)';
+            btnPurchases.style.borderBottomColor = 'var(--color-primary)';
+            btnPurchases.style.fontWeight = '600';
+            
+            btnListings.style.color = 'var(--color-ink-tertiary)';
+            btnListings.style.borderBottomColor = 'transparent';
+            btnListings.style.fontWeight = '500';
+            
+            contentListings.style.display = 'none';
+            contentPurchases.style.display = 'flex';
+        }
+    }
+</script>
 {% endblock %}

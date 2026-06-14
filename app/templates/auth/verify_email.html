@@ -2,21 +2,125 @@
 {% block title %}Verify Email — Reuni{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Verify Your Email</h2>
-    <p style="margin-bottom: 1.5rem; color: var(--text-light); text-align: center;">
-        We've sent a 6-digit verification code to <strong>{{ email }}</strong>. Please enter the code below to activate your account.
-    </p>
-    <form method="POST" action="{{ url_for('auth.verify_email') }}" class="form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form__group">
-            <label for="code">6-Digit Verification Code</label>
-            <input type="text" id="code" name="code" placeholder="123456" pattern="\d{6}" maxlength="6" required style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;" autocomplete="one-time-code">
+<div style="max-width: 480px; margin: 0 auto; padding-top: var(--space-12); padding-bottom: var(--space-20); display: flex; flex-direction: column; align-items: center; gap: var(--space-6);">
+    <!-- Icon -->
+    <div style="color: var(--color-primary);">
+        <span class="material-symbols-outlined" style="font-size: 48px;">mail</span>
+    </div>
+
+    <div style="text-align: center;">
+        <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-2);">Check your email</h1>
+        <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0; line-height: var(--lead-body);">
+            We sent a 6-digit code to <strong>{{ email }}</strong>. It expires in 15 minutes.
+        </p>
+    </div>
+
+    <!-- MAIN INTERACTION CARD -->
+    <div style="background: var(--color-surface); box-shadow: var(--shadow-raised); border-radius: var(--radius-xl); padding: var(--space-8); width: 100%;">
+        <form method="POST" action="{{ url_for('auth.verify_email') }}" id="otp-form" style="display: flex; flex-direction: column; gap: var(--space-4);">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="code" id="full-code-input" required>
+
+            <label for="otp-input-0" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); text-align: center; margin-bottom: var(--space-2);">
+                6-Digit Verification Code
+            </label>
+
+            <!-- OTP blocks -->
+            <div style="display: flex; gap: var(--space-2); justify-content: center; margin-bottom: var(--space-4);">
+                <input type="text" class="otp-digit" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1"
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2"
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3"
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4"
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5"
+                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="confirm-btn" style="height: 48px; border-radius: var(--radius-md); font-weight: 600;" disabled>
+                Verify Email
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-1);">
+            <span>Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Resend code</a></span>
+            <span style="font-size: 11px; color: var(--color-ink-tertiary);">Limit 10 per hour</span>
         </div>
-        <button type="submit" class="btn btn--primary btn--block">Verify Account</button>
-    </form>
-    <p class="auth-container__footer">
-        Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a>
-    </p>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const otpForm = document.getElementById('otp-form');
+        const otpInputs = document.querySelectorAll('.otp-digit');
+        const fullCodeInput = document.getElementById('full-code-input');
+        const confirmBtn = document.getElementById('confirm-btn');
+
+        if (otpInputs.length && fullCodeInput) {
+            otpInputs.forEach((input, index) => {
+                // Style focus
+                input.addEventListener('focus', function() {
+                    this.style.borderColor = 'var(--color-primary)';
+                    this.style.boxShadow = '0 0 0 3px var(--color-primary-muted)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (this.value.length === 1) {
+                        this.style.borderColor = 'var(--color-success)';
+                        this.style.boxShadow = 'none';
+                    } else {
+                        this.style.borderColor = 'var(--color-border)';
+                        this.style.boxShadow = 'none';
+                    }
+                });
+
+                // Auto-advance
+                input.addEventListener('input', function () {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    
+                    if (this.value.length === 1) {
+                        this.style.borderColor = 'var(--color-success)';
+                        if (index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        }
+                    } else {
+                        this.style.borderColor = 'var(--color-border)';
+                    }
+                    syncCodeValue();
+                });
+
+                // Backspace auto-retreat
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Backspace' && this.value.length === 0) {
+                        if (index > 0) {
+                            otpInputs[index - 1].focus();
+                            otpInputs[index - 1].value = '';
+                            otpInputs[index - 1].style.borderColor = 'var(--color-border)';
+                            syncCodeValue();
+                        }
+                    }
+                });
+            });
+
+            function syncCodeValue() {
+                let currentVal = '';
+                otpInputs.forEach(input => {
+                    currentVal += input.value;
+                });
+                fullCodeInput.value = currentVal;
+                
+                if (currentVal.length === 6) {
+                    confirmBtn.disabled = false;
+                    otpForm.submit();
+                } else {
+                    confirmBtn.disabled = true;
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

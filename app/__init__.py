@@ -199,6 +199,18 @@ def create_app(config_class=None):
             max_price=max_price,
         )
 
+    @app.context_processor
+    def inject_global_stats():
+        from app.models import Item, User
+        from app import db
+        try:
+            total_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
+            total_users = db.session.query(db.func.count(User.id)).filter(User.is_verified == True).scalar() or 0
+        except Exception:
+            total_kg = 0.0
+            total_users = 0
+        return dict(campus_total_kg=total_kg, campus_total_users=total_users)
+
     # ── Dashboard ──
     @app.route("/dashboard")
     @login_required
@@ -231,7 +243,6 @@ def create_app(config_class=None):
             my_claims=my_claims,
         )
 
-    # ── Profile / Settings ──
     @app.route("/profile")
     @login_required
     def profile():
@@ -242,12 +253,16 @@ def create_app(config_class=None):
             seller_id=current_user.id, is_sold=True
         ).count()
         total_bought = Item.query.filter_by(buyer_id=current_user.id, is_sold=True).count()
+        active_listings = Item.query.filter_by(
+            seller_id=current_user.id, is_sold=False, buyer_id=None
+        ).all()
 
         return render_template(
             "profile.html",
             total_listed=total_listed,
             total_sold=total_sold,
             total_bought=total_bought,
+            active_listings=active_listings,
         )
     
     # ── Settings Routes ──
