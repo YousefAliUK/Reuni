@@ -409,7 +409,7 @@ def buy_item(item_id):
         email_html = f"""<p>Hi {holder.name},</p>
 <p>An exchange has been initiated for the item "<strong>{item.title}</strong>" on Reuni.</p>
 <p>Your 4-digit transaction PIN is:</p>
-<h2 style="letter-spacing:4px;font-size:24px;color:#007bff;">{pin}</h2>
+<div class="code-block">{pin}</div>
 <p>Please keep this PIN secure.</p>
 <p>{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}</p>
 <p>— The Reuni team</p>"""
@@ -690,7 +690,7 @@ def cancel_claim_route(item_id):
         email_html = (
             f"<p>Hello {other_party.name},</p>"
             f"<p>The claim on the item \"<strong>{item_title}</strong>\" has been cancelled.</p>"
-            f"<ul>"
+            f"<ul class=\"cancellation-list\">"
             f"<li><strong>Cancelled by:</strong> {cancelled_by_role}</li>"
             f"<li><strong>Item name:</strong> {item_title}</li>"
             f"</ul>"
@@ -755,7 +755,7 @@ def resend_pin(item_id):
     try:
         email_html = f"""<p>Hi {holder.name},</p>
 <p>A new 4-digit transaction PIN has been generated for "<strong>{item.title}</strong>":</p>
-<h2 style="letter-spacing:4px;font-size:24px;color:#007bff;">{pin}</h2>
+<div class="code-block">{pin}</div>
 <p>{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}</p>
 <p>— The Reuni team</p>"""
         send_email(

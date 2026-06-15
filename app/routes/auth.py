@@ -42,11 +42,11 @@ def send_otp_email(name: str, email: str, code: str):
     safe_name = html_escape(name)
     safe_code = html_escape(code)
     email_html = (
-        f"<p>Hi {safe_name},</p>"
-        f"<p>Your 6-digit verification code to activate your Reuni account is:</p>"
-        f"<h2 style='letter-spacing:4px'>{safe_code}</h2>"
-        f"<p>This code expires in 15 minutes.</p>"
-        f"<p>If you didn't create an account, you can safely ignore this email.</p>"
+        f"<p>Hi {safe_name},</p>\n"
+        f"<p>Your 6-digit verification code to activate your Reuni account is:</p>\n"
+        f"<div class=\"code-block\">{safe_code}</div>\n"
+        f"<p>This code expires in 15 minutes.</p>\n"
+        f"<p>If you didn't create an account, you can safely ignore this email.</p>\n"
         f"<p>— The Reuni team</p>"
     )
     send_email(
@@ -466,10 +466,14 @@ def invite_register(token):
 
         # Send welcome email
         try:
+            login_url = url_for("auth.login", _external=True)
             email_html = (
-                f"<p>Hello {name},</p>"
-                f"<p>Your Reuni partner account for <strong>{university_domain}</strong> has been successfully created.</p>"
-                f"<p>You can now log in to access the dashboard.</p>"
+                f"<p>Hello {name},</p>\n"
+                f"<p>Your Reuni partner account for <strong>{university_domain}</strong> has been successfully created.</p>\n"
+                f"<p>Click the button below to log in and access your partner dashboard.</p>\n"
+                f"<div style=\"text-align:center; margin: 24px 0;\">\n"
+                f"    <a href=\"{login_url}\" class=\"btn-primary\">Log In to Dashboard</a>\n"
+                f"</div>\n"
                 f"<p>— The Reuni team</p>"
             )
             send_email(
@@ -507,10 +511,12 @@ def forgot_password():
                 
                 email_html = f"""<p>Hi {user.name},</p>
 <p>We received a request to reset the password for your Reuni account.</p>
-<p>Click the link below to set a new password. This link expires in 1 hour.</p>
-<p><a href="{reset_url}" style="display:inline-block;padding:10px 20px;color:#fff;background-color:#007bff;text-decoration:none;border-radius:5px;">Reset Password</a></p>
+<p>Click the button below to set a new password. This link expires in 1 hour.</p>
+<div style="text-align:center; margin: 24px 0;">
+    <a href="{reset_url}" class="btn-primary">Reset Password</a>
+</div>
 <p>Or copy and paste this URL into your browser:</p>
-<p>{reset_url}</p>
+<p style="word-break: break-all;"><a href="{reset_url}">{reset_url}</a></p>
 <p>If you didn't request a password reset, you can safely ignore this email. Your password will not change unless you click the link above.</p>
 <p>— The Reuni team</p>"""
                 try:
