@@ -436,7 +436,7 @@ class TestEmailVerification:
 
 
 class TestOtpEmailSending:
-    @patch("app.routes.auth.Brevo")
+    @patch("app.utils.emails.Brevo")
     def test_send_otp_email_suppressed_skips_outbound_call(self, mock_brevo, app):
         with app.app_context():
             app.config["MAIL_SUPPRESS_SEND"] = True
@@ -446,15 +446,22 @@ class TestOtpEmailSending:
 
         mock_brevo.assert_not_called()
 
-    @patch("app.routes.auth.Brevo")
+    @patch("app.utils.emails.Brevo")
     def test_send_otp_email_missing_api_key_skips_outbound_call(self, mock_brevo, app, caplog):
         with app.app_context():
-            app.config["MAIL_SUPPRESS_SEND"] = False
-            app.config["BREVO_API_KEY"] = None
+            orig_testing = app.config.get("TESTING")
+            orig_suppress = app.config.get("MAIL_SUPPRESS_SEND")
+            try:
+                app.config["TESTING"] = False  # Temporarily allow reaching the key check
+                app.config["MAIL_SUPPRESS_SEND"] = False
+                app.config["BREVO_API_KEY"] = None
 
-            send_otp_email("Test User", "test@example.com", "123456")
+                send_otp_email("Test User", "test@example.com", "123456")
+            finally:
+                app.config["TESTING"] = orig_testing
+                app.config["MAIL_SUPPRESS_SEND"] = orig_suppress
 
-        assert "Brevo API key (BREVO_API_KEY) is not set; skipping OTP email send" in caplog.text
+        assert "Brevo API key (BREVO_API_KEY) is not set; skipping email send" in caplog.text
         mock_brevo.assert_not_called()
 
 
@@ -581,7 +588,7 @@ class TestForgotPassword:
         assert resp.status_code == 200
         assert b"Reset your password" in resp.data
 
-    @patch("app.routes.auth.mail.send")
+    @patch("app.routes.auth.send_email")
     def test_forgot_password_success(self, mock_send, client, sample_user):
         """POST /auth/forgot-password with valid email sends reset link."""
         resp = client.post("/auth/forgot-password", data={
@@ -590,12 +597,12 @@ class TestForgotPassword:
         assert resp.status_code == 200
         assert b"If an account exists with that email, a reset link has been sent" in resp.data
         mock_send.assert_called_once()
-        msg = mock_send.call_args[0][0]
-        assert msg.subject == "Password reset for your Reuni account"
-        assert "test@university.ac.uk" in msg.recipients
-        assert "/auth/reset-password/" in msg.body
+        args, kwargs = mock_send.call_args
+        assert kwargs.get("subject") == "Password reset for your Reuni account"
+        assert kwargs.get("to_email") == "test@university.ac.uk"
+        assert "/auth/reset-password/" in kwargs.get("html_content")
 
-    @patch("app.routes.auth.mail.send")
+    @patch("app.routes.auth.send_email")
     def test_forgot_password_unregistered_email(self, mock_send, client):
         """POST /auth/forgot-password with unregistered email flashes neutral message and does not send email."""
         resp = client.post("/auth/forgot-password", data={
@@ -605,7 +612,7 @@ class TestForgotPassword:
         assert b"If an account exists with that email, a reset link has been sent" in resp.data
         mock_send.assert_not_called()
 
-    @patch("app.routes.auth.mail.send")
+    @patch("app.routes.auth.send_email")
     def test_forgot_password_unverified_email(self, mock_send, client, db_session):
         """POST /auth/forgot-password with unverified email flashes neutral message and does not send email."""
         unverified_user = User(

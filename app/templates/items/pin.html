@@ -50,15 +50,51 @@
 
         {% if is_holder %}
             {% if pin_code %}
-                <div class="pin-display-wrapper" style="margin-bottom: var(--space-4);">
-                    <span style="display: none;">Your PIN Code</span>
-                    <span class="pin-digit">{{ pin_code[0] }}</span>
-                    <span class="pin-dot">&middot;</span>
-                    <span class="pin-digit">{{ pin_code[1] }}</span>
-                    <span class="pin-dot">&middot;</span>
-                    <span class="pin-digit">{{ pin_code[2] }}</span>
-                    <span class="pin-dot">&middot;</span>
-                    <span class="pin-digit">{{ pin_code[3] }}</span>
+                <div id="pin-digits-block">
+                    <div class="pin-display-wrapper" style="margin-bottom: var(--space-4);">
+                        <span style="display: none;">Your PIN Code</span>
+                        <span class="pin-digit">{{ pin_code[0] }}</span>
+                        <span class="pin-dot">&middot;</span>
+                        <span class="pin-digit">{{ pin_code[1] }}</span>
+                        <span class="pin-dot">&middot;</span>
+                        <span class="pin-digit">{{ pin_code[2] }}</span>
+                        <span class="pin-dot">&middot;</span>
+                        <span class="pin-digit">{{ pin_code[3] }}</span>
+                    </div>
+                    
+                    <!-- Toggle link for QR code -->
+                    <div style="text-align: center; margin-bottom: var(--space-6);">
+                        <button type="button" id="show-qr-btn" style="background: none; border: none; cursor: pointer; color: var(--color-primary); font-size: var(--type-small); font-weight: 600; padding: 0;">Show QR code instead</button>
+                    </div>
+                </div>
+
+                <!-- QR Panel (hidden by default) -->
+                <div id="qr-panel" style="display: none; text-align: center; margin-bottom: var(--space-6);">
+                    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); display: inline-block; width: 100%; box-sizing: border-box;">
+                        <div style="width: 200px; height: 200px; margin: 0 auto var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #ffffff; display: flex; align-items: center; justify-content: center;">
+                            <!-- Mock QR code representation -->
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 120px; height: 120px;">
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: transparent;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: transparent;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: transparent;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: transparent;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                                <div style="background: transparent;"></div>
+                                <div style="background: #000; border-radius: 2px;"></div>
+                            </div>
+                        </div>
+                        <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin: 0 0 var(--space-4) 0;">The other person scans this to confirm</p>
+                        <button type="button" id="hide-qr-btn" style="background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); font-size: var(--type-small); padding: 0;">&larr; Back to PIN digits</button>
+                    </div>
                 </div>
                 
                 <!-- Countdown timer -->
@@ -510,6 +546,23 @@
             cancelAbort.addEventListener('click', () => {
                 cancelConfirmBlock.style.display = 'none';
                 cancelActionBlock.style.display = 'block';
+            });
+        }
+
+        // 5. QR Code Toggle Logic
+        const showQrBtn = document.getElementById('show-qr-btn');
+        const hideQrBtn = document.getElementById('hide-qr-btn');
+        const pinDigitsBlock = document.getElementById('pin-digits-block');
+        const qrPanel = document.getElementById('qr-panel');
+
+        if (showQrBtn && hideQrBtn && pinDigitsBlock && qrPanel) {
+            showQrBtn.addEventListener('click', () => {
+                pinDigitsBlock.style.display = 'none';
+                qrPanel.style.display = 'block';
+            });
+            hideQrBtn.addEventListener('click', () => {
+                qrPanel.style.display = 'none';
+                pinDigitsBlock.style.display = 'block';
             });
         }
     });

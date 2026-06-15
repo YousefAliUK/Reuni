@@ -2,327 +2,329 @@
 {% block title %}Reuni — Campus Marketplace{% endblock %}
 {% block mobile_title %}Marketplace{% endblock %}
 
+{% block hero %}
+    <!-- ─── TIER 1: MARKETPLACE HERO SECTION ─── -->
+    <section class="marketplace-hero" aria-label="Welcome to Reuni">
+        <div class="marketplace-hero__image-container">
+            <img src="{{ url_for('static', filename='images/hero_photo.jpg') }}" alt="Student circular economy marketplace" class="marketplace-hero__image">
+            <div class="marketplace-hero__badge">
+                <span class="material-symbols-outlined" style="font-size: 14px; color: #4ADE80;">eco</span>
+                <span>100% Student Powered</span>
+            </div>
+        </div>
+        <div class="marketplace-hero__inner">
+            <div class="marketplace-hero__content">
+                {% if not current_user.is_authenticated %}
+                    <h1 class="marketplace-hero__title">Campus items. Real kg saved.</h1>
+                    <p class="marketplace-hero__subtitle" style="margin-bottom: var(--space-4);">Student-to-student in-person campus marketplace. No fees, no shipping. Prevent waste and give items a second life.</p>
+                    
+                    {% if campus_total_kg and campus_total_kg > 0 %}
+                    <div class="marketplace-hero__stats" style="margin-bottom: var(--space-6);">
+                        <div class="marketplace-hero__stat-chip">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-success); font-size: 16px;">eco</span>
+                            <span class="marketplace-hero__stat-value marketplace-hero__stat-value--primary" data-target="{{ campus_total_kg }}">{{ "%.1f"|format(campus_total_kg) }}</span>
+                            <span class="marketplace-hero__stat-text">kg CO₂e saved</span>
+                        </div>
+                        <div class="marketplace-hero__stat-chip">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-primary); font-size: 16px;">group</span>
+                            <span class="marketplace-hero__stat-value" data-target="{{ campus_total_users }}">{{ campus_total_users }}</span>
+                            <span class="marketplace-hero__stat-text">students active</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="marketplace-hero__cta-group">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--hero-cta">
+                            <span>Register free</span>
+                            <span class="btn__icon-wrapper"><span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span></span>
+                        </a>
+                    </div>
+                {% else %}
+                    <h1 class="marketplace-hero__title">Welcome back, {{ current_user.name.split()[0] }}!</h1>
+                    <p class="marketplace-hero__subtitle">Divert waste from landfill by listing items you no longer need, or browse what's available today.</p>
+                    
+                    <div class="marketplace-hero__stats">
+                        <div class="marketplace-hero__stat-chip">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-success); font-size: 16px;">eco</span>
+                            <span class="marketplace-hero__stat-value marketplace-hero__stat-value--primary" data-target="{{ current_user.kg_saved_total or 0.0 }}">{{ "%.1f"|format(current_user.kg_saved_total or 0.0) }}</span>
+                            <span class="marketplace-hero__stat-text">saved</span>
+                        </div>
+                        <div class="marketplace-hero__stat-chip">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-primary); font-size: 16px;">inventory_2</span>
+                            <span class="marketplace-hero__stat-value" data-target="{{ current_user.items|length }}">{{ current_user.items|length }}</span>
+                            <span class="marketplace-hero__stat-text">listed</span>
+                        </div>
+                        {% set purchases_count = current_user.purchases | selectattr('is_sold') | list | length %}
+                        <div class="marketplace-hero__stat-chip">
+                            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-primary); font-size: 16px;">shopping_bag</span>
+                            <span class="marketplace-hero__stat-value" data-target="{{ purchases_count }}">{{ purchases_count }}</span>
+                            <span class="marketplace-hero__stat-text">bought</span>
+                        </div>
+                    </div>
+
+                    <div class="marketplace-hero__cta-group">
+                        <a href="{{ url_for('items.list_item') }}" class="btn btn--primary">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                            <span>List an Item</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
 {% block content %}
 <div id="marketplace-app" style="width: 100%;">
 
-    <!-- ─── SECTION A: HERO STRIP (Logged-out) / STATS BAR (Logged-in) ─── -->
-    {% if not current_user.is_authenticated %}
-    <section class="slim-hero" aria-label="Welcome to Reuni">
-        <div style="display: flex; flex-direction: column; gap: var(--space-1);">
-            <div class="slim-hero__title">
-                <span class="material-symbols-outlined" aria-hidden="true" style="color: #ffffff;">eco</span>
-                <span>Campus items. Real kg saved. Give your stuff a second life.</span>
-            </div>
-            <p class="slim-hero__subtitle" style="margin: 0; color: rgba(255, 255, 255, 0.9);">
-                Student-to-student. In person. No fees.
-            </p>
+    <!-- ─── TIER 2: CATEGORY FILTER STRIP ─── -->
+    <div class="category-strip" aria-label="Filter by category">
+        <div class="category-strip__inner">
+            <a href="{{ url_for('index', price_type=price_type, category='', q=search_query, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="category-chip {% if not active_category %}category-chip--active{% endif %}">
+                All
+            </a>
+            {% for cat in categories %}
+                <a href="{{ url_for('index', price_type=price_type, category=cat, q=search_query, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="category-chip {% if active_category == cat %}category-chip--active{% endif %}">
+                    {{ cat }}
+                </a>
+            {% endfor %}
         </div>
-        <a href="{{ url_for('auth.register') }}" class="slim-hero__cta">Register for free</a>
-    </section>
-    {% else %}
-    <section class="live-stats-bar" aria-label="Your Campus Statistics">
-        <div class="stat-chip-blueprint">
-            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">eco</span>
-            <span><span class="stat-value">{{ "%.1f"|format(current_user.kg_saved_total) }}</span> kg saved</span>
-        </div>
-        <div class="stat-chip-blueprint">
-            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">package</span>
-            <span><span class="stat-value">{{ current_user.items|length }}</span> listed</span>
-        </div>
-        <div class="stat-chip-blueprint">
-            {% set purchases_count = current_user.purchases | selectattr('is_sold') | list | length %}
-            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 18px;">shopping_bag</span>
-            <span><span class="stat-value">{{ purchases_count }}</span> bought</span>
-        </div>
-    </section>
-    {% endif %}
-
-    <!-- ─── SECTION B: SEARCH BAR ─── -->
-    <section aria-label="Search items" class="search-section">
-        <form method="GET" action="{{ url_for('index') }}" style="display: flex; gap: var(--space-2);">
-            {% if active_category %}
-                <input type="hidden" name="category" value="{{ active_category }}">
-            {% endif %}
-            <input type="hidden" name="price_type" value="{{ price_type }}">
-            <input type="hidden" name="min_price" value="{{ min_price }}">
-            <input type="hidden" name="max_price" value="{{ max_price }}">
-            
-            <div style="position: relative; flex: 1;">
-                <span class="material-symbols-outlined" style="position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 18px;">search</span>
-                <input
-                    type="search"
-                    name="q"
-                    placeholder="Search listings — textbooks, furniture, electronics…"
-                    value="{{ search_query }}"
-                    style="width: 100%; height: 48px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 44px; padding-right: var(--space-4); font-size: var(--type-body); color: var(--color-ink-primary); box-sizing: border-box;"
-                    aria-label="Search items"
-                >
-            </div>
-            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); padding: 0 var(--space-6); background: var(--color-primary);">Search</button>
-        </form>
-    </section>
-
-    <!-- ─── Mobile Only Active Filter Scroll Strip + Filters Drawer Trigger ─── -->
-    <div class="mobile-filters-trigger-strip">
-        <!-- Price Chips -->
-        <a href="{{ url_for('index', price_type='all', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'all' or not price_type %}filter-chip--active{% endif %}">All</a>
-        <a href="{{ url_for('index', price_type='free', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'free' %}filter-chip--active{% endif %}">Free</a>
-        <a href="{{ url_for('index', price_type='paid', category=active_category, q=search_query) }}" class="filter-chip {% if price_type == 'paid' %}filter-chip--active{% endif %}">Paid</a>
-        
-        <!-- Category Chips -->
-        {% for cat in categories %}
-            <a href="{{ url_for('index', price_type=price_type, category=cat, q=search_query) }}" class="filter-chip {% if active_category == cat %}filter-chip--active{% endif %}">{{ cat }}</a>
-        {% endfor %}
-        
-        <!-- Filters drawer trigger -->
-        <button type="button" class="filter-chip filter-chip--trigger" id="mobile-filter-drawer-open">
-            <span class="material-symbols-outlined" style="font-size: 16px;">filter_list</span>
-            Filters
-        </button>
     </div>
 
-    <!-- ─── MARKETPLACE BODY LAYOUT ─── -->
-    <div class="marketplace-layout">
-
-        <!-- ─── SECTION C: FILTER SIDEBAR (Desktop Left) ─── -->
-        <aside class="sticky-sidebar">
-            <form method="GET" action="{{ url_for('index') }}" id="sidebar-filter-form" style="display: flex; flex-direction: column; gap: var(--space-6);">
-                {% if search_query %}
-                    <input type="hidden" name="q" value="{{ search_query }}">
-                {% endif %}
-
-                <!-- Price Type Group -->
-                <div class="filter-group">
-                    <span class="filter-group__title-blueprint">Price Type</span>
-                    <div style="display: flex; flex-direction: column; gap: var(--space-2);">
-                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                            <input type="radio" name="price_type" value="all" {% if price_type == 'all' or not price_type %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
-                            <span>All items</span>
-                        </label>
-                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                            <input type="radio" name="price_type" value="free" {% if price_type == 'free' %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
-                            <span>Free only</span>
-                        </label>
-                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                            <input type="radio" name="price_type" value="paid" {% if price_type == 'paid' %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
-                            <span>Paid only</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Category Group -->
-                <div class="filter-group">
-                    <span class="filter-group__title-blueprint">Category</span>
-                    <div style="display: flex; flex-direction: column; gap: var(--space-2);">
-                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                            <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
-                            <span>All Categories</span>
-                        </label>
-                        {% for cat in categories %}
-                        {% set cat_weight_map = {'Furniture': '12.0', 'Kitchenware': '4.0', 'Electronics': '3.0', 'Sports': '2.5', 'Clothing': '1.5', 'Books': '0.8', 'Stationery': '0.3', 'Other': '1.0'} %}
-                        {% set weight = cat_weight_map.get(cat, '1.0') %}
-                        <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                            <input type="radio" name="category" value="{{ cat }}" {% if active_category == cat %}checked{% endif %} style="accent-color: var(--color-primary);" onchange="this.form.submit()">
-                            <span>{{ cat }} <span style="font-family: var(--font-mono); color: var(--color-ink-tertiary); font-size: 12px;">({{ weight }} kg)</span></span>
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Price Range Group (if paid or all) -->
-                {% if price_type != 'free' %}
-                <div class="filter-group">
-                    <span class="filter-group__title-blueprint">Price Range</span>
-                    <div style="display: flex; align-items: center; gap: var(--space-2);">
-                        <div style="position: relative; flex: 1;">
-                            <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
-                            <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;" aria-label="Minimum price">
-                        </div>
-                        <span style="color: var(--color-ink-tertiary); font-size: var(--type-small);">to</span>
-                        <div style="position: relative; flex: 1;">
-                            <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
-                            <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;" aria-label="Maximum price">
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Apply Button -->
-                <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-size: var(--type-small); width: 100%; background: var(--color-primary);">Apply Filters</button>
-
-                <!-- Clear link -->
-                <a href="{{ url_for('index', q=search_query) }}" style="text-align: center; font-size: 13px; color: var(--color-ink-tertiary); text-decoration: none; display: block;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-tertiary)'">Clear All</a>
-            </form>
-        </aside>
-
-        <!-- ─── SECTION D: LISTINGS GRID (Right) ─── -->
-        <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+    <!-- ─── TIER 3: FILTER & SORT CONTROL BAR ─── -->
+    <div class="filter-control-bar" aria-label="Filters and sorting">
+        <form method="GET" action="{{ url_for('index') }}" class="filter-control-bar__form">
+            <!-- Hidden inputs to preserve query and category -->
+            <input type="hidden" name="q" value="{{ search_query }}">
+            <input type="hidden" name="category" value="{{ active_category }}">
             
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="results-count" style="font-size: var(--type-small); color: var(--color-ink-tertiary);">
+            <!-- Desktop Layout Tier 3 Controls -->
+            <div class="filter-control-bar__desktop">
+                <!-- Condition Dropdown -->
+                <div class="filter-control-bar__group">
+                    <label for="condition-select" class="sr-only">Condition</label>
+                    <div class="filter-select-wrapper">
+                        <span class="material-symbols-outlined filter-icon">tune</span>
+                        <select id="condition-select" name="condition" class="filter-select">
+                            <option value="">Any Condition</option>
+                            <option value="New" {% if request.args.get('condition') == 'New' %}selected{% endif %}>New</option>
+                            <option value="Like New" {% if request.args.get('condition') == 'Like New' %}selected{% endif %}>Like New</option>
+                            <option value="Good" {% if request.args.get('condition') == 'Good' %}selected{% endif %}>Good</option>
+                            <option value="Fair" {% if request.args.get('condition') == 'Fair' %}selected{% endif %}>Fair</option>
+                            <option value="For Parts" {% if request.args.get('condition') == 'For Parts' %}selected{% endif %}>For Parts</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Price Type Toggle -->
+                <div class="filter-control-bar__group price-type-toggle">
+                    <button type="button" class="price-toggle-btn {% if price_type == 'all' or not price_type %}active{% endif %}" data-value="all">All Prices</button>
+                    <button type="button" class="price-toggle-btn {% if price_type == 'free' %}active{% endif %}" data-value="free">Free Only</button>
+                    <button type="button" class="price-toggle-btn {% if price_type == 'paid' %}active{% endif %}" data-value="paid">Paid</button>
+                    <input type="hidden" name="price_type" id="price-type-input" value="{{ price_type or 'all' }}">
+                </div>
+
+                <!-- Min/Max Price Inputs (only shown when Paid is selected) -->
+                <div class="filter-control-bar__group price-range-inputs" style="{% if price_type != 'paid' %}display: none;{% endif %}">
+                    <div class="price-input-wrap">
+                        <span class="price-currency">£</span>
+                        <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" aria-label="Minimum price" class="filter-price-input">
+                    </div>
+                    <span class="price-range-to">to</span>
+                    <div class="price-input-wrap">
+                        <span class="price-currency">£</span>
+                        <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" aria-label="Maximum price" class="filter-price-input">
+                    </div>
+                    <button type="submit" class="btn btn--sm btn--primary filter-price-go">Go</button>
+                </div>
+
+                <!-- Sort Dropdown -->
+                <div class="filter-control-bar__group">
+                    <label for="sort-select" class="sr-only">Sort By</label>
+                    <div class="filter-select-wrapper">
+                        <span class="material-symbols-outlined filter-icon">swap_vert</span>
+                        <select id="sort-select" name="sort" class="filter-select">
+                            <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest first</option>
+                            <option value="price-low" {% if request.args.get('sort') == 'price-low' %}selected{% endif %}>Price: Low-High</option>
+                            <option value="price-high" {% if request.args.get('sort') == 'price-high' %}selected{% endif %}>Price: High-Low</option>
+                            <option value="eco" {% if request.args.get('sort') == 'eco' %}selected{% endif %}>Eco-friendly</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Clear button -->
+                {% if active_category or price_type != 'all' or min_price or max_price or search_query or request.args.get('condition') or request.args.get('sort') %}
+                    <a href="{{ url_for('index') }}" class="btn btn--outline filter-clear-btn" style="text-decoration: none;">Clear</a>
+                {% endif %}
+
+                <!-- Result count pushed right -->
+                <span class="filter-results-count">
                     Showing {{ items|length }} items
                 </span>
             </div>
 
-            {% if items %}
-            <section class="listings-grid-blueprint" id="marketplace-grid" aria-label="Available listings">
-                {% for item in items %}
-                <article class="blueprint-card" aria-label="{{ item.title }}" style="--card-index: {% if loop.index0 < 10 %}{{ loop.index0 }}{% else %}10{% endif %};">
-                    <a href="{{ url_for('items.detail', item_id=item.id) }}" style="text-decoration: none; display: flex; flex-direction: column; height: 100%; color: inherit;">
-                        <!-- Image wrapper -->
-                        <div class="blueprint-card__img-wrap">
-                            {% if item.image_filename %}
-                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="blueprint-card__img" loading="lazy">
-                            {% else %}
-                                <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: var(--color-surface-raised); color: var(--color-ink-tertiary);">
-                                    <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
-                                </div>
-                            {% endif %}
-                            
-                            <!-- Overlay badges -->
-                            {% if item.buyer_id %}
-                                <span class="blueprint-badge-tr">Claimed</span>
-                            {% endif %}
-                            {% if item.is_free %}
-                                <span class="blueprint-badge-tl">Free</span>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Card Body -->
-                        <div class="blueprint-card__body" style="padding: var(--space-4); display: flex; flex-direction: column; flex: 1; gap: var(--space-2);">
-                            <!-- Row 1: Chips -->
-                            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                                <span style="font-size: var(--type-micro); padding: 4px 8px; background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
-                                    {{ item.category }}
-                                </span>
-                                <span style="font-size: var(--type-micro); padding: 4px 8px; background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
-                                    {{ item.condition }}
-                                </span>
-                            </div>
+            <!-- Mobile Layout Toggle -->
+            <div class="filter-control-bar__mobile">
+                <button type="button" class="mobile-filters-trigger" id="mobile-filter-drawer-open">
+                    <span class="material-symbols-outlined">filter_list</span>
+                    <span>Filters</span>
+                </button>
+                <span class="filter-results-count">
+                    Showing {{ items|length }} items
+                </span>
+            </div>
+        </form>
+    </div>
 
-                            <!-- Row 2: Title -->
-                            <h3 class="blueprint-card__title" style="font-size: var(--type-body); font-weight: 600; color: var(--color-ink-primary); line-height: var(--lead-title); margin: 0; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em;">
-                                {{ item.title }}
-                            </h3>
-
-                            <!-- Row 3: Price + kg_saved -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: var(--space-2);">
-                                {% if item.is_free %}
-                                    <span class="blueprint-card__price" style="font-family: var(--font-sans); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-success);">Free</span>
-                                {% else %}
-                                    <span class="blueprint-card__price" style="font-family: var(--font-mono); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary);">£{{ "%.2f"|format(item.price) }}</span>
-                                {% endif %}
-
-                                <span class="blueprint-card__kg" style="display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: var(--type-small); color: var(--color-primary); font-weight: 600;">
-                                    <span class="material-symbols-outlined" style="font-size: 14px;">eco</span>
-                                    {{ "%.1f"|format(item.kg_saved) }} kg saved
-                                </span>
-                            </div>
-
-                            <!-- Row 4: Context CTA -->
-                            <div style="margin-top: var(--space-3);">
-                                {% if item.buyer_id %}
-                                    <span class="btn btn--block blueprint-card__cta" style="background: var(--color-surface-raised); color: var(--color-ink-tertiary); cursor: not-allowed; border: none; height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%;">Claimed</span>
-                                {% elif current_user.is_authenticated %}
-                                    <span class="btn btn--block blueprint-card__cta" style="background: var(--color-accent); color: #ffffff; height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%;">View details</span>
-                                {% else %}
-                                    <span class="btn btn--block btn--outline blueprint-card__cta" style="height: 40px; border-radius: var(--radius-md); font-size: var(--type-small); font-weight: 600; width: 100%; border-color: var(--color-primary); color: var(--color-primary);">Login to Claim</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </a>
-                </article>
-                {% endfor %}
-            </section>
-
-            <!-- Pagination -->
-            {% if pagination and pagination.pages > 1 %}
-            <nav class="pagination" aria-label="Pagination Navigation" style="display: flex; justify-content: center; margin-top: var(--space-6); width: 100%;">
-                <!-- Desktop Pagination -->
-                <ul class="pagination__list pagination__list--desktop" style="display: flex; gap: var(--space-2); list-style: none; padding: 0;">
-                    {% if pagination.has_prev %}
-                    <li>
-                        <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span>
-                        </a>
-                    </li>
-                    {% endif %}
-
-                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                        {% if page_num %}
-                            {% if page_num == pagination.page %}
-                            <li>
-                                <span class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-primary); color: #ffffff; font-weight: 700;">{{ page_num }}</span>
-                            </li>
-                            {% else %}
-                            <li>
-                                <a href="{{ url_for('index', page=page_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">{{ page_num }}</a>
-                            </li>
-                            {% endif %}
+    <!-- ─── MARKETPLACE BODY LAYOUT (Sidebar-free Grid) ─── -->
+    <div class="marketplace-layout-full" id="listings-section-wrapper">
+        {% if items %}
+        <section class="listings-grid-blueprint" id="marketplace-grid" aria-label="Available listings">
+            {% for item in items %}
+            <article class="listing-card {% if item.is_sold %}listing-card--sold{% elif item.buyer_id %}listing-card--claimed{% endif %}" style="--card-index: {% if loop.index0 < 10 %}{{ loop.index0 }}{% else %}10{% endif %};">
+                <a href="{{ url_for('items.detail', item_id=item.id) }}">
+                    <!-- Image wrapper -->
+                    <div class="listing-card__img-wrap">
+                        {% if item.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="listing-card__img" loading="lazy">
                         {% else %}
-                        <li style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--color-ink-tertiary);">…</li>
+                            <div class="listing-card__img-fallback">
+                                <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
+                            </div>
                         {% endif %}
-                    {% endfor %}
-
-                    {% if pagination.has_next %}
-                    <li>
-                        <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-
-                <!-- Mobile Pagination -->
-                <div class="pagination__mobile" style="display: none; width: 100%; gap: var(--space-3);">
-                    {% if pagination.has_prev %}
-                        <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">← Prev</a>
-                    {% else %}
-                        <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>← Prev</button>
-                    {% endif %}
+                        
+                        <!-- Overlay category badge -->
+                        <span class="listing-card__badge-cat">{{ item.category }}</span>
+                        
+                        <!-- Overlay condition badges -->
+                        {% if item.is_sold %}
+                            <span class="listing-card__badge-cond cond--danger">Sold</span>
+                        {% elif item.buyer_id %}
+                            <span class="listing-card__badge-cond cond--warning">Claimed</span>
+                        {% else %}
+                            {% if item.condition == 'New' %}
+                                <span class="listing-card__badge-cond cond--success">New</span>
+                            {% elif item.condition == 'Like New' %}
+                                <span class="listing-card__badge-cond cond--success">Like New</span>
+                            {% elif item.condition == 'Good' %}
+                                <span class="listing-card__badge-cond cond--primary">Good</span>
+                            {% else %}
+                                <span class="listing-card__badge-cond cond--warning">{{ item.condition }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     
-                    {% if pagination.has_next %}
-                        <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Next →</a>
+                    <!-- Card Body -->
+                    <div class="listing-card__body">
+                        <!-- Title -->
+                        <h3 class="listing-card__title">{{ item.title }}</h3>
+                        
+                        <!-- Price + kg_saved -->
+                        <div class="listing-card__meta">
+                            <span class="listing-card__eco">
+                                <span class="material-symbols-outlined">eco</span>
+                                <span class="eco-val">{{ "%.1f"|format(item.kg_saved) }}</span> kg
+                            </span>
+                            
+                            {% if item.is_free %}
+                                <span class="listing-card__price price--free">Free</span>
+                            {% else %}
+                                <span class="listing-card__price">£{{ "%.2f"|format(item.price) }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </article>
+            {% endfor %}
+        </section>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="pagination" aria-label="Pagination Navigation" style="display: flex; justify-content: center; margin-top: var(--space-10); width: 100%;">
+            <!-- Desktop Pagination -->
+            <ul class="pagination__list pagination__list--desktop" style="display: flex; gap: var(--space-2); list-style: none; padding: 0;">
+                {% if pagination.has_prev %}
+                <li>
+                    <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == pagination.page %}
+                        <li>
+                            <span class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--color-primary); color: #ffffff; font-weight: 700;">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a href="{{ url_for('index', page=page_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
                     {% else %}
-                        <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>Next →</button>
+                    <li style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; color: var(--color-ink-tertiary);">…</li>
                     {% endif %}
-                </div>
-            </nav>
-            {% endif %}
+                {% endfor %}
 
-            {% else %}
-            <!-- Empty state -->
-            <section class="empty-state" aria-label="No items found" style="text-align: center; padding: var(--space-12) var(--space-6); background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card);">
-                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 48px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4); display: block;">inventory_2</span>
-                <h3 style="font-size: var(--type-title); font-weight: 600; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-2);">Nothing found</h3>
-                <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin: 0; margin-bottom: var(--space-6);">Try adjusting your filters or search terms.</p>
-                <a href="{{ url_for('index') }}" class="btn btn--outline" style="border-color: var(--color-primary); color: var(--color-primary);">Clear Filters</a>
-            </section>
-            {% endif %}
+                {% if pagination.has_next %}
+                <li>
+                    <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-secondary); text-decoration: none;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
 
-        </div>
+            <!-- Mobile Pagination -->
+            <div class="pagination__mobile" style="display: none; width: 100%; gap: var(--space-3); padding: 0 var(--space-4);">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">&larr; Prev</a>
+                {% else %}
+                    <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>&larr; Prev</button>
+                {% endif %}
+                
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Next &rarr;</a>
+                {% else %}
+                    <button class="btn btn--outline" style="flex: 1; height: 48px; opacity: 0.4; cursor: not-allowed;" disabled>Next &rarr;</button>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty state -->
+        <section class="empty-state" aria-label="No items found" style="text-align: center; padding: var(--space-20) var(--space-6); background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-top: var(--space-10);">
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 48px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4); display: block;">shopping_bag</span>
+            <h3 style="font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-2);">Nothing here yet</h3>
+            <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin: 0; margin-bottom: var(--space-6);">Be the first to list something on campus.</p>
+            <a href="{{ url_for('items.list_item') }}" class="btn btn--primary" style="background: var(--color-primary); color: #ffffff;">List an item</a>
+        </section>
+        {% endif %}
     </div>
 </div>
 
 <!-- ─── Mobile Filters Drawer Slide-up menu ─── -->
 <div class="mobile-drawer-backdrop" id="mobile-filter-drawer-backdrop" style="z-index: 600;"></div>
-<aside class="mobile-drawer" id="mobile-filter-drawer" style="z-index: 700; width: 100%; max-height: 90vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; top: auto; bottom: 0; transform: translateY(100%); transition: transform var(--duration-normal) var(--ease-out-expo);" aria-label="Filter Options Menu">
+<aside class="mobile-drawer" id="mobile-filter-drawer" style="z-index: 700; width: 100%; max-height: 90vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; top: auto; bottom: 0; transform: translateY(100%); transition: transform var(--duration-mid) var(--ease-smooth);" aria-label="Filter Options Menu">
     <!-- Header -->
-    <div class="mobile-filter-drawer__header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--container-pad-x); border-bottom: 1px solid var(--color-border); background: var(--color-surface); height: 56px; box-sizing: border-box; flex-shrink: 0;">
+    <div class="mobile-filter-drawer__header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--color-border); background: var(--color-surface); height: 56px; box-sizing: border-box; flex-shrink: 0;">
         <button type="button" id="mobile-filter-drawer-close" style="background: transparent; border: none; display: flex; align-items: center; gap: 8px; color: var(--color-ink-primary); font-size: var(--type-body); font-weight: 500; cursor: pointer; padding: 0;">
             <span class="material-symbols-outlined" style="font-size: 20px;">arrow_back</span>
             <span>Back</span>
         </button>
         <span style="font-weight: 700; font-size: var(--type-body-lg); color: var(--color-ink-primary);">Filters</span>
-        <a href="{{ url_for('index', q=search_query) }}" style="font-size: var(--type-small); color: var(--color-ink-secondary); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-secondary)'">Clear all</a>
+        <a href="{{ url_for('index', q=search_query) }}" style="font-size: var(--type-small); color: var(--color-ink-secondary); text-decoration: none;">Clear all</a>
     </div>
     
     <!-- Scrollable content -->
-    <div style="overflow-y: auto; flex: 1; padding: var(--space-6) var(--container-pad-x) var(--space-12);">
+    <div style="overflow-y: auto; flex: 1; padding: var(--space-6) var(--space-6) var(--space-12);">
         <form method="GET" action="{{ url_for('index') }}" id="mobile-filter-form" style="display: flex; flex-direction: column; gap: var(--space-6);">
             {% if search_query %}
                 <input type="hidden" name="q" value="{{ search_query }}">
             {% endif %}
+            <input type="hidden" name="category" value="{{ active_category }}">
 
             <!-- Price Type Group -->
             <div class="filter-group">
@@ -343,27 +345,8 @@
                 </div>
             </div>
 
-            <!-- Category Group -->
-            <div class="filter-group">
-                <span class="filter-group__title-blueprint">Category</span>
-                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
-                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                        <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %} style="accent-color: var(--color-primary);">
-                        <span>All Categories</span>
-                    </label>
-                    {% for cat in categories %}
-                    {% set cat_weight_map = {'Furniture': '12.0', 'Kitchenware': '4.0', 'Electronics': '3.0', 'Sports': '2.5', 'Clothing': '1.5', 'Books': '0.8', 'Stationery': '0.3', 'Other': '1.0'} %}
-                    {% set weight = cat_weight_map.get(cat, '1.0') %}
-                    <label class="radio-label" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-small); color: var(--color-ink-primary);">
-                        <input type="radio" name="category" value="{{ cat }}" {% if active_category == cat %}checked{% endif %} style="accent-color: var(--color-primary);">
-                        <span>{{ cat }} <span style="font-family: var(--font-mono); color: var(--color-ink-tertiary); font-size: 12px;">({{ weight }} kg)</span></span>
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-
             <!-- Price Range Group -->
-            <div class="filter-group">
+            <div class="filter-group" id="mobile-price-range-group" style="{% if price_type != 'paid' %}display: none;{% endif %}">
                 <span class="filter-group__title-blueprint">Price Range</span>
                 <div style="display: flex; align-items: center; gap: var(--space-2);">
                     <div style="position: relative; flex: 1;">
@@ -380,7 +363,7 @@
 
             <!-- Drawer actions (sticky footer on mobile) -->
             <div class="filter-drawer-actions" style="position: sticky; bottom: 0; background: var(--color-surface); border-top: 1px solid var(--color-border); padding: var(--space-3) 0 0 0; z-index: 10; margin-top: auto;">
-                <button type="submit" id="mobile-filter-apply-btn" class="btn btn--primary" style="height: 56px; border-radius: var(--radius-md); background: var(--color-primary); width: 100%; display: flex; align-items: center; justify-content: center; font-weight: 600; border: none;">Apply — {{ items|length }} results</button>
+                <button type="submit" id="mobile-filter-apply-btn" class="btn btn--primary" style="height: 56px; border-radius: var(--radius-md); background: var(--color-primary); width: 100%; display: flex; align-items: center; justify-content: center; font-weight: 600; border: none; color: #ffffff;">Apply — {{ items|length }} results</button>
             </div>
         </form>
     </div>
@@ -390,6 +373,231 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Desktop Price Type Toggle interaction
+        const priceBtns = document.querySelectorAll('.price-toggle-btn');
+        const priceInput = document.getElementById('price-type-input');
+        const rangeInputs = document.querySelector('.price-range-inputs');
+        const mobilePriceRange = document.getElementById('mobile-price-range-group');
+        const filterForm = document.querySelector('.filter-control-bar__form');
+        const sectionWrapper = document.getElementById('listings-section-wrapper');
+
+        // AJAX live update function
+        function fetchFilteredItems(url) {
+            const grid = document.getElementById('marketplace-grid');
+            if (grid) grid.style.opacity = '0.5';
+
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // 1. Swap listings section
+                    const newSection = doc.getElementById('listings-section-wrapper');
+                    if (newSection && sectionWrapper) {
+                        sectionWrapper.innerHTML = newSection.innerHTML;
+                    }
+
+                    // 2. Sync category strip
+                    const newStrip = doc.querySelector('.category-strip');
+                    const currentStrip = document.querySelector('.category-strip');
+                    if (newStrip && currentStrip) {
+                        currentStrip.innerHTML = newStrip.innerHTML;
+                    }
+
+                    // 3. Sync desktop form elements
+                    if (filterForm) {
+                        const newForm = doc.querySelector('.filter-control-bar__form');
+                        if (newForm) {
+                            // Sync selects (condition, sort)
+                            filterForm.querySelectorAll('select').forEach(select => {
+                                const newSelect = newForm.querySelector(`#${select.id}`);
+                                if (newSelect) select.value = newSelect.value;
+                            });
+                            // Sync hidden inputs
+                            const catInput = filterForm.querySelector('input[name="category"]');
+                            const newCatInput = newForm.querySelector('input[name="category"]');
+                            if (catInput && newCatInput) catInput.value = newCatInput.value;
+
+                            const ptInput = document.getElementById('price-type-input');
+                            const newPtInput = doc.getElementById('price-type-input');
+                            if (ptInput && newPtInput) {
+                                ptInput.value = newPtInput.value;
+                                // Sync active state of price buttons
+                                priceBtns.forEach(b => {
+                                    b.classList.remove('active');
+                                    if (b.getAttribute('data-value') === ptInput.value) {
+                                        b.classList.add('active');
+                                    }
+                                });
+                                // Toggle price inputs display
+                                if (ptInput.value === 'paid') {
+                                    if (rangeInputs) rangeInputs.style.display = 'flex';
+                                } else {
+                                    if (rangeInputs) rangeInputs.style.display = 'none';
+                                }
+                            }
+                            // Sync price inputs (min_price, max_price)
+                            filterForm.querySelectorAll('input[type="number"]').forEach(input => {
+                                const newInput = newForm.querySelector(`input[name="${input.name}"]`);
+                                if (newInput) input.value = newInput.value;
+                            });
+                        }
+                    }
+
+                    // 4. Sync mobile form elements
+                    const mobileForm = document.getElementById('mobile-filter-form');
+                    const mobilePriceRange = document.getElementById('mobile-price-range-group');
+                    if (mobileForm) {
+                        const newMobileForm = doc.getElementById('mobile-filter-form');
+                        if (newMobileForm) {
+                            // Sync price type radio buttons
+                            const checkedRadio = newMobileForm.querySelector('input[name="price_type"]:checked');
+                            if (checkedRadio) {
+                                const localRadio = mobileForm.querySelector(`input[name="price_type"][value="${checkedRadio.value}"]`);
+                                if (localRadio) localRadio.checked = true;
+                            }
+                            // Toggle mobile price range group display
+                            const newMobilePriceRange = doc.getElementById('mobile-price-range-group');
+                            if (newMobilePriceRange && mobilePriceRange) {
+                                mobilePriceRange.style.display = newMobilePriceRange.style.display;
+                            }
+                            // Sync min_price, max_price
+                            mobileForm.querySelectorAll('input[type="number"]').forEach(input => {
+                                const newInput = newMobileForm.querySelector(`input[name="${input.name}"]`);
+                                if (newInput) input.value = newInput.value;
+                            });
+                            // Sync hidden category
+                            const mCatInput = mobileForm.querySelector('input[name="category"]');
+                            const newMCatInput = newMobileForm.querySelector('input[name="category"]');
+                            if (mCatInput && newMCatInput) mCatInput.value = newMCatInput.value;
+                        }
+                    }
+
+                    // 5. Sync results count
+                    const newCounts = doc.querySelectorAll('.filter-results-count');
+                    const currentCounts = document.querySelectorAll('.filter-results-count');
+                    currentCounts.forEach((el, idx) => {
+                        if (newCounts[idx]) el.innerHTML = newCounts[idx].innerHTML;
+                    });
+
+                    // 6. Sync desktop clear button
+                    const desktopGroup = document.querySelector('.filter-control-bar__desktop');
+                    const currentClear = document.querySelector('.filter-clear-btn');
+                    const newClear = doc.querySelector('.filter-clear-btn');
+                    if (currentClear && !newClear) {
+                        currentClear.remove();
+                    } else if (!currentClear && newClear) {
+                        const countSpan = desktopGroup?.querySelector('.filter-results-count');
+                        if (countSpan) countSpan.insertAdjacentHTML('beforebegin', newClear.outerHTML);
+                    } else if (currentClear && newClear) {
+                        currentClear.outerHTML = newClear.outerHTML;
+                    }
+
+                    // 7. Sync mobile apply button results count
+                    const applyBtn = document.getElementById('mobile-filter-apply-btn');
+                    const countEl = doc.querySelector('.filter-results-count');
+                    if (countEl && applyBtn) {
+                        const countText = countEl.textContent.trim().replace(/\D+/g, '');
+                        applyBtn.textContent = `Apply — ${countText} results`;
+                    }
+
+                    // 8. Update browser history URL
+                    history.pushState(null, '', url);
+                });
+        }
+
+        priceBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const val = this.getAttribute('data-value');
+                priceInput.value = val;
+                priceBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (val === 'paid') {
+                    if (rangeInputs) rangeInputs.style.display = 'flex';
+                } else {
+                    if (rangeInputs) {
+                        rangeInputs.style.display = 'none';
+                        rangeInputs.querySelectorAll('input').forEach(input => input.value = '');
+                    }
+                    if (filterForm) {
+                        const formData = new FormData(filterForm);
+                        const params = new URLSearchParams(formData).toString();
+                        fetchFilteredItems('/?' + params);
+                    }
+                }
+            });
+        });
+
+        // Intercept form submissions & select changes
+        if (filterForm) {
+            filterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams(formData).toString();
+                fetchFilteredItems('/?' + params);
+            });
+
+            filterForm.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(filterForm);
+                    const params = new URLSearchParams(formData).toString();
+                    fetchFilteredItems('/?' + params);
+                });
+            });
+        }
+
+        // Intercept Category Chip clicks, Pagination Link clicks, and Clear clicks
+        document.addEventListener('click', function(e) {
+            const chip = e.target.closest('.category-chip');
+            if (chip) {
+                e.preventDefault();
+                const url = chip.getAttribute('href');
+                if (url) {
+                    document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('category-chip--active'));
+                    chip.classList.add('category-chip--active');
+                    const urlParams = new URLSearchParams(url.split('?')[1]);
+                    const catInput = filterForm?.querySelector('input[name="category"]');
+                    if (catInput) catInput.value = urlParams.get('category') || '';
+                    fetchFilteredItems(url);
+                }
+                return;
+            }
+
+            const pagLink = e.target.closest('.pagination__link');
+            if (pagLink) {
+                e.preventDefault();
+                const url = pagLink.getAttribute('href');
+                if (url) fetchFilteredItems(url);
+                return;
+            }
+
+            const clearBtn = e.target.closest('.filter-clear-btn');
+            if (clearBtn) {
+                e.preventDefault();
+                const url = clearBtn.getAttribute('href');
+                if (url && filterForm) {
+                    filterForm.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
+                    filterForm.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+                    const catInput = filterForm.querySelector('input[name="category"]');
+                    if (catInput) catInput.value = '';
+                    const priceTypeInput = document.getElementById('price-type-input');
+                    if (priceTypeInput) priceTypeInput.value = 'all';
+                    priceBtns.forEach(b => {
+                        b.classList.remove('active');
+                        if (b.getAttribute('data-value') === 'all') b.classList.add('active');
+                    });
+                    if (rangeInputs) rangeInputs.style.display = 'none';
+                    document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('category-chip--active'));
+                    const allCatChip = document.querySelector('.category-chip:first-child');
+                    if (allCatChip) allCatChip.classList.add('category-chip--active');
+                    fetchFilteredItems(url);
+                }
+            }
+        });
+
         // Mobile Filter Drawer Logic
         const filterBtn = document.getElementById('mobile-filter-drawer-open');
         const filterDrawer = document.getElementById('mobile-filter-drawer');
@@ -414,21 +622,22 @@
         if (filterClose) filterClose.addEventListener('click', closeFilterDrawer);
         if (filterBackdrop) filterBackdrop.addEventListener('click', closeFilterDrawer);
 
-        // Media query listener to display mobile filter strip
-        function handleViewportChange(e) {
-            const mobileStrip = document.querySelector('.mobile-filters-trigger-strip');
-            if (mobileStrip) {
-                mobileStrip.style.display = e.matches ? 'flex' : 'none';
-            }
-        }
-        const mql = window.matchMedia('(max-width: 1023px)');
-        mql.addEventListener('change', handleViewportChange);
-        handleViewportChange(mql); // Initial run
-
-        // 3. Dynamic results counter update on mobile filter form changes
+        // Handle price type radio changes in mobile form to toggle range inputs
         const mobileForm = document.getElementById('mobile-filter-form');
         const applyBtn = document.getElementById('mobile-filter-apply-btn');
-        if (mobileForm && applyBtn) {
+        
+        if (mobileForm) {
+            mobileForm.querySelectorAll('input[name="price_type"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'paid') {
+                        if (mobilePriceRange) mobilePriceRange.style.display = 'block';
+                    } else {
+                        if (mobilePriceRange) mobilePriceRange.style.display = 'none';
+                    }
+                });
+            });
+
+            // Dynamic results counter update on mobile filter form changes
             mobileForm.addEventListener('change', function() {
                 const formData = new FormData(mobileForm);
                 const params = new URLSearchParams(formData).toString();
@@ -437,14 +646,52 @@
                     .then(html => {
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
-                        const countEl = doc.querySelector('.results-count');
-                        if (countEl) {
+                        const countEl = doc.querySelector('.filter-results-count');
+                        if (countEl && applyBtn) {
                             const countText = countEl.textContent.trim().replace(/\D+/g, '');
                             applyBtn.textContent = `Apply — ${countText} results`;
                         }
                     });
             });
+
+            // Intercept mobile form submission to use AJAX
+            mobileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(mobileForm);
+                const params = new URLSearchParams(formData).toString();
+                fetchFilteredItems('/?' + params);
+                closeFilterDrawer();
+            });
         }
+
+        // Dynamic count-up animation for hero stats
+        const statValues = document.querySelectorAll('.marketplace-hero__stat-value');
+        statValues.forEach(el => {
+            const target = parseFloat(el.getAttribute('data-target') || '0');
+            if (isNaN(target) || target <= 0) return;
+            
+            const isFloat = el.textContent.includes('.');
+            const start = 0;
+            const duration = 1200; // 1.2 seconds smooth ease-out
+            const startTime = performance.now();
+            
+            function updateCount(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Cubic ease-out curve
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                const current = start + easeProgress * target;
+                
+                el.textContent = isFloat ? current.toFixed(1) : Math.floor(current);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCount);
+                } else {
+                    el.textContent = isFloat ? target.toFixed(1) : Math.floor(target);
+                }
+            }
+            requestAnimationFrame(updateCount);
+        });
     });
 </script>
 {% endblock %}

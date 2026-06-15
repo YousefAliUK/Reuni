@@ -3,198 +3,161 @@
 {% block mobile_title %}{{ item.title | truncate(28, True) }}{% endblock %}
 
 {% block content %}
-<div style="max-width: 960px; margin: 0 auto; padding-top: var(--space-6);">
+<div class="detail-wrapper">
     
-    <!-- Breadcrumb -->
-    <nav aria-label="Breadcrumb" style="margin-bottom: var(--space-4); display: flex; align-items: center; gap: 6px; font-size: var(--type-small); color: var(--color-ink-tertiary);">
-        <a href="{{ url_for('index') }}" style="color: var(--color-ink-tertiary); text-decoration: none;">Browse</a>
-        <span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
-        <a href="{{ url_for('index', category=item.category) }}" style="color: var(--color-ink-tertiary); text-decoration: none;">{{ item.category }}</a>
-        <span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
-        <span style="color: var(--color-ink-primary); font-weight: 500;">{{ item.title }}</span>
-    </nav>
+    <!-- Clean Back Navigation Link -->
+    <div class="back-navigation">
+        <a href="{{ url_for('index') }}" class="back-link">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span>Back to Browse</span>
+        </a>
+    </div>
 
-    <!-- Detail layout grid -->
-    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-8); margin-top: var(--space-4);" class="detail-grid-container">
+    <!-- Detail Layout Grid -->
+    <div class="detail-container">
         
-        <!-- LEFT COLUMN: Image cover -->
-        <div class="detail__image-container" style="position: relative; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-raised); max-height: 480px; aspect-ratio: 16/10;">
-            {% if item.image_filename %}
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Photo of {{ item.title }}" style="width: 100%; height: 100%; object-fit: cover;">
-            {% else %}
-                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-ink-tertiary);">
-                    <span class="material-symbols-outlined" style="font-size: 80px;">image</span>
-                </div>
-            {% endif %}
-
-            {% if item.is_sold %}
-                <div style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: center;">
-                    <span style="font-family: var(--font-sans); font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: 0.1em; text-transform: uppercase;">SOLD</span>
-                </div>
-            {% elif item.buyer_id %}
-                <div style="position: absolute; inset: 0; background: rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center;">
-                    <span style="font-family: var(--font-sans); font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: 0.1em; text-transform: uppercase;">CLAIMED</span>
-                </div>
-            {% endif %}
+        <!-- LEFT COLUMN: Item Photo -->
+        <div class="detail-photo-pane">
+            <div class="detail-photo">
+                {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Photo of {{ item.title }}" class="detail-photo__img">
+                {% else %}
+                    <div class="detail-photo__fallback">
+                        <span class="material-symbols-outlined" aria-hidden="true">image</span>
+                    </div>
+                {% endif %}
+                
+                {% if item.is_sold %}
+                    <div class="detail-photo__ribbon ribbon--sold">Sold</div>
+                {% elif item.buyer_id %}
+                    <div class="detail-photo__ribbon ribbon--claimed">Claimed</div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- RIGHT COLUMN: Details & Actions -->
-        <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <!-- RIGHT COLUMN: Info Panel -->
+        <div class="detail-info">
             
-            <!-- Row 1: Chips -->
-            <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                <span style="font-size: var(--type-micro); padding: var(--space-1) var(--space-3); background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
-                    {{ item.category }}
-                </span>
-                <span style="font-size: var(--type-micro); padding: var(--space-1) var(--space-3); background: var(--color-surface-raised); color: var(--color-ink-secondary); border-radius: var(--radius-sm); font-weight: 500;">
-                    {{ item.condition }}
-                </span>
-            </div>
-
-            <!-- Row 2: Title -->
-            <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); line-height: var(--lead-title); margin: 0;">
-                {{ item.title }}
-            </h1>
-
-            <!-- Row 3: Price -->
-            <div style="margin-top: -4px;">
-                {% if item.is_free %}
-                    <span style="font-family: var(--font-sans); font-size: 24px; font-weight: 700; color: var(--color-success);">Free</span>
+            <!-- Category and Condition Tags -->
+            <div class="detail-info__badges">
+                <span class="category-chip">{{ item.category }}</span>
+                {% if item.condition == 'New' %}
+                    <span class="condition-chip cond--success">New</span>
+                {% elif item.condition == 'Like New' %}
+                    <span class="condition-chip cond--success">Like New</span>
+                {% elif item.condition == 'Good' %}
+                    <span class="condition-chip cond--primary">Good</span>
                 {% else %}
-                    <span style="font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--color-ink-primary);">£{{ "%.2f"|format(item.price) }}</span>
+                    <span class="condition-chip cond--warning">{{ item.condition }}</span>
                 {% endif %}
             </div>
 
-            <!-- Row 4: KG Impact Block -->
-            <div style="background: var(--color-primary-muted); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; border: none; width: 100%; box-sizing: border-box;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-primary);">eco</span>
-                    <strong style="color: var(--color-primary); font-size: 14px; font-weight: 600;">This item saves ~{{ "%.1f"|format(item.kg_saved) }} kg from landfill</strong>
-                </div>
-                <div style="font-size: 11px; color: var(--color-ink-tertiary);">Based on WRAP UK material weight data</div>
+            <!-- Title -->
+            <h1 class="detail-info__title">{{ item.title }}</h1>
+            
+            <!-- Listed by sub-label -->
+            <p class="detail-info__seller">
+                Listed by <span style="font-weight: 500; color: var(--color-ink-primary);">{{ item.seller.name }}</span>
+            </p>
+
+            <!-- Price -->
+            <div class="detail-info__price-row">
+                {% if item.is_free %}
+                    <span class="detail-info__price price--free">Free</span>
+                {% else %}
+                    <span class="detail-info__price">£{{ "%.2f"|format(item.price) }}</span>
+                {% endif %}
             </div>
 
-            <!-- Row 5: Description -->
+            <!-- Eco Impact Block -->
+            <div class="eco-block">
+                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                <div class="eco-block__text">
+                    <span class="eco-block__title">Saving <span class="font-mono">{{ "%.1f"|format(item.kg_saved) }}</span> kg from landfill</span>
+                    <span class="eco-block__sub">Based on WRAP UK material weight data</span>
+                </div>
+            </div>
+
+            <!-- Description -->
             {% if item.description %}
-            <div style="margin-top: var(--space-2);">
-                <p style="font-size: var(--type-body); color: var(--color-ink-secondary); line-height: var(--lead-body); margin: 0; max-width: var(--content-max-ch);">
+            <div class="detail-description">
+                <div class="detail-description__content" id="detail-desc-content">
                     {{ item.description }}
-                </p>
-            </div>
-            {% endif %}
-
-            <!-- Row 6: Seller info card -->
-            <div style="display: flex; align-items: center; gap: var(--space-3); background: var(--color-surface-raised); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); width: fit-content;">
-                <div style="width: 36px; height: 36px; border-radius: var(--radius-full); background: var(--color-primary-muted); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: var(--type-body);">
-                    {{ item.seller.name[0] }}
                 </div>
-                <div>
-                    <div style="font-size: var(--type-small); font-weight: 600; color: var(--color-ink-primary);">{{ item.seller.name }}</div>
-                    <div style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">Listed {{ item.created_at.strftime('%d %b %Y') }}</div>
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid var(--color-border); margin: var(--space-2) 0;">
-
-            <!-- Row 7: Context CTA Block -->
-            <div>
-                {% if item.is_sold %}
-                    <!-- SOLD State Celebratory Count-up for buyer/seller (In-flow, visible on both desktop and mobile) -->
-                    {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
-                        <div style="background: var(--color-success-muted); border-radius: var(--radius-xl); padding: var(--space-6); text-align: center; margin: var(--space-4) 0; border: 1px solid var(--color-success);">
-                            <span class="material-symbols-outlined" style="color: var(--color-success); font-size: 64px; display: block; margin-bottom: var(--space-2);">check_circle</span>
-                            <h2 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: var(--space-2) 0;">Exchange complete!</h2>
-                            
-                            <div style="margin: var(--space-4) 0;">
-                                <div id="celebration-kg-value" data-target="{{ item.kg_saved }}" style="font-family: var(--font-mono); font-size: 40px; font-weight: 800; color: var(--color-success);">0.0 kg</div>
-                                <div style="font-size: 14px; color: var(--color-success); font-weight: 600;">saved from landfill</div>
-                                {% if current_user.id == item.seller_id %}
-                                    <div style="font-size: 12px; color: var(--color-ink-secondary); margin-top: 4px;">Added to your total: {{ "%.1f"|format(current_user.kg_saved_total) }} kg overall</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endif %}
+                {% if item.description|length > 150 %}
+                    <button type="button" class="desc-toggle-btn" id="desc-toggle">Show more</button>
                 {% endif %}
+            </div>
+            {% endif %}
 
-                <!-- DESKTOP IN-FLOW CTA (hidden on mobile) -->
-                <div class="hide-on-mobile" style="display: flex; flex-direction: column; gap: var(--space-3); width: 100%;">
-                    {% if item.is_sold %}
-                        {% if not (current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id)) %}
-                            <!-- Standard SOLD State for visitors -->
-                            <div style="background: var(--color-success-muted); border-radius: var(--radius-md); padding: var(--space-4); display: flex; align-items: center; gap: var(--space-3);">
-                                <span class="material-symbols-outlined" style="color: var(--color-success); font-size: 24px;">check_circle</span>
-                                <div>
-                                    <div style="font-weight: 600; color: var(--color-ink-primary);">Sold</div>
-                                    <div style="font-size: var(--type-small); color: var(--color-ink-secondary);">This item has found a new home.</div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% elif item.buyer_id and not item.is_sold %}
-                        <!-- CLAIMED State -->
-                        <div style="background: var(--color-warning-muted); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
-                            <div style="display: flex; align-items: center; gap: var(--space-3);">
-                                <span class="material-symbols-outlined" style="color: var(--color-warning); font-size: 24px;">timer</span>
-                                <div>
-                                    <div style="font-weight: 600; color: var(--color-ink-primary);">Claimed &middot; Pending pickup</div>
-                                    <div style="font-size: var(--type-small); color: var(--color-ink-secondary);">Currently reserved by {{ item.buyer.name }}</div>
-                                </div>
-                            </div>
-                            {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
-                                <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary" style="background: var(--color-accent); align-self: flex-start; text-decoration: none;">
-                                    View PIN handshake &rarr;
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% elif current_user.is_authenticated and item.seller_id == current_user.id %}
-                        <!-- Owner State -->
-                        <div style="display: flex; gap: var(--space-4);">
-                            <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="flex: 1; border-color: var(--color-primary); color: var(--color-primary); height: 48px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 600; border-radius: var(--radius-md);">
-                                Edit listing
-                            </a>
-                            <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn--outline" style="width: 100%; border-color: var(--color-danger); color: var(--color-danger); height: 48px; border-radius: var(--radius-md); font-weight: 600;">
-                                    Delete listing
-                                </button>
-                            </form>
-                        </div>
-                    {% elif has_cancelled_before %}
-                        <!-- STATE F: Previously Cancelled -->
-                        <button class="btn btn--block" disabled style="background: var(--color-surface-raised); color: var(--color-ink-tertiary); height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%; border: none; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span class="material-symbols-outlined">block</span>
-                            Claimed before — unavailable to you
-                        </button>
-                        <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You cancelled a previous claim on this item.</p>
-                    {% elif current_user.is_authenticated %}
-                        <!-- Available + Logged In Student -->
-                        <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn--primary btn--block" style="background: var(--color-accent); height: 48px; border-radius: var(--radius-md); font-size: var(--type-body); font-weight: 600; width: 100%;">
-                                {% if item.is_free %}Claim This Item{% else %}Buy for £{{ "%.2f"|format(item.price) }}{% endif %}
-                            </button>
-                        </form>
-                        <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You'll receive the pickup PIN. Cash/transfer at handoff.</p>
-                    {% else %}
-                        <!-- Available + Not Logged In -->
-                        <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--block" style="background: var(--color-accent); height: 48px; border-radius: var(--radius-md); font-size: var(--type-body); font-weight: 600; width: 100%; text-decoration: none; display: flex; align-items: center; justify-content: center;">
-                            Log in to claim this item
-                        </a>
-                        <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">Requires oxford brookes email verification</p>
-                    {% endif %}
+            <!-- Seller Info Card -->
+            <div class="seller-info-card">
+                <div class="seller-info-card__avatar">
+                    {{ item.seller.name[0]|upper }}
+                </div>
+                <div class="seller-info-card__details">
+                    <span class="seller-info-card__name">{{ item.seller.name }}</span>
+                    <span class="seller-info-card__meta">Listed on {{ item.created_at.strftime('%B %d, %Y') }}</span>
                 </div>
             </div>
 
-            <!-- Row 8: PIN instructions (only when claimed, buyer or seller) -->
-            {% if item.buyer_id and not item.is_sold and current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
-                <div class="hide-on-mobile" style="background: var(--color-warning-muted); border-radius: var(--radius-md); padding: var(--space-4); font-size: var(--type-small); color: var(--color-ink-secondary); margin-top: var(--space-2);">
-                    {% if item.is_free %}
-                        <strong>Handoff code instructions:</strong> The seller holds the pickup PIN. Meet on campus, inspect the item, and ask the seller to share the PIN to confirm the exchange.
-                    {% else %}
-                        <strong>Handoff code instructions:</strong> You hold the pickup PIN. Meet on campus, inspect the item, pay, and then reveal the PIN to the seller to finalize the transfer.
-                    {% endif %}
-                </div>
-            {% endif %}
+            <hr class="detail-divider">
 
+            <!-- Desktop-Only CTA Actions Panel -->
+            <div class="detail-cta-actions hide-on-mobile">
+                {% if item.is_sold %}
+                    {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
+                        <div class="success-celebration-pane">
+                            <span class="material-symbols-outlined success-icon" aria-hidden="true">check_circle</span>
+                            <h2>Exchange complete!</h2>
+                            <div class="kg-counter" id="celebration-kg-value" data-target="{{ item.kg_saved }}">0.0 kg</div>
+                            <p class="kg-counter-label">saved from landfill</p>
+                        </div>
+                    {% else %}
+                        <button class="btn btn--block btn--disabled" disabled>Sold</button>
+                    {% endif %}
+                {% elif item.buyer_id and not item.is_sold %}
+                    {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
+                        <div class="claimed-state-panel">
+                            <div class="claimed-state-header">
+                                <span class="material-symbols-outlined" aria-hidden="true">timer</span>
+                                <div>
+                                    <div class="panel-heading">Claimed &middot; Pending pickup</div>
+                                    <div class="panel-subtext">Currently reserved by {{ item.buyer.name }}</div>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary btn--accent btn--block" style="text-decoration: none;">
+                                View PIN handshake &rarr;
+                            </a>
+                        </div>
+                    {% else %}
+                        <button class="btn btn--block btn--disabled" disabled>Currently claimed</button>
+                    {% endif %}
+                {% elif current_user.is_authenticated and item.seller_id == current_user.id %}
+                    <div class="owner-btn-group">
+                        <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="text-decoration: none;">Edit listing</a>
+                        <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--outline btn--danger" style="width: 100%;">Delete listing</button>
+                        </form>
+                    </div>
+                {% elif has_cancelled_before %}
+                    <button class="btn btn--block btn--disabled" disabled style="opacity: 0.4;">Unavailable (Previous claim cancelled)</button>
+                    <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You cancelled a previous claim on this item.</p>
+                {% elif current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--primary btn--block btn--accent">
+                            {% if item.is_free %}Claim this item{% else %}Pay and Claim{% endif %}
+                        </button>
+                    </form>
+                    <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You'll receive the pickup PIN. Cash/transfer at handoff.</p>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--block btn--accent" style="text-decoration: none;">
+                        Log in to claim this item
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -202,69 +165,64 @@
 <!-- MOBILE STICKY CTA FOOTER (visible only on mobile) -->
 <div class="show-on-mobile detail-cta-container">
     {% if item.is_sold %}
-        <div style="background: var(--color-success-muted); color: var(--color-success); border-radius: var(--radius-md); padding: 12px; text-align: center; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
-            <span class="material-symbols-outlined">check_circle</span>
-            Sold
-        </div>
+        <button class="btn btn--block btn--disabled" disabled>Sold</button>
     {% elif item.buyer_id and not item.is_sold %}
         {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
-            <div style="display: flex; flex-direction: column; gap: 4px; width: 100%; box-sizing: border-box;">
-                <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn" style="background: var(--color-accent); color: #ffffff; height: 48px; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; width: 100%; border: none;">
-                    View PIN handshake &rarr;
-                </a>
-                <div id="mobile-claim-expiry" data-expires="{{ item.pin_expires_at.isoformat() if item.pin_expires_at }}" style="font-family: var(--font-mono); font-size: 11px; color: var(--color-warning); text-align: center; font-weight: 500;">
-                    <!-- Updated by JS -->
-                </div>
-            </div>
+            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary btn--block btn--accent" style="text-decoration: none;">
+                View PIN handshake &rarr;
+            </a>
         {% else %}
-            <button class="btn" disabled style="background: var(--color-surface-raised); color: var(--color-ink-tertiary); height: 48px; width: 100%; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: not-allowed;">
-                Item Claimed
-            </button>
+            <button class="btn btn--block btn--disabled" disabled>Currently claimed</button>
         {% endif %}
     {% elif current_user.is_authenticated and item.seller_id == current_user.id %}
-        <div style="display: flex; gap: var(--space-2); width: 100%; box-sizing: border-box;">
-            <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="flex: 1; height: 48px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 600; border-radius: var(--radius-md);">
-                Edit
-            </a>
-            <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1; display: inline;">
+        <div class="owner-btn-group" style="width: 100%;">
+            <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="flex: 1; text-decoration: none;">Edit</a>
+            <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn--outline" style="width: 100%; border-color: var(--color-danger); color: var(--color-danger); height: 48px; border-radius: var(--radius-md); font-weight: 600;">
-                    Delete
-                </button>
+                <button type="submit" class="btn btn--outline btn--danger" style="width: 100%;">Delete</button>
             </form>
         </div>
     {% elif has_cancelled_before %}
-        <!-- STATE F: Previously Cancelled -->
-        <button class="btn" disabled style="background: var(--color-surface-raised); color: var(--color-ink-tertiary); height: 48px; width: 100%; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span class="material-symbols-outlined">block</span>
-            Claimed before — unavailable to you
-        </button>
+        <button class="btn btn--block btn--disabled" disabled>Unavailable (Claim cancelled)</button>
     {% elif current_user.is_authenticated %}
-        <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}" style="width: 100%; box-sizing: border-box; padding: 0; margin: 0;">
+        <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn" style="background: var(--color-accent); color: #ffffff; height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%; border: none;">
+            <button type="submit" class="btn btn--primary btn--block btn--accent" style="width: 100%;">
                 {% if item.is_free %}Claim for Free{% else %}Claim &middot; £{{ "%.2f"|format(item.price) }}{% endif %}
             </button>
         </form>
     {% else %}
-        <a href="{{ url_for('auth.login') }}" class="btn" style="background: var(--color-accent); color: #ffffff; height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
+        <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--block btn--accent" style="width: 100%; text-decoration: none;">
             Log in to claim
         </a>
     {% endif %}
 </div>
-
-<style>
-    @media (min-width: 768px) {
-        .detail-grid-container {
-            grid-template-columns: 55fr 45fr !important;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Description Show More Toggle
+        const descContent = document.getElementById('detail-desc-content');
+        const descToggle = document.getElementById('desc-toggle');
+        
+        if (descContent && descToggle) {
+            descContent.style.maxHeight = '150px';
+            descContent.style.overflow = 'hidden';
+            descContent.style.transition = 'max-height var(--duration-mid) var(--ease-out)';
+            
+            descToggle.addEventListener('click', function() {
+                if (descContent.style.maxHeight === '150px') {
+                    descContent.style.maxHeight = '1000px';
+                    descToggle.textContent = 'Show less';
+                } else {
+                    descContent.style.maxHeight = '150px';
+                    descToggle.textContent = 'Show more';
+                }
+            });
+        }
+
+        // Celebratory count-up animation for KG Saved
         const valueEl = document.getElementById('celebration-kg-value');
         if (valueEl && valueEl.dataset.target) {
             const target = parseFloat(valueEl.dataset.target);
@@ -288,24 +246,6 @@
             }
             
             requestAnimationFrame(animate);
-        }
-
-        const expiryEl = document.getElementById('mobile-claim-expiry');
-        if (expiryEl && expiryEl.dataset.expires) {
-            const expiresTime = new Date(expiryEl.dataset.expires).getTime();
-            const updateExpiry = () => {
-                const now = Date.now();
-                const diffMs = expiresTime - now;
-                if (diffMs <= 0) {
-                    expiryEl.textContent = "Expired";
-                    return;
-                }
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                expiryEl.textContent = `Expires in ${diffHours}h ${diffMins}m`;
-            };
-            updateExpiry();
-            setInterval(updateExpiry, 60000);
         }
     });
 </script>

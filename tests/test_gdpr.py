@@ -2,7 +2,6 @@ import os
 import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
-from app import mail
 from app.models import User, Item, CancellationRecord
 from tests.conftest import make_test_image
 
@@ -134,26 +133,26 @@ class TestGDPRDeletion:
         # Log in as buyer (second_user)
         client.post("/auth/login", data={"email": "other@university.ac.uk", "password": "StrongPass123"})
 
-        with mail.record_messages() as outbox:
-            resp = client.post(
-                "/settings/delete",
-                data={"delete_confirm_text": "DELETE"},
-                follow_redirects=True
-            )
-            assert resp.status_code == 200
+        from app.utils.emails import outbox
+        resp = client.post(
+            "/settings/delete",
+            data={"delete_confirm_text": "DELETE"},
+            follow_redirects=True
+        )
+        assert resp.status_code == 200
 
-            # Claim should be cancelled, item remains since seller is active
-            item = db_session.session.get(Item, sample_item.id)
-            assert item is not None
-            assert item.buyer_id is None
-            assert item.pin_code is None
+        # Claim should be cancelled, item remains since seller is active
+        item = db_session.session.get(Item, sample_item.id)
+        assert item is not None
+        assert item.buyer_id is None
+        assert item.pin_code is None
 
-            # Email notification sent to the seller (sample_user)
-            assert len(outbox) == 1
-            email_msg = outbox[0]
-            assert email_msg.subject == f"A claim on {sample_item.title} has been cancelled"
-            assert sample_user.email in email_msg.recipients
-            assert "deactivated for deletion" in email_msg.body
+        # Email notification sent to the seller (sample_user)
+        assert len(outbox) == 1
+        email_msg = outbox[0]
+        assert email_msg.subject == f"A claim on {sample_item.title} has been cancelled"
+        assert sample_user.email in email_msg.recipients
+        assert "deactivated for deletion" in email_msg.html_content
 
     def test_removes_active_listings_and_images(self, auth_client, sample_user, sample_item, db_session, app):
         """Unsold listings of the user are hard-deleted, and their image files are removed from disk."""

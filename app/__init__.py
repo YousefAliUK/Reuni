@@ -11,7 +11,6 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_mail import Mail
 from dotenv import load_dotenv
 
 # Load .env file if present (for local development)
@@ -26,10 +25,9 @@ csrf = CSRFProtect()
 migrate = Migrate()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["1000 per day", "100 per hour"],
+    default_limits=["1000 per day", "1000 per hour"],
     storage_uri="memory://",
 )
-mail = Mail()
 
 
 def create_app(config_class=None):
@@ -61,7 +59,6 @@ def create_app(config_class=None):
     login_manager.init_app(app)
     csrf.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
 
     # Configure rotating file logging
     if not app.debug and not app.testing:
@@ -151,6 +148,8 @@ def create_app(config_class=None):
         price_type = request.args.get("price_type", "all")
         min_price = request.args.get("min_price", "").strip()
         max_price = request.args.get("max_price", "").strip()
+        active_condition = request.args.get("condition", "")
+        sort_by = request.args.get("sort", "newest")
 
         query = Item.query.filter_by(is_sold=False)
 
@@ -181,8 +180,22 @@ def create_app(config_class=None):
             except ValueError:
                 pass
 
+        # Apply Condition Filter
+        if active_condition:
+            query = query.filter(Item.condition == active_condition)
+
+        # Apply Sorting
+        if sort_by == "price-low":
+            order_clause = (Item.buyer_id.is_(None).desc(), Item.price.asc(), Item.created_at.desc())
+        elif sort_by == "price-high":
+            order_clause = (Item.buyer_id.is_(None).desc(), Item.price.desc(), Item.created_at.desc())
+        elif sort_by == "eco":
+            order_clause = (Item.buyer_id.is_(None).desc(), Item.kg_saved.desc(), Item.created_at.desc())
+        else:
+            order_clause = (Item.buyer_id.is_(None).desc(), Item.created_at.desc())
+
         page = request.args.get("page", 1, type=int)
-        pagination = query.order_by(Item.buyer_id.is_(None).desc(), Item.created_at.desc()).paginate(
+        pagination = query.order_by(*order_clause).paginate(
             page=page, per_page=12, error_out=False
         )
         items = pagination.items
@@ -197,6 +210,8 @@ def create_app(config_class=None):
             price_type=price_type,
             min_price=min_price,
             max_price=max_price,
+            condition=active_condition,
+            sort=sort_by,
         )
 
     @app.context_processor
@@ -406,8 +421,7 @@ def create_app(config_class=None):
             return redirect(url_for("settings"))
 
         from app.models import Item, CancellationRecord
-        from flask_mail import Message
-        from app import mail
+        from app.utils.emails import send_email
         from datetime import datetime, timezone, timedelta
 
         # 4. Cancel Claims with Email Notifications to Other Parties
@@ -425,17 +439,19 @@ def create_app(config_class=None):
             try:
                 seller = item.seller
                 if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
-                    msg = Message(
+                    email_html = (
+                        f"<p>Hello {seller.name},</p>"
+                        f"<p>The claim on the item \"<strong>{item.title}</strong>\" has been cancelled "
+                        f"because the buyer's account has been deactivated for deletion.</p>"
+                        f"<p>The item is now available back on the marketplace.</p>"
+                        f"<p>— The Reuni team</p>"
+                    )
+                    send_email(
+                        to_email=seller.email,
+                        to_name=seller.name,
                         subject=f"A claim on {item.title} has been cancelled",
-                        recipients=[seller.email]
+                        html_content=email_html
                     )
-                    msg.body = (
-                        f"Hello {seller.name},\n\n"
-                        f"The claim on the item \"{item.title}\" has been cancelled because the buyer's account has been deactivated for deletion.\n\n"
-                        f"The item is now available back on the marketplace.\n\n"
-                        f"— The Reuni team"
-                    )
-                    mail.send(msg)
             except Exception as mail_err:
                 app.logger.warning(f"Failed to send deletion claim cancellation email to seller: {mail_err}")
 
@@ -453,16 +469,18 @@ def create_app(config_class=None):
             # Notify the buyer
             try:
                 if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
-                    msg = Message(
+                    email_html = (
+                        f"<p>Hello {buyer.name},</p>"
+                        f"<p>The claim on the item \"<strong>{item.title}</strong>\" has been cancelled "
+                        f"because the seller's account has been deactivated for deletion.</p>"
+                        f"<p>— The Reuni team</p>"
+                    )
+                    send_email(
+                        to_email=buyer.email,
+                        to_name=buyer.name,
                         subject=f"A claim on {item.title} has been cancelled",
-                        recipients=[buyer.email]
+                        html_content=email_html
                     )
-                    msg.body = (
-                        f"Hello {buyer.name},\n\n"
-                        f"The claim on the item \"{item.title}\" has been cancelled because the seller's account has been deactivated for deletion.\n\n"
-                        f"— The Reuni team"
-                    )
-                    mail.send(msg)
             except Exception as mail_err:
                 app.logger.warning(f"Failed to send deletion claim cancellation email to buyer: {mail_err}")
 

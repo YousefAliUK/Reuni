@@ -2,43 +2,37 @@
 {% block title %}Verify Email — Reuni{% endblock %}
 
 {% block content %}
-<div style="max-width: 480px; margin: 0 auto; padding-top: var(--space-12); padding-bottom: var(--space-20); display: flex; flex-direction: column; align-items: center; gap: var(--space-6);">
+<div class="auth-container">
     <!-- Icon -->
-    <div style="color: var(--color-primary);">
-        <span class="material-symbols-outlined" style="font-size: 48px;">mail</span>
+    <div class="auth-header__icon">
+        <span class="material-symbols-outlined">mail</span>
     </div>
 
-    <div style="text-align: center;">
-        <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-2);">Check your email</h1>
-        <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0; line-height: var(--lead-body);">
+    <div class="auth-header">
+        <h1 class="auth-header__title">Check your email</h1>
+        <p class="auth-header__sub">
             We sent a 6-digit code to <strong>{{ email }}</strong>. It expires in 15 minutes.
         </p>
     </div>
 
     <!-- MAIN INTERACTION CARD -->
-    <div style="background: var(--color-surface); box-shadow: var(--shadow-raised); border-radius: var(--radius-xl); padding: var(--space-8); width: 100%;">
-        <form method="POST" action="{{ url_for('auth.verify_email') }}" id="otp-form" style="display: flex; flex-direction: column; gap: var(--space-4);">
+    <div class="auth-card">
+        <form method="POST" action="{{ url_for('auth.verify_email') }}" id="otp-form" class="auth-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="code" id="full-code-input" required>
 
-            <label for="otp-input-0" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); text-align: center; margin-bottom: var(--space-2);">
+            <label for="otp-input-0" class="auth-label" style="text-align: center; margin-bottom: var(--space-2);">
                 6-Digit Verification Code
             </label>
 
             <!-- OTP blocks -->
-            <div style="display: flex; gap: var(--space-2); justify-content: center; margin-bottom: var(--space-4);">
-                <input type="text" class="otp-digit" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
-                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1"
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
-                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2"
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
-                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3"
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
-                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4"
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
-                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5"
-                       style="width: 56px; height: 64px; border: 2px solid var(--color-border); border-radius: var(--radius-md); text-align: center; font-family: var(--font-mono); font-size: 24px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-primary); transition: all var(--duration-fast) var(--ease-out-expo);">
+            <div class="otp-inputs-grid">
+                <input type="text" class="otp-digit otp-digit-box" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus>
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5">
             </div>
 
             <button type="submit" class="btn btn--primary" id="confirm-btn" style="height: 48px; border-radius: var(--radius-md); font-weight: 600;" disabled>
@@ -46,13 +40,15 @@
             </button>
         </form>
 
-        <div style="text-align: center; margin-top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-1);">
-            <span>Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Resend code</a></span>
+        <div class="auth-footer-links">
+            <span>Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a></span>
             <span style="font-size: 11px; color: var(--color-ink-tertiary);">Limit 10 per hour</span>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const otpForm = document.getElementById('otp-form');
@@ -62,19 +58,11 @@
 
         if (otpInputs.length && fullCodeInput) {
             otpInputs.forEach((input, index) => {
-                // Style focus
-                input.addEventListener('focus', function() {
-                    this.style.borderColor = 'var(--color-primary)';
-                    this.style.boxShadow = '0 0 0 3px var(--color-primary-muted)';
-                });
-                
                 input.addEventListener('blur', function() {
                     if (this.value.length === 1) {
-                        this.style.borderColor = 'var(--color-success)';
-                        this.style.boxShadow = 'none';
+                        this.classList.add('otp-digit-box--success');
                     } else {
-                        this.style.borderColor = 'var(--color-border)';
-                        this.style.boxShadow = 'none';
+                        this.classList.remove('otp-digit-box--success');
                     }
                 });
 
@@ -83,12 +71,12 @@
                     this.value = this.value.replace(/[^0-9]/g, '');
                     
                     if (this.value.length === 1) {
-                        this.style.borderColor = 'var(--color-success)';
+                        this.classList.add('otp-digit-box--success');
                         if (index < otpInputs.length - 1) {
                             otpInputs[index + 1].focus();
                         }
                     } else {
-                        this.style.borderColor = 'var(--color-border)';
+                        this.classList.remove('otp-digit-box--success');
                     }
                     syncCodeValue();
                 });
@@ -99,7 +87,7 @@
                         if (index > 0) {
                             otpInputs[index - 1].focus();
                             otpInputs[index - 1].value = '';
-                            otpInputs[index - 1].style.borderColor = 'var(--color-border)';
+                            otpInputs[index - 1].classList.remove('otp-digit-box--success');
                             syncCodeValue();
                         }
                     }

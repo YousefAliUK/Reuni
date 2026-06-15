@@ -15,7 +15,7 @@
     </style>
     
     <!-- Left column: Form -->
-    <div class="split-layout__left" style="display: flex; align-items: center; justify-content: center; padding: var(--space-8) var(--container-pad-x); background: var(--color-bg);">
+    <div class="split-layout__left">
         <div style="width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6) 0;">
             <!-- Logo mark -->
             <div style="display: flex; align-items: center; gap: var(--space-2);">
@@ -30,48 +30,44 @@
                 <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0;">Oxford Brookes students only. Free forever.</p>
             </div>
 
-            <form method="POST" action="{{ url_for('auth.register') }}" style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
-                <div>
-                    <label for="name" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Full Name</label>
-                    <div style="position: relative;">
+                <div class="auth-form-group">
+                    <label for="name" class="auth-label">Full Name</label>
+                    <div style="position: relative; width: 100%;">
                         <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">person</span>
-                        <input type="text" id="name" name="name" placeholder="Jane Doe" required
-                               style="width: 100%; height: 48px; padding: 0 var(--space-3) 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <input type="text" id="name" name="name" placeholder="Jane Doe" required class="auth-input" style="padding-left: 44px;">
                     </div>
                 </div>
 
-                <div>
-                    <label for="email" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">University Email</label>
-                    <div style="position: relative;">
+                <div class="auth-form-group">
+                    <label for="email" class="auth-label">University Email</label>
+                    <div style="position: relative; width: 100%;">
                         <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">mail</span>
-                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required
-                               style="width: 100%; height: 48px; padding: 0 var(--space-3) 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required class="auth-input" style="padding-left: 44px;">
                     </div>
                     <!-- Email hint/validation -->
                     <span id="email-validation-hint" style="font-size: 12px; display: none; margin-top: 4px; font-weight: 600;"></span>
                 </div>
 
-                <div>
-                    <label for="phone_number" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">WhatsApp Number</label>
-                    <div style="position: relative;">
+                <div class="auth-form-group">
+                    <label for="phone_number" class="auth-label">WhatsApp Number</label>
+                    <div style="position: relative; width: 100%;">
                         <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">phone</span>
-                        <input type="tel" id="phone_number" name="phone_number" placeholder="07912 345 678" required
-                               style="width: 100%; height: 48px; padding: 0 var(--space-3) 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                        <input type="tel" id="phone_number" name="phone_number" placeholder="07912 345 678" required class="auth-input" style="padding-left: 44px;">
                     </div>
                     <small style="color: var(--color-ink-tertiary); font-size: 11px; display: block; margin-top: 4px;">
                         Used to coordinate meetups with buyers. Not shown publicly.
                     </small>
                 </div>
 
-                <div>
-                    <label for="password" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Password</label>
-                    <div style="position: relative;">
+                <div class="auth-form-group">
+                    <label for="password" class="auth-label">Password</label>
+                    <div style="position: relative; width: 100%;">
                         <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
-                        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8"
-                               style="width: 100%; height: 48px; padding: 0 44px 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
-                        <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px;">
+                        <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
                             <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
                         </button>
                     </div>
@@ -86,13 +82,12 @@
                     </div>
                 </div>
 
-                <div>
-                    <label for="confirm_password" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Confirm Password</label>
-                    <div style="position: relative;">
+                <div class="auth-form-group">
+                    <label for="confirm_password" class="auth-label">Confirm Password</label>
+                    <div style="position: relative; width: 100%;">
                         <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
-                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required minlength="8"
-                               style="width: 100%; height: 48px; padding: 0 44px 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
-                        <button type="button" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px;">
+                        <button type="button" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
                             <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
                         </button>
                     </div>
@@ -105,8 +100,8 @@
                 <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">Create account</button>
             </form>
 
-            <div style="font-size: 14px; color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-1);">
-                Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--color-primary); font-weight: 600;">Sign in</a>
+            <div class="auth-footer-links" style="text-align: center; margin-top: var(--space-1);">
+                <span>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></span>
             </div>
         </div>
     </div>

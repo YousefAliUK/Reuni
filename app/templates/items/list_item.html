@@ -2,58 +2,57 @@
 {% block title %}List an Item — Reuni{% endblock %}
 
 {% block content %}
-<div style="max-width: 680px; margin: 0 auto; padding-top: var(--space-10); padding-bottom: var(--space-20);" id="list-item-app">
+<div class="listing-form-container" id="list-item-app">
     <!-- Back button -->
-    <a href="{{ url_for('index') }}" class="sidebar-nav__link hide-on-mobile" style="display: inline-flex; align-items: center; width: auto; margin-bottom: var(--space-6); text-decoration: none; padding-left: 0;">
-        <span class="material-symbols-outlined" style="margin-right: 8px;">arrow_back</span>
+    <a href="{{ url_for('index') }}" class="back-link hide-on-mobile">
+        <span class="material-symbols-outlined">arrow_back</span>
         Back to Marketplace
     </a>
 
-    <h1 style="font-size: var(--type-display); font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1); letter-spacing: var(--track-display);">List an item</h1>
-    <p style="font-size: 14px; color: var(--color-ink-secondary); margin-top: 0; margin-bottom: var(--space-8);">It takes 60 seconds. No shipping. Campus pickup only.</p>
+    <h1 class="auth-header__title" style="text-align: left; font-size: var(--type-display); margin-bottom: var(--space-1);">List an item</h1>
+    <p class="auth-header__sub" style="text-align: left; margin-bottom: var(--space-8);">It takes 60 seconds. No shipping. Campus pickup only.</p>
 
     <!-- FORM CARD -->
-    <div style="background: var(--color-surface); box-shadow: var(--shadow-card); border-radius: var(--radius-xl); padding: var(--space-8);">
+    <div class="listing-form-card">
         
-        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: var(--space-6);">
+        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Photo Upload zone (First on mobile via CSS order) -->
-            <div class="list-photo-field">
-                <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Photo (required)</label>
+            <div class="list-photo-field form-group">
+                <label class="form-label">Photo (required)</label>
                 
-                <div id="photo-upload-zone" style="border: 2px dashed var(--color-border); border-radius: var(--radius-lg); height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; background: var(--color-surface-raised); transition: all var(--duration-normal);">
-                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" required style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none;">
+                <div id="photo-upload-zone">
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" required class="image-upload__input">
                     
-                    <div id="upload-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;">
-                        <span class="material-symbols-outlined" style="font-size: 32px; color: var(--color-ink-tertiary);">upload</span>
-                        <span style="font-size: 14px; color: var(--color-ink-secondary); font-weight: 500;">Click to upload or drag here</span>
-                        <span style="font-size: 12px; color: var(--color-ink-tertiary);">JPG, PNG, WEBP &middot; Max 5MB</span>
+                    <div id="upload-placeholder" class="upload-placeholder">
+                        <span class="material-symbols-outlined">upload</span>
+                        <span class="upload-placeholder__text">Click to upload or drag here</span>
+                        <span class="upload-placeholder__hint">JPG, PNG, WEBP &middot; Max 5MB</span>
                     </div>
 
-                    <img id="photo-preview" src="" alt="Upload preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    <img id="photo-preview" src="" alt="Upload preview" class="photo-preview-img">
                     
                     <!-- Remove photo button -->
-                    <button type="button" id="remove-photo-btn" style="display: none; position: absolute; top: 12px; right: 12px; background: rgba(15, 23, 42, 0.7); border: none; border-radius: var(--radius-full); padding: 4px 10px; color: #ffffff; font-family: var(--font-sans); font-size: 12px; font-weight: 600; cursor: pointer; z-index: 10; align-items: center; gap: 4px;">
+                    <button type="button" id="remove-photo-btn" class="remove-photo-badge">
                         ✕ Remove
                     </button>
                 </div>
             </div>
 
             <!-- Title -->
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1);">
-                    <label for="title" style="font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin: 0;">Title</label>
-                    <span id="title-char-counter" style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">0/80</span>
+            <div class="form-group">
+                <div class="form-label-row">
+                    <label for="title" class="form-label">Title</label>
+                    <span id="title-char-counter" class="form-counter">0/80</span>
                 </div>
-                <input type="text" id="title" name="title" placeholder="e.g. IKEA desk lamp, Canon AE-1 film camera…" required maxlength="80"
-                       style="width: 100%; height: 48px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                <input type="text" id="title" name="title" placeholder="e.g. IKEA desk lamp, Canon AE-1 film camera…" required maxlength="80" class="form-input">
             </div>
 
             <!-- Category -->
-            <div>
-                <label for="category" style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Category</label>
-                <select id="category" name="category" required style="width: 100%; height: 48px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+            <div class="form-group">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" required class="form-select">
                     <option value="" disabled selected>Select a category</option>
                     {% for cat in categories %}
                         <option value="{{ cat }}">{{ cat }}</option>
@@ -61,17 +60,17 @@
                 </select>
                 
                 <!-- Dynamic Live Category Weight Preview -->
-                <div id="live-eco-preview" style="display: none; margin-top: var(--space-2); background: var(--color-primary-muted); border-radius: var(--radius-md); padding: 10px 14px;">
-                    <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-primary); font-weight: 600;">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">eco</span>
+                <div id="live-eco-preview" class="eco-preview-banner">
+                    <span class="eco-preview-content">
+                        <span class="material-symbols-outlined">eco</span>
                         <span id="live-eco-text">Selecting category...</span>
                     </span>
                 </div>
             </div>
 
             <!-- Condition -->
-            <div>
-                <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Condition</label>
+            <div class="form-group">
+                <label class="form-label">Condition</label>
                 <!-- Hidden original select -->
                 <select id="condition" name="condition" required style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none;">
                     <option value="" disabled selected>Select condition</option>
@@ -81,10 +80,9 @@
                 </select>
                 
                 <!-- Custom Segmented Buttons -->
-                <div class="condition-btns-container" style="display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-raised);">
+                <div class="condition-btns-container">
                     {% for cond in conditions %}
-                        <button type="button" class="condition-btn" data-value="{{ cond }}"
-                                style="flex: 1; height: 40px; border: none; background: transparent; color: var(--color-ink-secondary); font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: pointer; border-right: 1px solid var(--color-border); transition: all var(--duration-fast);">
+                        <button type="button" class="condition-btn" data-value="{{ cond }}">
                             {{ cond }}
                         </button>
                     {% endfor %}
@@ -92,42 +90,40 @@
             </div>
 
             <!-- Price -->
-            <div>
-                <label style="display: block; font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">Price</label>
+            <div class="form-group">
+                <label class="form-label">Price</label>
                 <!-- Hidden original elements -->
                 <input type="checkbox" id="is_free" name="is_free" style="display: none;">
                 
                 <!-- Custom Segmented Toggle -->
-                <div class="price-toggle-container" style="display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-raised); width: 200px; margin-bottom: var(--space-3);">
-                    <button type="button" id="price-toggle-free" style="flex: 1; height: 36px; border: none; background: var(--color-success); color: #ffffff; font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--duration-fast);">
+                <div class="price-toggle-container" style="margin-bottom: var(--space-1);">
+                    <button type="button" id="price-toggle-free" class="price-toggle-btn">
                         Free
                     </button>
-                    <button type="button" id="price-toggle-paid" style="flex: 1; height: 36px; border: none; background: transparent; color: var(--color-ink-secondary); font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: all var(--duration-fast);">
+                    <button type="button" id="price-toggle-paid" class="price-toggle-btn">
                         Set Price
                     </button>
                 </div>
 
                 <!-- Numerical Input Box -->
                 <div id="price-input-container" style="display: none;">
-                    <div style="position: relative; width: 150px;">
-                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-ink-secondary); font-size: 14px;">£</span>
-                        <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" inputmode="decimal"
-                               style="width: 100%; height: 48px; padding: 0 var(--space-3) 0 24px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body);">
+                    <div class="price-input-wrapper">
+                        <span class="price-input-symbol">£</span>
+                        <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" inputmode="decimal" class="form-input price-input-field">
                     </div>
-                    <small style="color: var(--color-ink-tertiary); font-size: 12px; display: block; margin-top: var(--space-1);">
+                    <small class="form-helper-text">
                         Cash or bank transfer at handoff. No platform fees.
                     </small>
                 </div>
             </div>
 
             <!-- Description -->
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1);">
-                    <label for="description" style="font-size: var(--type-small); font-weight: 500; color: var(--color-ink-secondary); margin: 0;">Description (optional)</label>
-                    <span id="desc-char-counter" style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">0/2000</span>
+            <div class="form-group">
+                <div class="form-label-row">
+                    <label for="description" class="form-label">Description (optional)</label>
+                    <span id="desc-char-counter" class="form-counter">0/2000</span>
                 </div>
-                <textarea id="description" name="description" rows="4" maxlength="2000" placeholder="Any details buyers should know — size, age, minor wear…"
-                          style="width: 100%; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body); resize: vertical; min-height: 120px;"></textarea>
+                <textarea id="description" name="description" rows="4" maxlength="2000" placeholder="Any details buyers should know — size, age, minor wear…" class="form-textarea"></textarea>
             </div>
 
             <!-- DESKTOP FORM ACTIONS (In-flow, hidden on mobile) -->
@@ -135,7 +131,7 @@
                 <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">
                     List this item
                 </button>
-                <div style="text-align: center;">
+                <div style="text-align: center; margin-top: var(--space-2);">
                     <a href="{{ url_for('index') }}" style="font-size: 13px; color: var(--color-ink-tertiary); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-tertiary)'">Discard</a>
                 </div>
             </div>
@@ -199,7 +195,7 @@
                 const category = categorySelect.value;
                 if (category && categoryWeights[category] !== undefined) {
                     const w = categoryWeights[category];
-                    liveEcoText.textContent = `Selecting '${category}' = ~${w.toFixed(1)} kg CO₂e prevented`;
+                    liveEcoText.textContent = `Selecting '${category}' saves ~${w.toFixed(1)} kg CO₂e prevented`;
                     liveEcoPreview.style.display = 'block';
                 } else {
                     liveEcoPreview.style.display = 'none';
@@ -215,15 +211,11 @@
                 btn.addEventListener('click', function() {
                     conditionSelect.value = btn.dataset.value;
                     
-                    // Reset styling
-                    conditionBtns.forEach(b => {
-                        b.style.background = 'transparent';
-                        b.style.color = 'var(--color-ink-secondary)';
-                    });
+                    // Reset styling via classes
+                    conditionBtns.forEach(b => b.classList.remove('active'));
                     
-                    // Select style
-                    btn.style.background = 'var(--color-primary)';
-                    btn.style.color = '#ffffff';
+                    // Select style via class
+                    btn.classList.add('active');
                 });
             });
             
@@ -245,18 +237,14 @@
             isFreeCheckbox.checked = isFree;
             
             if (isFree) {
-                priceToggleFree.style.background = 'var(--color-success)';
-                priceToggleFree.style.color = '#ffffff';
-                priceTogglePaid.style.background = 'transparent';
-                priceTogglePaid.style.color = 'var(--color-ink-secondary)';
+                priceToggleFree.classList.add('active-free');
+                priceTogglePaid.classList.remove('active-paid');
                 priceInputContainer.style.display = 'none';
                 priceInput.value = '';
                 priceInput.required = false;
             } else {
-                priceToggleFree.style.background = 'transparent';
-                priceToggleFree.style.color = 'var(--color-ink-secondary)';
-                priceTogglePaid.style.background = 'var(--color-primary)';
-                priceTogglePaid.style.color = '#ffffff';
+                priceToggleFree.classList.remove('active-free');
+                priceTogglePaid.classList.add('active-paid');
                 priceInputContainer.style.display = 'block';
                 priceInput.required = true;
             }
@@ -267,7 +255,7 @@
             priceTogglePaid.addEventListener('click', () => setPriceMode(false));
             
             // Initial price state
-            setPriceMode(isFreeCheckbox.checked);
+            setPriceMode(isFreeCheckbox.checked !== false);
         }
 
         // 5. Image Upload Preview Zone & Remove button
@@ -286,16 +274,16 @@
 
             uploadZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                uploadZone.style.borderColor = 'var(--color-primary)';
+                uploadZone.classList.add('dragover');
             });
 
             uploadZone.addEventListener('dragleave', () => {
-                uploadZone.style.borderColor = 'var(--color-border)';
+                uploadZone.classList.remove('dragover');
             });
 
             uploadZone.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadZone.style.borderColor = 'var(--color-border)';
+                uploadZone.classList.remove('dragover');
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                     fileInput.files = e.dataTransfer.files;
                     previewFile(e.dataTransfer.files[0]);
@@ -351,21 +339,20 @@
             const titleInput = document.getElementById('title');
             const priceInput = document.getElementById('price');
             
-            if (photoZone) photoZone.style.borderColor = 'var(--color-border)';
-            if (condContainer) condContainer.style.borderColor = 'var(--color-border)';
-            if (categorySelect) categorySelect.style.borderColor = 'var(--color-border)';
-            if (titleInput) titleInput.style.borderColor = 'var(--color-border)';
-            if (priceInput) priceInput.style.borderColor = 'var(--color-border)';
+            if (photoZone) photoZone.classList.remove('error');
+            if (condContainer) condContainer.classList.remove('error');
+            if (categorySelect) categorySelect.classList.remove('error');
+            if (titleInput) titleInput.classList.remove('error');
+            if (priceInput) priceInput.classList.remove('error');
 
             // 1. Validate Photo
             const imageInput = document.getElementById('image');
             if (imageInput && imageInput.hasAttribute('required') && imageInput.files.length === 0) {
                 isValid = false;
                 if (photoZone) {
-                    photoZone.style.borderColor = 'var(--color-danger)';
+                    photoZone.classList.add('error');
                     const errMsg = document.createElement('div');
                     errMsg.className = 'custom-error-msg';
-                    errMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; margin-top: var(--space-1); font-weight: 500;';
                     errMsg.textContent = 'Please upload a photo of your item.';
                     photoZone.parentNode.appendChild(errMsg);
                 }
@@ -374,10 +361,9 @@
             // 2. Validate Title
             if (titleInput && !titleInput.value.trim()) {
                 isValid = false;
-                titleInput.style.borderColor = 'var(--color-danger)';
+                titleInput.classList.add('error');
                 const errMsg = document.createElement('div');
                 errMsg.className = 'custom-error-msg';
-                errMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; margin-top: var(--space-1); font-weight: 500;';
                 errMsg.textContent = 'Please enter a title.';
                 titleInput.parentNode.appendChild(errMsg);
             }
@@ -385,10 +371,9 @@
             // 3. Validate Category
             if (categorySelect && !categorySelect.value) {
                 isValid = false;
-                categorySelect.style.borderColor = 'var(--color-danger)';
+                categorySelect.classList.add('error');
                 const errMsg = document.createElement('div');
                 errMsg.className = 'custom-error-msg';
-                errMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; margin-top: var(--space-1); font-weight: 500;';
                 errMsg.textContent = 'Please select a category.';
                 categorySelect.parentNode.appendChild(errMsg);
             }
@@ -398,10 +383,9 @@
             if (conditionSelect && !conditionSelect.value) {
                 isValid = false;
                 if (condContainer) {
-                    condContainer.style.borderColor = 'var(--color-danger)';
+                    condContainer.classList.add('error');
                     const errMsg = document.createElement('div');
                     errMsg.className = 'custom-error-msg';
-                    errMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; margin-top: var(--space-1); font-weight: 500;';
                     errMsg.textContent = 'Please select the condition of your item.';
                     condContainer.parentNode.appendChild(errMsg);
                 }
@@ -413,10 +397,9 @@
                 const priceVal = parseFloat(priceInput.value);
                 if (isNaN(priceVal) || priceVal < 0) {
                     isValid = false;
-                    priceInput.style.borderColor = 'var(--color-danger)';
+                    priceInput.classList.add('error');
                     const errMsg = document.createElement('div');
                     errMsg.className = 'custom-error-msg';
-                    errMsg.style.cssText = 'color: var(--color-danger); font-size: 12px; margin-top: var(--space-1); font-weight: 500;';
                     errMsg.textContent = 'Please enter a valid price.';
                     priceInput.parentNode.appendChild(errMsg);
                 }

@@ -2,270 +2,196 @@
 {% block title %}Partner Dashboard — Reuni{% endblock %}
 
 {% block content %}
-<div style="max-width: 1320px; margin: 0 auto; padding-top: var(--space-6); padding-bottom: var(--space-16); display: flex; flex-direction: column; gap: var(--space-8);">
+<div class="esg-container">
     
     <!-- ─── Dashboard Header ─── -->
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4);">
-        <div style="display: flex; align-items: center; gap: var(--space-4);">
-            <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--color-surface-raised); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+    <div class="esg-header">
+        <div class="esg-title-block">
+            <div class="esg-logo-wrapper">
                 {% if logo_url %}
-                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="esg-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 {% endif %}
                 <div style="font-weight: 700; font-size: 20px; color: var(--color-primary); width: 100%; height: 100%; display: {% if logo_url %}none{% else %}flex{% endif %}; align-items: center; justify-content: center;">
                     {{ uni_initials }}
                 </div>
             </div>
             <div>
-                <h1 style="font-size: 20px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">
+                <h1 class="esg-title">
                     {% if is_global %}Global Sustainability Dashboard{% else %}{{ uni_name }} Dashboard{% endif %}
                 </h1>
-                <p style="font-size: 13px; color: var(--color-ink-tertiary); margin: 0;">Sustainability Dashboard</p>
+                <p class="esg-subtitle">Sustainability & Impact Report</p>
             </div>
         </div>
         
-        <div style="display: flex; align-items: center; gap: var(--space-4);">
-            <div style="font-family: var(--font-mono); font-size: 12px; color: var(--color-ink-tertiary);">
+        <div class="esg-actions">
+            <!-- Admin-only domain scope dropdown selector (Visual Mockup for B2B) -->
+            {% if is_global %}
+                <div class="scope-selector-mock" style="position: relative; display: inline-flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-ink-tertiary);">filter_list</span>
+                    <select disabled style="height: 40px; padding: 0 var(--space-4) 0 var(--space-2); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: not-allowed; opacity: 0.85;">
+                        <option selected>Scope: All Universities</option>
+                        <option>Oxford Brookes University</option>
+                        <option>University of Oxford</option>
+                    </select>
+                </div>
+            {% endif %}
+            
+            <div class="esg-timestamp">
                 Last updated: <span id="last-updated-time">--:--</span>
             </div>
-            <button onclick="window.print();" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px;">
+            
+            <button onclick="window.print();" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
                 <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
-                Download report
+                <span>Download report</span>
             </button>
         </div>
     </div>
 
     <!-- ─── ROW 1: KPI Metrics Row (4-column grid with Card A dominant) ─── -->
-    <div class="kpis-grid" style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
-        <style>
-            @media (min-width: 768px) {
-                .kpis-grid {
-                    grid-template-columns: 1fr 1fr !important;
-                }
-            }
-            @media (min-width: 1024px) {
-                .kpis-grid {
-                    grid-template-columns: 2fr 1fr 1fr 1fr !important;
-                }
-            }
-        </style>
-
-        <!-- CARD A — Total kg Saved (DOMINANT 2fr width on desktop, teal background) -->
-        <div style="background: var(--color-primary); color: #ffffff; border-radius: var(--radius-lg); padding: 24px 28px; box-shadow: var(--shadow-card); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-            <div style="position: absolute; right: 20px; bottom: 10px; opacity: 0.2; color: #ffffff;">
-                <span class="material-symbols-outlined" style="font-size: 80px;">eco</span>
+    <div class="esg-metric-grid">
+        
+        <!-- CARD A — Total kg Saved (DOMINANT, teal background, eco icon) -->
+        <div class="esg-card esg-card--dominant">
+            <div class="esg-card-icon-back">
+                <span class="material-symbols-outlined" style="font-size: 80px; color: #ffffff;">eco</span>
             </div>
             <div style="position: relative; z-index: 1;">
-                <span style="font-family: var(--font-mono); font-size: 52px; font-weight: 800; line-height: 1; display: block; color: #ffffff;">
+                <span class="esg-card-num esg-card-num--large font-mono">
                     {{ "%.1f"|format(total_kg_saved) }}
                 </span>
-                <span style="font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.9); display: block; margin-top: 4px;">kg saved from landfill</span>
+                <span class="esg-card-label esg-card-label--light">kilograms saved from landfill</span>
             </div>
-            <span style="font-size: 12px; color: rgba(255,255,255,0.7); position: relative; z-index: 1; margin-top: 8px;">Since platform launch</span>
+            <span class="esg-card-hint esg-card-hint--light">Since platform launch</span>
         </div>
 
         <!-- CARD B — Items Exchanged -->
-        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: 24px 28px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-            <div>
-                <span style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--color-ink-primary); display: block; line-height: 1;">
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">recycling</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
                     {{ total_items_exchanged }}
                 </span>
-                <span style="font-size: 13px; color: var(--color-ink-secondary); display: block; margin-top: 4px;">items exchanged</span>
+                <span class="esg-card-label">items exchanged</span>
             </div>
-            <span style="font-size: 12px; color: var(--color-ink-tertiary);">Verified student exchanges</span>
+            <span class="esg-card-hint">Verified student exchanges</span>
         </div>
 
         <!-- CARD C — Verified Students -->
-        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: 24px 28px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-            <div>
-                <span style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--color-ink-primary); display: block; line-height: 1;">
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">school</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
                     {{ total_verified_students }}
                 </span>
-                <span style="font-size: 13px; color: var(--color-ink-secondary); display: block; margin-top: 4px;">verified students</span>
+                <span class="esg-card-label">verified students</span>
             </div>
-            <span style="font-size: 12px; color: var(--color-ink-tertiary);">Active on platform</span>
+            <span class="esg-card-hint">Active on platform</span>
         </div>
 
-        <!-- CARD D — Avg kg/Transaction -->
-        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: 24px 28px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
-            <div>
-                <span style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--color-ink-primary); display: block; line-height: 1;">
-                    {% if total_items_exchanged > 0 %}
-                        {{ "%.1f"|format(total_kg_saved / total_items_exchanged) }}
-                    {% else %}
-                        0.0
-                    {% endif %}
-                </span>
-                <span style="font-size: 13px; color: var(--color-ink-secondary); display: block; margin-top: 4px;">avg kg per exchange</span>
+        <!-- CARD D — CO₂ Prevented -->
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">co2</span>
             </div>
-            <span style="font-size: 12px; color: var(--color-ink-tertiary);">Campus average benchmark</span>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
+                    {{ "%.1f"|format(total_kg_saved) }} kg
+                </span>
+                <span class="esg-card-label">CO₂e prevented</span>
+            </div>
+            <span class="esg-card-hint">Carbon equivalent avoided</span>
         </div>
     </div>
 
-    <!-- ─── ROW 2: Category Breakdown (2-column asymmetric: 2fr | 1fr) ─── -->
-    <div class="split-asymmetric" style="display: grid; grid-template-columns: 1fr; gap: var(--space-6);">
-        <style>
-            @media (min-width: 1024px) {
-                .split-asymmetric {
-                    grid-template-columns: 2fr 1fr !important;
-                }
-            }
-        </style>
-
-        <!-- LEFT PANEL (2fr) — Category Table -->
-        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-card);">
-            <h2 style="font-size: 16px; font-weight: 600; color: var(--color-ink-primary); margin-top: 0; margin-bottom: var(--space-4);">Exchanges by Category</h2>
+    <!-- ─── ROW 2: Category Distribution Panel vs Live Circulation Log (Split Asymmetric) ─── -->
+    <div class="esg-split-layout">
+        
+        <!-- LEFT PANEL (2fr) — Category Distribution Panel -->
+        <div class="esg-panel category-distribution">
+            <h2 class="esg-panel-title">Exchanges by Category</h2>
             
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--color-border); color: var(--color-ink-tertiary); font-weight: 600;">
-                            <th style="padding: var(--space-2) var(--space-3); font-weight: 600;">Category</th>
-                            <th style="padding: var(--space-2) var(--space-3); font-weight: 600; text-align: right;">Exchanges</th>
-                            <th style="padding: var(--space-2) var(--space-3); font-weight: 600; text-align: right;">kg Saved</th>
-                            <th style="padding: var(--space-2) var(--space-3); font-weight: 600; text-align: right;">% of Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if categories_list %}
-                            {% for cat in categories_list %}
-                                <tr class="table-row-hover" style="border-bottom: 1px solid var(--color-border); transition: background var(--duration-fast); position: relative;">
-                                    <td style="padding: var(--space-3); display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-primary); font-weight: 500;">
-                                        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 18px;">{{ cat.icon }}</span>
-                                        {{ cat.category }}
-                                    </td>
-                                    <td style="padding: var(--space-3); text-align: right; font-family: var(--font-mono); color: var(--color-ink-secondary);">
-                                        {{ cat.count }} exchanged
-                                    </td>
-                                    <td style="padding: var(--space-3); text-align: right; font-family: var(--font-mono); color: var(--color-primary); font-weight: 600;">
-                                        {{ "%.1f"|format(cat.kg) }} kg
-                                    </td>
-                                    <td style="padding: var(--space-3); text-align: right; font-family: var(--font-mono); color: var(--color-ink-secondary); position: relative;">
-                                        <!-- Subtle bar backing -->
-                                        <div style="position: absolute; right: 0; top: 15%; bottom: 15%; width: {{ cat.percentage }}%; background: var(--color-primary); opacity: 0.08; pointer-events: none; border-radius: 2px 0 0 2px;"></div>
-                                        {{ "%.1f"|format(cat.percentage) }}%
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary);">
-                                    No category statistics available yet.
-                                </td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- RIGHT PANEL (1fr) — Category Donut -->
-        <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
-            <h2 style="font-size: 16px; font-weight: 600; color: var(--color-ink-primary); margin-top: 0; margin-bottom: var(--space-4);">Distribution</h2>
-            
-            {% if categories_list %}
-                <!-- Calculate gradient stops dynamically in Jinja -->
-                {% set ns = namespace(cumulative=0, grad_stops=[]) %}
-                {% for cat in categories_list %}
-                    {% set start = ns.cumulative %}
-                    {% set end = ns.cumulative + cat.percentage %}
-                    {% set opacity = 1.0 - (loop.index0 * 0.1) %}
-                    {% if opacity < 0.2 %}{% set opacity = 0.2 %}{% endif %}
-                    {% set ns.grad_stops = ns.grad_stops + ['rgba(13, 148, 136, ' ~ opacity|round(2) ~ ') ' ~ start|round(1) ~ '% ' ~ end|round(1) ~ '%'] %}
-                    {% set ns.cumulative = end %}
-                {% endfor %}
-                
-                <div style="position: relative; width: 160px; height: 160px; border-radius: 50%; background: conic-gradient({{ ns.grad_stops | join(', ') or 'var(--color-border) 0% 100%' }}); display: flex; align-items: center; justify-content: center; margin: var(--space-4) auto;">
-                    <div style="width: 106px; height: 106px; border-radius: 50%; background: var(--color-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);">
-                        <span style="font-size: var(--type-micro); font-weight: 600; color: var(--color-ink-tertiary); text-transform: uppercase; letter-spacing: var(--track-wide);">Total kg</span>
-                        <span style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--color-primary);">{{ "%.1f"|format(total_kg_saved) }}</span>
-                    </div>
-                </div>
-
-                <!-- Legend -->
-                <div style="display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4);">
-                    {% for cat in categories_list[:4] %}
-                        {% set opacity = 1.0 - (loop.index0 * 0.1) %}
-                        {% if opacity < 0.2 %}{% set opacity = 0.2 %}{% endif %}
-                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
-                            <div style="display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-secondary);">
-                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: rgba(13, 148, 136, {{ opacity }});"></span>
-                                <span>{{ cat.category }}</span>
+            <div class="category-distribution-list">
+                {% if categories_list %}
+                    {% for cat in categories_list %}
+                        <div class="category-distribution-row">
+                            <div class="category-distribution-row__info">
+                                <span class="material-symbols-outlined category-distribution-row__icon">{{ cat.icon }}</span>
+                                <span class="category-distribution-row__name">{{ cat.category }}</span>
                             </div>
-                            <span style="font-family: var(--font-mono); color: var(--color-ink-primary); font-weight: 600;">{{ "%.1f"|format(cat.percentage) }}%</span>
+                            <div class="category-distribution-row__bar-container">
+                                <div class="category-distribution-row__bar-fill" style="width: {{ cat.percentage }}%;"></div>
+                            </div>
+                            <div class="category-distribution-row__stats">
+                                <span>{{ cat.count }} {% if cat.count == 1 %}exchanged{% else %}exchanges{% endif %}</span>
+                                <span class="category-distribution-row__divider">&middot;</span>
+                                <span class="category-distribution-row__weight font-mono">{{ "%.1f"|format(cat.kg) }} kg</span>
+                            </div>
                         </div>
                     {% endfor %}
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: var(--space-10); color: var(--color-ink-tertiary);">
-                    No distribution data.
-                </div>
-            {% endif %}
+                {% else %}
+                    <div style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary); font-size: 14px;">
+                        No category statistics available yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL (1fr) — Live Circulation Log -->
+        <div class="esg-panel circulation-log">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <h2 class="esg-panel-title" style="margin: 0;">Recent Exchanges</h2>
+                <span class="pulse-dot" title="Live circulation update stream"></span>
+            </div>
+            
+            <div class="circulation-log-list">
+                {% if recent_exchanges %}
+                    {% for log in recent_exchanges %}
+                        <div class="circulation-log-row">
+                            <div class="circulation-log-item">
+                                <div class="circulation-log-item__icon">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">{{ log.icon }}</span>
+                                </div>
+                                <div class="circulation-log-item__details">
+                                    <span class="circulation-log-item__title">{{ log.title | truncate(24, True) }}</span>
+                                    <span class="circulation-log-item__category">{{ log.category }}</span>
+                                </div>
+                            </div>
+                            <div class="circulation-log-stats">
+                                <span class="circulation-log-stats__weight">+{{ "%.1f"|format(log.kg_saved) }} kg</span>
+                                <span class="circulation-log-stats__time">{{ log.time_ago }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary); font-size: 13px;">
+                        No recent exchanges recorded.
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <!-- ─── ROW 3: Recent Exchanges (Full Width Table) ─── -->
-    <div style="background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-card);">
-        <h2 style="font-size: 16px; font-weight: 600; color: var(--color-ink-primary); margin-top: 0; margin-bottom: var(--space-4);">Recent Exchanges</h2>
-        
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                <thead>
-                    <tr style="border-bottom: 1px solid var(--color-border); color: var(--color-ink-tertiary); font-weight: 600;">
-                        <th style="padding: var(--space-2) var(--space-3); font-weight: 600;">Item</th>
-                        <th style="padding: var(--space-2) var(--space-3); font-weight: 600;">Category</th>
-                        <th style="padding: var(--space-2) var(--space-3); font-weight: 600; text-align: right; font-weight: 600;">kg Saved</th>
-                        <th style="padding: var(--space-2) var(--space-3); font-weight: 600; text-align: right; font-weight: 600;">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if recent_exchanges %}
-                        {% for log in recent_exchanges %}
-                            <tr class="table-row-hover" style="border-bottom: 1px solid var(--color-border); height: 52px; transition: background var(--duration-fast);">
-                                <td style="padding: var(--space-2) var(--space-3); font-weight: 500; color: var(--color-ink-primary);">
-                                    {{ log.title }}
-                                </td>
-                                <td style="padding: var(--space-2) var(--space-3);">
-                                    <span style="font-size: var(--type-micro); background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 500; text-transform: uppercase;">
-                                        {{ log.category }}
-                                    </span>
-                                </td>
-                                <td style="padding: var(--space-2) var(--space-3); text-align: right; font-family: var(--font-mono); color: var(--color-primary); font-weight: 600;">
-                                    +{{ "%.1f"|format(log.kg_saved) }} kg
-                                </td>
-                                <td style="padding: var(--space-2) var(--space-3); text-align: right; font-family: var(--font-mono); color: var(--color-ink-tertiary); font-size: 13px;">
-                                    {{ log.time_ago }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="4" style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary);">
-                                No recent completed transactions recorded yet.
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- ─── ROW 4: ESG COPY BLOCK (for report extraction) ─── -->
-    <div style="background: var(--color-surface-raised); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); padding: 24px 28px; display: flex; flex-direction: column; gap: var(--space-4);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin: 0; text-transform: uppercase; letter-spacing: var(--track-wide);">For Your ESG Report</h2>
-            <button id="copy-esg-btn" onclick="copyESGText()" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary);">
+    <!-- ─── ROW 3: ESG COPY BLOCK (for report extraction) ─── -->
+    <div class="esg-report-card">
+        <div class="esg-report-header">
+            <h2 class="esg-report-eyebrow">For Your ESG Report</h2>
+            <button id="copy-esg-btn" onclick="copyESGText()" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary); cursor: pointer;">
                 <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
                 <span>Copy text</span>
             </button>
         </div>
         
-        <p id="esg-report-text" style="font-size: 14px; color: var(--color-ink-secondary); font-style: italic; margin: 0; line-height: var(--lead-body);">
+        <p id="esg-report-text" class="esg-report-text">
             {{ uni_name }} students exchanged {{ total_items_exchanged }} items via Reuni, diverting an estimated {{ "%.1f"|format(total_kg_saved) }} kg of goods from landfill in line with UN SDG 12.
         </p>
     </div>
 
     <!-- ─── GDPR Footnote ─── -->
-    <div style="display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-tertiary); font-size: 12px;">
+    <div style="display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-tertiary); font-size: 12px; padding-top: var(--space-2);">
         <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">verified</span>
         <span>UK/EU GDPR Compliant Log. Student identities are protected. Data updates in real time.</span>
     </div>

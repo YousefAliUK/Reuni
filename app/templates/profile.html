@@ -10,76 +10,66 @@
     <span>Items recycled</span>
 </div>
 
-<div class="profile-page" style="max-width: 720px; margin: 0 auto; padding: 40px var(--space-4) var(--space-12);">
+<div class="profile-page-v3">
 
-    <!-- ── Profile Header ── -->
-    <div class="profile-header" style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: var(--space-8);">
+    <!-- ── Profile Hero ── -->
+    <div class="profile-hero">
         <!-- Avatar: 80px circle, initials-based, var(--primary-muted) bg, var(--primary) text 32px 700 -->
-        <div class="profile-header__avatar" style="width: 80px; height: 80px; border-radius: var(--radius-full); background: var(--color-primary-muted); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; margin-bottom: var(--space-4);">
+        <div class="profile-hero__avatar">
             {{ current_user.name[0]|upper }}
         </div>
         
-        <!-- Name: 24px 700, --ink-primary -->
-        <h1 class="profile-header__name" style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin-bottom: var(--space-2); line-height: var(--lead-display); letter-spacing: var(--track-tight);">
+        <!-- Name -->
+        <h1 class="profile-hero__name">
             {{ current_user.name }}
         </h1>
         
-        <!-- University -->
-        <p class="profile-header__university" style="font-size: 14px; color: var(--color-ink-secondary); margin-bottom: var(--space-1);">
+        <!-- University Domain Pill -->
+        <div class="profile-hero__domain-pill">
             {% if current_user.university_domain == 'brookes.ac.uk' %}
                 Oxford Brookes University
             {% else %}
                 {{ current_user.university_domain|default('University Partner') }}
             {% endif %}
-        </p>
+        </div>
         
         <!-- Member since -->
-        <p class="profile-header__member-since" style="font-size: 12px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4);">
+        <p class="profile-hero__member-since">
             Member since {{ current_user.created_at.strftime('%B %Y') }}
         </p>
         
-        <!-- Verified badge: [✓ Verified Student] — var(--success) fill, white, 11px, pill -->
+        <!-- Verified badge -->
         {% if current_user.is_verified %}
-        <span class="profile-header__badge" style="display: inline-flex; align-items: center; gap: 4px; background: var(--color-success); color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: var(--track-wide);">
+        <span class="profile-hero__badge">
             <span class="material-symbols-outlined" style="font-size: 12px; font-weight: 800;">check</span> Verified Student
         </span>
         {% endif %}
     </div>
 
-    <!-- ── kg_saved Headline Block ── -->
-    <div class="profile-impact-block" style="background: var(--color-primary-muted); border-radius: var(--radius-lg); padding: var(--space-6) var(--space-8); text-align: center; margin-bottom: var(--space-8);">
-        <div class="profile-impact-value" style="font-family: var(--font-mono); font-size: 36px; font-weight: 800; color: var(--color-primary); line-height: 1; margin-bottom: var(--space-2);">
-            {{ "%.1f"|format(current_user.kg_saved_total) }} kg
-        </div>
-        <div class="profile-impact-label" style="font-size: 14px; color: var(--color-primary); opacity: 0.8; font-weight: 500;">
-            saved from landfill
-        </div>
-    </div>
-
-    <!-- ── Stats Row: 3 plain stat blocks, borderless, text-only (no cards) ── -->
-    <div class="profile-stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-bottom: var(--space-8); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: var(--space-4) 0;">
-        <div class="profile-stat-col" style="border-right: 1px solid var(--color-border);">
-            <span class="profile-stat-number" style="display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--color-ink-primary);">
+    <!-- ── Stats Row: 3 columns, separated by vertical dividers ── -->
+    <div class="profile-stats-grid">
+        <div class="profile-stat-column">
+            <span class="profile-stat-column__number">
                 {{ total_listed }}
             </span>
-            <span class="profile-stat-label" style="display: block; font-size: 12px; color: var(--color-ink-tertiary); margin-top: 2px;">
+            <span class="profile-stat-column__label">
                 Items listed
             </span>
         </div>
-        <div class="profile-stat-col" style="border-right: 1px solid var(--color-border);">
-            <span class="profile-stat-number" style="display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--color-ink-primary);">
-                {{ total_sold }}
+        <div class="profile-stat-column">
+            <span class="profile-stat-column__number profile-stat-column__number--primary">
+                {{ "%.1f"|format(current_user.kg_saved_total) }} kg
             </span>
-            <span class="profile-stat-label" style="display: block; font-size: 12px; color: var(--color-ink-tertiary); margin-top: 2px;">
-                Items sold
+            <span class="profile-stat-column__label">
+                Total kg saved
             </span>
         </div>
-        <div class="profile-stat-col">
-            <span class="profile-stat-number" style="display: block; font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--color-ink-primary);">
-                {{ total_bought }}
+        <div class="profile-stat-column">
+            <span class="profile-stat-column__number">
+                {{ total_sold }}
             </span>
-            <span class="profile-stat-label" style="display: block; font-size: 12px; color: var(--color-ink-tertiary); margin-top: 2px;">
-                Items purchased
+            <span class="profile-stat-column__label">
+                Completed sales
             </span>
         </div>
     </div>
@@ -94,64 +84,64 @@
 
     <!-- ── Active Listings Section ── -->
     <section class="profile-listings-section" aria-labelledby="active-listings-heading">
-        <h2 id="active-listings-heading" style="font-size: 16px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4);">
+        <h2 id="active-listings-heading" class="profile-listings-title">
             Active listings
         </h2>
         
         {% if active_listings %}
-        <div class="listings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-4);">
+        <div class="listings-grid-blueprint">
             {% for item in active_listings %}
-            <article class="item-card" style="background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; display: flex; flex-direction: column; transition: transform var(--transition), box-shadow var(--transition); position: relative;">
-                <div style="position: relative; width: 100%; height: 0; padding-bottom: 62.5%; overflow: hidden; background: var(--color-surface-raised);">
+            <article class="listing-card">
+                <!-- Image wrapper -->
+                <div class="listing-card__img-wrap">
                     {% if item.image_filename %}
-                        <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="listing-card__img" loading="lazy">
                     {% else %}
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--color-ink-tertiary); background: var(--color-surface-raised);">
-                            <span class="material-symbols-outlined" style="font-size: 40px;">image</span>
+                        <div class="listing-card__img-fallback">
+                            <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
                         </div>
                     {% endif %}
                     
-                    {% if item.is_free %}
-                        <span style="position: absolute; top: 8px; left: 8px; background: var(--color-success); color: #ffffff; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: var(--radius-full); text-transform: uppercase; z-index: 2;">Free</span>
+                    <!-- Overlay category badge -->
+                    <span class="listing-card__badge-cat">{{ item.category }}</span>
+                    
+                    <!-- Overlay condition badge -->
+                    {% if item.condition == 'New' %}
+                        <span class="listing-card__badge-cond cond--success">New</span>
+                    {% elif item.condition == 'Like New' %}
+                        <span class="listing-card__badge-cond cond--success">Like New</span>
+                    {% elif item.condition == 'Good' %}
+                        <span class="listing-card__badge-cond cond--primary">Good</span>
+                    {% else %}
+                        <span class="listing-card__badge-cond cond--warning">{{ item.condition }}</span>
                     {% endif %}
                 </div>
 
                 <!-- Card Body -->
-                <div style="padding: var(--space-4); display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;">
-                    <div>
-                        <!-- Category / Condition Chips -->
-                        <div style="display: flex; gap: 4px; margin-bottom: var(--space-2); flex-wrap: wrap;">
-                            <span style="font-size: 10px; font-weight: 500; background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm);">{{ item.category }}</span>
-                            <span style="font-size: 10px; font-weight: 500; background: var(--color-surface-raised); color: var(--color-ink-secondary); padding: 2px 6px; border-radius: var(--radius-sm);">{{ item.condition }}</span>
-                        </div>
+                <div class="listing-card__body">
+                    <!-- Title -->
+                    <h3 class="listing-card__title">
+                        <a href="{{ url_for('items.detail', item_id=item.id) }}">{{ item.title }}</a>
+                    </h3>
 
-                        <!-- Title -->
-                        <h3 style="font-size: 15px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.4em; line-height: 1.2;">
-                            <a href="{{ url_for('items.detail', item_id=item.id) }}" style="color: inherit; text-decoration: none;">{{ item.title }}</a>
-                        </h3>
+                    <!-- Price + Eco-Impact Info -->
+                    <div class="listing-card__meta">
+                        <span class="listing-card__eco">
+                            <span class="material-symbols-outlined">eco</span>
+                            <span class="eco-val">{{ "%.1f"|format(item.kg_saved) }}</span> kg
+                        </span>
+                        
+                        {% if item.is_free %}
+                            <span class="listing-card__price price--free">Free</span>
+                        {% else %}
+                            <span class="listing-card__price">£{{ "%.2f"|format(item.price) }}</span>
+                        {% endif %}
                     </div>
 
-                    <div>
-                        <!-- Price and kg saved -->
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-2);">
-                            <span style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--color-ink-primary);">
-                                {% if item.is_free %}
-                                    <span style="color: var(--color-success);">Free</span>
-                                {% else %}
-                                    £{{ "%.2f"|format(item.price) }}
-                                {% endif %}
-                            </span>
-                            <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--color-primary); display: inline-flex; align-items: center; gap: 2px;">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">eco</span>
-                                {{ "%.1f"|format(item.kg_saved) }} kg saved
-                            </span>
-                        </div>
-
-                        <!-- Action -->
-                        <div style="margin-top: var(--space-3); display: flex; gap: var(--space-2);">
-                            <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline btn--sm" style="flex: 1; text-align: center; font-size: 12px; padding: 6px 0;">Edit</a>
-                            <a href="{{ url_for('items.detail', item_id=item.id) }}" class="btn btn--primary btn--sm" style="flex: 1; text-align: center; font-size: 12px; padding: 6px 0;">View</a>
-                        </div>
+                    <!-- Action buttons -->
+                    <div class="listing-card__actions">
+                        <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline btn--sm">Edit</a>
+                        <a href="{{ url_for('items.detail', item_id=item.id) }}" class="btn btn--primary btn--sm">View</a>
                     </div>
                 </div>
             </article>

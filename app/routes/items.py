@@ -17,9 +17,9 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from PIL import Image as PILImage
-from flask_mail import Message
+from app.utils.emails import send_email
 
-from app import db, mail, limiter
+from app import db, limiter
 from app.models import (
     Item, User, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES,
     ALLOWED_EXTENSIONS, MAX_IMAGE_SIZE,
@@ -406,23 +406,19 @@ def buy_item(item_id):
 
     try:
         holder = item.seller if item.is_free else current_user
-        msg = Message(
+        email_html = f"""<p>Hi {holder.name},</p>
+<p>An exchange has been initiated for the item "<strong>{item.title}</strong>" on Reuni.</p>
+<p>Your 4-digit transaction PIN is:</p>
+<h2 style="letter-spacing:4px;font-size:24px;color:#007bff;">{pin}</h2>
+<p>Please keep this PIN secure.</p>
+<p>{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}</p>
+<p>— The Reuni team</p>"""
+        send_email(
+            to_email=holder.email,
+            to_name=holder.name,
             subject=f"Transaction PIN for {item.title}",
-            recipients=[holder.email]
+            html_content=email_html
         )
-        msg.body = f"""Hi {holder.name},
-
-An exchange has been initiated for the item "{item.title}" on Reuni.
-
-Your 4-digit transaction PIN is:
-
-{pin}
-
-Please keep this PIN secure. 
-{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}
-
-— The Reuni team"""
-        mail.send(msg)
     except Exception as e:
         current_app.logger.error(f"Failed to send PIN email: {e}")
 
@@ -691,20 +687,23 @@ def cancel_claim_route(item_id):
         )
         item_link = url_for("items.detail", item_id=item_id, _external=True)
 
-        msg = Message(
+        email_html = (
+            f"<p>Hello {other_party.name},</p>"
+            f"<p>The claim on the item \"<strong>{item_title}</strong>\" has been cancelled.</p>"
+            f"<ul>"
+            f"<li><strong>Cancelled by:</strong> {cancelled_by_role}</li>"
+            f"<li><strong>Item name:</strong> {item_title}</li>"
+            f"</ul>"
+            f"<p>{tier_msg}</p>"
+            f"<p>You can view the item listing back on the marketplace here: <a href=\"{item_link}\">{item_link}</a></p>"
+            f"<p>— The Reuni team</p>"
+        )
+        send_email(
+            to_email=other_party.email,
+            to_name=other_party.name,
             subject=f"A claim on {item_title} has been cancelled",
-            recipients=[other_party.email]
+            html_content=email_html
         )
-        msg.body = (
-            f"Hello {other_party.name},\n\n"
-            f"The claim on the item \"{item_title}\" has been cancelled.\n\n"
-            f"Cancelled by: {cancelled_by_role}\n"
-            f"Item name: {item_title}\n\n"
-            f"{tier_msg}\n\n"
-            f"You can view the item listing back on the marketplace here: {item_link}\n\n"
-            f"— The Reuni team"
-        )
-        mail.send(msg)
     except Exception as mail_err:
         current_app.logger.warning(f"Failed to send cancellation email notification to {other_party.email}: {mail_err}")
 
@@ -754,20 +753,17 @@ def resend_pin(item_id):
         return redirect(url_for("items.pin_page", item_id=item.id))
 
     try:
-        msg = Message(
+        email_html = f"""<p>Hi {holder.name},</p>
+<p>A new 4-digit transaction PIN has been generated for "<strong>{item.title}</strong>":</p>
+<h2 style="letter-spacing:4px;font-size:24px;color:#007bff;">{pin}</h2>
+<p>{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}</p>
+<p>— The Reuni team</p>"""
+        send_email(
+            to_email=holder.email,
+            to_name=holder.name,
             subject=f"New Transaction PIN for {item.title}",
-            recipients=[holder.email]
+            html_content=email_html
         )
-        msg.body = f"""Hi {holder.name},
-
-A new 4-digit transaction PIN has been generated for "{item.title}":
-
-{pin}
-
-{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}
-
-— The Reuni team"""
-        mail.send(msg)
         flash("A new PIN has been generated and sent to your email.", "success")
     except Exception as e:
         current_app.logger.error(f"Failed to send resend-pin email: {e}")

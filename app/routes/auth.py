@@ -4,13 +4,10 @@ from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
-from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from brevo import Brevo
-from brevo.transactional_emails import SendTransacEmailRequestSender, SendTransacEmailRequestToItem
-from brevo.core.api_error import ApiError
+from app.utils.emails import send_email
 
-from app import db, mail, limiter
+from app import db, limiter
 from app.models import User
 from app.utils.email_validation import extract_university_domain, is_domain_allowed
 from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
@@ -40,36 +37,24 @@ def _normalise_phone(raw: str) -> str:
 
 
 def send_otp_email(name: str, email: str, code: str):
-    if current_app.config.get("MAIL_SUPPRESS_SEND"):
-        return
-
-    api_key = current_app.config.get("BREVO_API_KEY")
-    if not api_key:
-        current_app.logger.warning("Brevo API key (BREVO_API_KEY) is not set; skipping OTP email send")
-        return
-
-    client = Brevo(api_key=api_key)
-    sender_email = current_app.config.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
     from html import escape as html_escape
 
     safe_name = html_escape(name)
     safe_code = html_escape(code)
-    try:
-        client.transactional_emails.send_transac_email(
-            sender=SendTransacEmailRequestSender(email=sender_email, name="Reuni"),
-            to=[SendTransacEmailRequestToItem(email=email, name=safe_name)],
-            subject="Your OTP Code",
-            html_content=(
-                f"<p>Hi {safe_name},</p>"
-                f"<p>Your 6-digit verification code to activate your Reuni account is:</p>"
-                f"<h2 style='letter-spacing:4px'>{safe_code}</h2>"
-                f"<p>This code expires in 15 minutes.</p>"
-                f"<p>If you didn't create an account, you can safely ignore this email.</p>"
-                f"<p>— The Reuni team</p>"
-            ),
-        )
-    except ApiError as e:
-        current_app.logger.error(f"Brevo API error sending OTP email to {email}: {e}")
+    email_html = (
+        f"<p>Hi {safe_name},</p>"
+        f"<p>Your 6-digit verification code to activate your Reuni account is:</p>"
+        f"<h2 style='letter-spacing:4px'>{safe_code}</h2>"
+        f"<p>This code expires in 15 minutes.</p>"
+        f"<p>If you didn't create an account, you can safely ignore this email.</p>"
+        f"<p>— The Reuni team</p>"
+    )
+    send_email(
+        to_email=email,
+        to_name=safe_name,
+        subject="Your OTP Code",
+        html_content=email_html
+    )
 
 
 def resend_key_func():
@@ -481,12 +466,18 @@ def invite_register(token):
 
         # Send welcome email
         try:
-            msg = Message(
-                subject="Welcome to Reuni Partner Dashboard",
-                recipients=[email]
+            email_html = (
+                f"<p>Hello {name},</p>"
+                f"<p>Your Reuni partner account for <strong>{university_domain}</strong> has been successfully created.</p>"
+                f"<p>You can now log in to access the dashboard.</p>"
+                f"<p>— The Reuni team</p>"
             )
-            msg.body = f"Hello {name},\n\nYour Reuni partner account for {university_domain} has been successfully created. You can now log in to access the dashboard.\n\n— The Reuni team"
-            mail.send(msg)
+            send_email(
+                to_email=email,
+                to_name=name,
+                subject="Welcome to Reuni Partner Dashboard",
+                html_content=email_html
+            )
         except Exception as e:
             current_app.logger.error(f"Failed to send partner welcome email: {e}")
 
@@ -514,24 +505,21 @@ def forgot_password():
                 token = generate_password_reset_token(user.email, user.password_hash, current_app.config["SECRET_KEY"])
                 reset_url = url_for("auth.reset_password", token=token, _external=True)
                 
-                msg = Message(
-                    subject="Password reset for your Reuni account",
-                    recipients=[email]
-                )
-                msg.body = f"""Hi {user.name},
-
-We received a request to reset the password for your Reuni account.
-
-Click the link below to set a new password. This link expires in 1 hour.
-
-{reset_url}
-
-If you didn't request a password reset, you can safely ignore this email.
-Your password will not change unless you click the link above.
-
-— The Reuni team"""
+                email_html = f"""<p>Hi {user.name},</p>
+<p>We received a request to reset the password for your Reuni account.</p>
+<p>Click the link below to set a new password. This link expires in 1 hour.</p>
+<p><a href="{reset_url}" style="display:inline-block;padding:10px 20px;color:#fff;background-color:#007bff;text-decoration:none;border-radius:5px;">Reset Password</a></p>
+<p>Or copy and paste this URL into your browser:</p>
+<p>{reset_url}</p>
+<p>If you didn't request a password reset, you can safely ignore this email. Your password will not change unless you click the link above.</p>
+<p>— The Reuni team</p>"""
                 try:
-                    mail.send(msg)
+                    send_email(
+                        to_email=email,
+                        to_name=user.name,
+                        subject="Password reset for your Reuni account",
+                        html_content=email_html
+                    )
                 except Exception as e:
                     current_app.logger.warning(f"Failed to send password reset email to {email}: {e}")
 

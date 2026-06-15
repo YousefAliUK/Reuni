@@ -2,94 +2,82 @@
 {% block title %}Privacy Policy — Reuni{% endblock %}
 
 {% block content %}
-<div class="list-item-container" style="max-width: 800px; padding: 2.5rem; line-height: 1.6; color: var(--clr-text);">
-    <!-- Back link -->
-    <a href="{{ url_for('index') }}" class="back-link" aria-label="Go back to marketplace" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--clr-text-muted); font-size: var(--fs-sm); margin-bottom: 2rem;">
-        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.15rem;">arrow_back</span>
-        Back to Marketplace
+<div class="privacy-page">
+    <!-- Back link (§3.12) -->
+    <a href="{{ url_for('index') }}" class="privacy-back-link" aria-label="Back to Reuni marketplace">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        <span>Back to Reuni</span>
     </a>
 
-    <h2 style="font-size: var(--fs-2xl); font-weight: 800; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-        <span class="material-symbols-outlined heading-icon" aria-hidden="true" style="font-size: 2rem; color: var(--clr-primary);">gavel</span>
-        Privacy Policy
-    </h2>
-    <p class="subtitle" style="color: var(--clr-text-muted); font-size: var(--fs-sm); margin-bottom: 2.5rem;">
-        Last Updated: June 9, 2026. Supporting UN SDG 12: Responsible Consumption and Production.
-    </p>
+    <!-- Page Header -->
+    <header class="privacy-header">
+        <h1 class="privacy-title">Privacy Policy</h1>
+        <span class="privacy-timestamp">Last updated: June 9, 2026</span>
+    </header>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            1. Overview
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <hr class="privacy-divider" aria-hidden="true">
+
+    <section class="privacy-section">
+        <h2>1. Overview</h2>
+        <p>
             Reuni is committed to protecting the privacy and security of our users' personal data. This Privacy Policy explains how we collect, use, store, and process your personal data in accordance with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
         </p>
     </section>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            2. Data Controller
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <section class="privacy-section">
+        <h2>2. Data Controller</h2>
+        <p>
             For the purposes of the UK GDPR, the Data Controller is the Reuni Application Team. If you have any questions, concerns, or requests regarding your personal data, you can contact us at:
         </p>
-        <p style="font-size: var(--fs-base); font-weight: 600; margin-bottom: 1rem; color: var(--clr-primary);">
-            Email: <a href="mailto:support@reuni.org" style="color: var(--clr-primary); text-decoration: underline;">support@reuni.org</a>
+        <p>
+            Email: <a href="mailto:support@reuni.org">support@reuni.org</a>
         </p>
     </section>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            3. Personal Data We Collect & Lawful Basis
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <section class="privacy-section">
+        <h2>3. Personal Data We Collect & Lawful Basis</h2>
+        <p>
             We collect and process the following personal data to operate the circular marketplace:
         </p>
-        <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem; font-size: var(--fs-base);">
-            <li style="margin-bottom: 0.5rem;"><strong>Account Identifiers:</strong> Name, university email address, and phone number. (Lawful basis: Performance of a Contract).</li>
-            <li style="margin-bottom: 0.5rem;"><strong>Verification Details:</strong> University domain mapping (to restrict membership to authorized students and staff). (Lawful basis: Legitimate Interests).</li>
-            <li style="margin-bottom: 0.5rem;"><strong>Marketplace Activity:</strong> Items listed, claimed, purchased, sold, and cancellation metrics. (Lawful basis: Performance of a Contract & Legitimate Interests).</li>
+        <ul>
+            <li><strong>Account Identifiers:</strong> Name, university email address, and phone number. (Lawful basis: Performance of a Contract).</li>
+            <li><strong>Verification Details:</strong> University domain mapping (to restrict membership to authorized students and staff). (Lawful basis: Legitimate Interests).</li>
+            <li><strong>Marketplace Activity:</strong> Items listed, claimed, purchased, sold, and cancellation metrics. (Lawful basis: Performance of a Contract & Legitimate Interests).</li>
         </ul>
     </section>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            4. How We Use Cookies
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <section class="privacy-section">
+        <h2>4. How We Use Cookies</h2>
+        <p>
             We strictly limit our use of cookies to protect your privacy. <strong>We do not use any tracking, advertising, or analytical cookies.</strong>
         </p>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+        <p>
             Our application only utilizes <strong>strictly functional, essential session cookies</strong> (stored with HTTPOnly, SameSite=Lax, and Secure flags in production) to handle user authentication, prevent Cross-Site Request Forgery (CSRF) attacks, and temporarily cache active exchange transaction PINs. Because these cookies are strictly necessary to provide the service requested, they do not require a cookie consent banner.
         </p>
     </section>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            5. Data Retention & Erasure (30-Day Queue)
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <section class="privacy-section">
+        <h2>5. Data Retention & Erasure (30-Day Queue)</h2>
+        <p>
             To maintain marketplace safety and prevent reputation-washing or system abuse, when you request account deletion:
         </p>
-        <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem; font-size: var(--fs-base);">
-            <li style="margin-bottom: 0.5rem;">Your active listings are removed, and pending exchange claims are cancelled immediately.</li>
-            <li style="margin-bottom: 0.5rem;">Your account enters a <strong>30-day deactivation cool-down period</strong> during which you cannot log in or register a new account using the same email or phone number.</li>
-            <li style="margin-bottom: 0.5rem;">After 30 days, your personal identifiers (name, email, phone number, password, institutional domain) are permanently wiped and anonymised.</li>
-            <li style="margin-bottom: 0.5rem;">Completed transaction records (items sold, carbon/landfill metrics saved) are preserved in a fully anonymised format to protect the integrity of university ESG circular economy reporting.</li>
+        <ul>
+            <li>Your active listings are removed, and pending exchange claims are cancelled immediately.</li>
+            <li>Your account enters a <strong>30-day deactivation cool-down period</strong> during which you cannot log in or register a new account using the same email or phone number.</li>
+            <li>After 30 days, your personal identifiers (name, email, phone number, password, institutional domain) are permanently wiped and anonymised.</li>
+            <li>Completed transaction records (items sold, carbon/landfill metrics saved) are preserved in a fully anonymised format to protect the integrity of university ESG circular economy reporting.</li>
         </ul>
     </section>
 
-    <section style="margin-bottom: 2.5rem;">
-        <h3 style="font-size: var(--fs-lg); font-weight: 700; border-bottom: 1px solid var(--clr-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-            6. Your Rights & Subject Access Requests (SAR)
-        </h3>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+    <section class="privacy-section">
+        <h2>6. Your Rights & Subject Access Requests (SAR)</h2>
+        <p>
             Under the UK GDPR, you have the right to access, rectify, or erase your personal data, or to restrict or object to its processing.
         </p>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
-            <strong>Right of Access (Article 15):</strong> You have the right to obtain a copy of the personal data we process about you. To submit a formal Subject Access Request (SAR), please contact our support team at <a href="mailto:support@reuni.org" style="color: var(--clr-primary); text-decoration: underline;">support@reuni.org</a> from your registered university email. We will process and export your data free of charge within 30 days of verifying your identity.
+        <p>
+            <strong>Right of Access (Article 15):</strong> You have the right to obtain a copy of the personal data we process about you. To submit a formal Subject Access Request (SAR), please contact our support team at <a href="mailto:support@reuni.org">support@reuni.org</a> from your registered university email. We will process and export your data free of charge within 30 days of verifying your identity.
         </p>
-        <p style="font-size: var(--fs-base); margin-bottom: 1rem;">
+        <p>
             If you are not satisfied with how we process your request, you have the right to lodge a complaint with the Information Commissioner's Office (ICO).
         </p>
     </section>

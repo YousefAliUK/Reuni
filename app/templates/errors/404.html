@@ -2,16 +2,70 @@
 {% block title %}Page Not Found — Reuni{% endblock %}
 
 {% block content %}
-<div style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
-    <div style="max-width: 480px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
-        <div style="font-family: var(--font-mono); font-size: 72px; font-weight: 800; color: var(--color-primary-muted); line-height: 1;">404</div>
-        <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">Page Not Found</h1>
-        <p style="font-size: 14px; color: var(--color-ink-secondary); line-height: var(--lead-body); margin: 0;">
+<div class="error-container" style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
+    <style>
+        .error-card {
+            background: var(--color-surface);
+            box-shadow: var(--shadow-card);
+            border-radius: var(--radius-xl);
+            padding: var(--space-10) var(--space-8);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid var(--color-border);
+        }
+        .error-icon {
+            color: var(--color-ink-tertiary);
+            font-size: 64px;
+            margin-bottom: var(--space-2);
+        }
+        .error-code-badge {
+            font-family: var(--font-mono);
+            font-size: 80px;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--color-primary);
+            margin: 0;
+            margin-bottom: var(--space-2);
+        }
+        .error-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-ink-primary);
+            margin: 0;
+            margin-bottom: var(--space-2);
+        }
+        .error-text {
+            font-size: 14px;
+            color: var(--color-ink-secondary);
+            line-height: var(--lead-body);
+            margin: 0;
+            max-width: 38ch;
+        }
+    </style>
+    
+    <div class="error-card">
+        <span class="material-symbols-outlined error-icon" aria-hidden="true">search_off</span>
+        <h1 class="error-code-badge">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-text">
             The page you requested could not be found. It might have been recycled, moved, or never existed in our loop.
         </p>
-        <div style="margin-top: var(--space-2);">
-            <a href="{{ url_for('index') }}" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600;">
-                <span class="material-symbols-outlined" style="margin-right: 8px;">home</span>
+        
+        <form method="GET" action="{{ url_for('index') }}" style="width: 100%; display: flex; gap: var(--space-2); margin-top: var(--space-6);">
+            <div style="position: relative; flex: 1;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">search</span>
+                <input type="text" name="q" placeholder="Search marketplace..." class="auth-input" style="padding-left: 44px; height: 44px; box-sizing: border-box;" required>
+            </div>
+            <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600; padding: 0 var(--space-4);">Search</button>
+        </form>
+        
+        <div style="margin-top: var(--space-4); width: 100%;">
+            <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); font-weight: 600;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
                 Back to Home
             </a>
         </div>
