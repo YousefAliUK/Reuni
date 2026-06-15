@@ -180,9 +180,9 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* --- Dark Mode Overrides --- */
 [data-theme="dark"] {
-    --color-bg:              #1C1917;  /* Stone-950 */
-    --color-hero-overlay-desktop: linear-gradient(90deg, rgba(28, 25, 23, 0.98) 0%, rgba(28, 25, 23, 0.85) 50%, rgba(28, 25, 23, 0.35) 100%);
-    --color-hero-overlay-mobile: linear-gradient(180deg, rgba(28, 25, 23, 0.98) 0%, rgba(28, 25, 23, 0.85) 70%, rgba(28, 25, 23, 0.6) 100%);
+    --color-bg:              #161514;   /* Tailored Organic Warm Charcoal (No gamer vibes) */
+    --color-hero-overlay-desktop: linear-gradient(90deg, rgba(22, 21, 20, 0.98) 0%, rgba(22, 21, 20, 0.85) 50%, rgba(22, 21, 20, 0.35) 100%);
+    --color-hero-overlay-mobile: linear-gradient(180deg, rgba(22, 21, 20, 0.98) 0%, rgba(22, 21, 20, 0.85) 70%, rgba(22, 21, 20, 0.6) 100%);
     --color-hero-text: #FFFFFF;
     --color-hero-subtext: rgba(255, 255, 255, 0.85);
     --color-hero-chip-bg:    rgba(255, 255, 255, 0.08);
@@ -190,27 +190,28 @@ input[type="search"]::-webkit-search-cancel-button {
     --color-hero-chip-value: #FFFFFF;
     --color-hero-chip-text: rgba(255, 255, 255, 0.7);
     --color-hero-chip-value-primary: var(--color-primary);
-    --color-surface:         #292524;  /* Stone-900 */
-    --color-surface-raised:  #44403C;  /* Stone-700 */
-    --color-border:          rgba(120, 113, 108, 0.2);
+    --color-surface:         #1F1E1D;   /* Premium surface card background */
+    --color-surface-raised:  #2C2B29;   /* Raised surface panel background */
+    --card-border-dark:      rgba(214, 211, 209, 0.12); /* Subtle warm grey border overlay */
+    --color-border:          rgba(214, 211, 209, 0.08);
     --color-ink-primary:     #F5F5F4;  /* Stone-100 */
     --color-ink-secondary:   #D6D3D1;  /* Stone-300 — readable on surface-raised (passes 4.5:1) */
     --color-ink-tertiary:    #87807B;  /* Stone-500 — timestamps, placeholders (readable on dark surfaces) */
-    --color-primary:         #2DD4BF;  /* Teal-400 — lightened for contrast. NOTE: NEVER use with white text (use dark text #1C1917 instead) */
+    --color-primary:         #2DD4BF;  /* Teal-400 — lightened for contrast. NOTE: NEVER use with white text */
     --color-primary-hover:   inherit;
-    --color-primary-muted:   rgba(13, 148, 136, 0.15);
+    --color-primary-muted:   rgba(45, 212, 191, 0.15);
     --color-accent:          #F97316;  /* Orange-500 */
     --color-accent-hover:    inherit;
-    --color-accent-muted:    rgba(234, 88, 12, 0.12);
+    --color-accent-muted:    rgba(249, 115, 22, 0.15);
     --color-danger:          #F87171;  /* Red-400 */
-    --color-danger-muted:    rgba(239, 68, 68, 0.15);
+    --color-danger-muted:    rgba(248, 113, 113, 0.15);
     --color-success:         #4ADE80;  /* Green-400 */
-    --color-success-muted:   rgba(21, 128, 61, 0.15);
+    --color-success-muted:   rgba(74, 222, 128, 0.15);
     --color-warning:         #FBBF24;  /* Amber-400 */
-    --color-warning-muted:   rgba(217, 119, 6, 0.15);
+    --color-warning-muted:   rgba(251, 191, 36, 0.15);
 
-    --navbar-bg:            rgba(41, 37, 36, 0.92);
-    --filters-bg:           rgba(41, 37, 36, 0.95);
+    --navbar-bg:            rgba(20, 18, 16, 0.92);
+    --filters-bg:           rgba(20, 18, 16, 0.95);
 
     /* Explicitly redefine legacy mappings to ensure inheritance in all browsers */
     --clr-bg: var(--color-bg);
@@ -224,8 +225,11 @@ input[type="search"]::-webkit-search-cancel-button {
     --clr-success: var(--color-success);
 }
 
-/* Dark theme contrast overrides for elements sitting on top of bright Teal-400 */
+/* Dark theme contrast overrides for elements sitting on top of bright Teal-400 or Orange-500 */
 [data-theme="dark"] .btn--primary,
+[data-theme="dark"] .btn--primary:hover,
+[data-theme="dark"] .btn--accent,
+[data-theme="dark"] .btn--accent:hover,
 [data-theme="dark"] .category-chip--active,
 [data-theme="dark"] .category-chip--active:hover,
 [data-theme="dark"] span.pagination__link {
@@ -6465,18 +6469,52 @@ body {
     padding: var(--space-8) var(--space-4) var(--space-12);
 }
 
-.personal-impact-banner {
-    background: var(--color-primary-muted);
-    border-radius: var(--radius-xl);
-    padding: var(--space-5) var(--space-6);
-    display: flex;
-    align-items: center;
+/* Executive dashboard spacing refinements */
+.dashboard-tab-content {
+    margin-bottom: var(--space-10) !important;
+}
+
+.dashboard-tab-content:not(:last-of-type) {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-8);
+}
+
+.dashboard-section-header {
+    margin-top: var(--space-4) !important;
+    margin-bottom: var(--space-4) !important;
+}
+
+.dashboard-header-grid {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: var(--space-4);
     margin-bottom: var(--space-6);
 }
 
+@media (min-width: 768px) {
+    .dashboard-header-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+    }
+}
+
+.personal-impact-banner {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    padding: var(--space-6) var(--space-8);
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+}
+
+[data-theme="dark"] .personal-impact-banner {
+    background: var(--color-surface);
+}
+
 .personal-impact-banner .banner-icon {
-    font-size: 28px;
+    font-size: 40px;
     color: var(--color-primary);
 }
 
@@ -6494,6 +6532,50 @@ body {
 }
 
 .personal-impact-banner .banner-sub {
+    font-size: var(--type-small);
+    color: var(--color-ink-secondary);
+    margin-top: var(--space-1);
+}
+
+.campus-momentum-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-success);
+    padding: var(--space-6) var(--space-8);
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+}
+
+.campus-momentum-card .banner-icon {
+    font-size: 40px;
+    color: var(--color-success);
+}
+
+[data-theme="dark"] .campus-momentum-card {
+    background: var(--color-surface);
+}
+
+.campus-momentum-card .banner-icon {
+    font-size: 28px;
+    color: var(--color-primary);
+}
+
+.campus-momentum-card .banner-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.campus-momentum-card .banner-title {
+    font-family: var(--font-sans);
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    font-weight: 800;
+    color: var(--color-ink-primary);
+    margin: 0;
+}
+
+.campus-momentum-card .banner-sub {
     font-size: var(--type-small);
     color: var(--color-ink-secondary);
     margin-top: var(--space-1);
@@ -6589,34 +6671,41 @@ body {
 }
 
 .dashboard-tabs-container {
-    border-bottom: 1px solid var(--color-border);
     margin-bottom: var(--space-6);
+    display: flex;
+    justify-content: flex-start;
 }
 
 .dashboard-tabs {
     display: flex;
-    gap: var(--space-4);
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.dashboard-tabs::-webkit-scrollbar {
-    display: none;
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: var(--space-1);
+    gap: var(--space-1);
+    width: 100%;
+    max-width: 620px;
+    box-sizing: border-box;
 }
 
 .dashboard-tab {
+    flex: 1;
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-full);
+    padding: var(--space-2) var(--space-4);
     font-family: var(--font-sans);
-    font-size: var(--type-body);
+    font-size: var(--type-small);
     font-weight: 600;
     color: var(--color-ink-secondary);
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-out);
-    position: relative;
+    text-align: center;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
 }
 
 .dashboard-tab:hover {
@@ -6624,8 +6713,15 @@ body {
 }
 
 .dashboard-tab.active-tab {
+    background-color: var(--color-surface);
     color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .dashboard-tab.active-tab {
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .tab-badge {
@@ -7010,6 +7106,8 @@ body {
 
 .profile-stat-column__number--primary {
     color: var(--color-primary);
+    font-size: 32px;
+    font-weight: 800;
 }
 
 .profile-stat-column__label {
@@ -7088,7 +7186,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
     font-size: var(--type-body);
+    min-width: 0;
+    word-break: break-all;
+}
+
+.settings-input-display > span:first-child {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .settings-input {
@@ -7356,7 +7465,17 @@ body {
 
 [data-theme="dark"] .split-layout__right {
     background-color: var(--color-surface);
-    background-image: linear-gradient(135deg, rgba(28, 25, 23, 0.96), rgba(41, 37, 36, 0.96)), url("../images/hero_photo.jpg");
+    background-image: linear-gradient(135deg, rgba(12, 11, 10, 0.96), rgba(20, 18, 16, 0.96)), url("../images/hero_photo.jpg");
+}
+
+/* Card border overrides for dark mode using the new teal shimmer */
+[data-theme="dark"] .listing-card,
+[data-theme="dark"] .claim-card,
+[data-theme="dark"] .purchase-row,
+[data-theme="dark"] .settings-card,
+[data-theme="dark"] .personal-impact-banner,
+[data-theme="dark"] .campus-momentum-card {
+    border: 1px solid var(--card-border-dark) !important;
 }
 
 /* ─── Error Pages v3.0 ─── */
@@ -7496,7 +7615,7 @@ body {
 
 /* Photo Upload Zone */
 #photo-upload-zone {
-    border: 2px dashed var(--color-border);
+    border: 2px dashed var(--color-primary-muted);
     border-radius: var(--radius-lg);
     height: 200px;
     display: flex;
@@ -7675,12 +7794,21 @@ body {
 
 /* Category environmental preview banner */
 .eco-preview-banner {
-    display: none;
-    margin-top: var(--space-2);
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0;
     background: var(--color-primary-muted);
     border-radius: var(--radius-md);
+    padding: 0 16px;
+    transition: max-height var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out), padding var(--duration-normal) var(--ease-out), margin-top var(--duration-normal) var(--ease-out);
+}
+
+.eco-preview-banner--visible {
+    max-height: 60px;
+    opacity: 1;
+    margin-top: var(--space-2);
     padding: 12px 16px;
-    transition: all var(--duration-normal) var(--ease-out);
 }
 
 .eco-preview-content {
@@ -8506,6 +8634,31 @@ body {
     padding: 0 8px !important;
     line-height: 1 !important;
     box-sizing: border-box !important;
+    font-family: var(--font-mono) !important;
+    font-size: var(--type-micro) !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+/* Profile card action buttons hover-reveal on desktop */
+@media (min-width: 768px) {
+    .profile-card__actions {
+        position: absolute;
+        bottom: var(--space-3);
+        left: var(--space-3);
+        right: var(--space-3);
+        margin-top: 0 !important;
+        opacity: 0;
+        pointer-events: none;
+        background: var(--color-surface);
+        padding-top: var(--space-2);
+        transition: opacity var(--duration-fast) ease;
+        z-index: 10;
+    }
+    .listing-card:hover .profile-card__actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 .navbar__sell-btn {

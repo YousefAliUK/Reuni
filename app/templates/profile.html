@@ -76,7 +76,7 @@
 
     <!-- ── Settings Link ── -->
     <div style="text-align: center; margin-bottom: var(--space-10);">
-        <a href="{{ url_for('settings') }}" style="display: inline-flex; align-items: center; gap: 6px; color: var(--color-primary); font-size: 13px; font-weight: 500; transition: color var(--transition);">
+        <a href="{{ url_for('settings') }}" class="btn btn--outline" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
             <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
             Edit profile / settings
         </a>
@@ -139,7 +139,7 @@
                     </div>
 
                     <!-- Action buttons -->
-                    <div class="listing-card__actions">
+                    <div class="listing-card__actions profile-card__actions">
                         <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline btn--sm">Edit</a>
                         <a href="{{ url_for('items.detail', item_id=item.id) }}" class="btn btn--primary btn--sm">View</a>
                     </div>

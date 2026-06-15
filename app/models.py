@@ -25,7 +25,7 @@ CATEGORY_WEIGHTS = {
 
 CATEGORIES = list(CATEGORY_WEIGHTS.keys())
 
-CONDITION_CHOICES = ["New", "Like New", "Good", "Fair", "Poor"]
+CONDITION_CHOICES = ["New", "Like New", "Good", "Fair", "For Parts"]
 
 # Allowed image extensions for upload validation
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}

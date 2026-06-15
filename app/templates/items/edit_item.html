@@ -31,7 +31,7 @@
                     <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" class="image-upload__input">
                     
                     <div id="upload-placeholder" class="upload-placeholder" style="gap: 4px;">
-                        <span class="material-symbols-outlined" style="font-size: 24px;">upload</span>
+                        <span class="material-symbols-outlined" style="font-size: 32px;">upload_file</span>
                         <span class="upload-placeholder__text" style="font-size: 13px;">Upload new photo (optional)</span>
                         <span class="upload-placeholder__hint" style="font-size: 11px;">JPG, PNG, WEBP &middot; Max 5MB</span>
                     </div>
@@ -195,9 +195,9 @@
             if (category && categoryWeights[category] !== undefined) {
                 const w = categoryWeights[category];
                 liveEcoText.textContent = `Selecting '${category}' saves ~${w.toFixed(1)} kg CO₂e prevented`;
-                liveEcoPreview.style.display = 'block';
+                liveEcoPreview.classList.add('eco-preview-banner--visible');
             } else {
-                liveEcoPreview.style.display = 'none';
+                liveEcoPreview.classList.remove('eco-preview-banner--visible');
             }
         }
 

@@ -11,15 +11,40 @@
 
 <div class="dashboard-wrapper">
     
-    <!-- ─── TIER 1: PERSONAL KG_SAVED TOTAL BANNER ─── -->
-    <section class="personal-impact-banner" aria-label="Personal Impact">
-        <span class="material-symbols-outlined banner-icon" aria-hidden="true">eco</span>
-        <div class="banner-text">
-            <h2 class="banner-title">You've saved <span class="font-mono">{{ "%.1f"|format(current_user.kg_saved_total or 0.0) }}</span> kg from landfill</h2>
-            {% set completed_count = my_purchases|length + (my_listings | selectattr('is_sold') | list | length) %}
-            <p class="banner-sub">Across {{ completed_count }} completed transactions</p>
-        </div>
-    </section>
+    <!-- ─── TIER 1: SPLIT HEADER GRID ─── -->
+    <div class="dashboard-header-grid">
+        <!-- Personal Impact Card (Left) -->
+        <section class="personal-impact-banner" aria-label="Personal Impact">
+            <span class="material-symbols-outlined banner-icon" aria-hidden="true">eco</span>
+            <div class="banner-text">
+                <div style="font-size: 36px; font-weight: 800; color: var(--color-primary); font-family: var(--font-mono); line-height: 1.1;">
+                    {{ "%.1f"|format(current_user.kg_saved_total or 0.0) }} kg
+                </div>
+                <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
+                    You've saved from landfill
+                </h2>
+                {% set completed_count = my_purchases|length + (my_listings | selectattr('is_sold') | list | length) %}
+                <p class="banner-sub" style="margin-top: 2px; margin-bottom: 0;">Across {{ completed_count }} completed transactions</p>
+            </div>
+        </section>
+        
+        <!-- Campus Momentum Card (Right) -->
+        <section class="campus-momentum-card" aria-label="Campus Sustainability Momentum">
+            <span class="material-symbols-outlined banner-icon" aria-hidden="true" style="color: var(--color-success);">monitoring</span>
+            <div class="banner-text">
+                <div style="font-size: 36px; font-weight: 800; color: var(--color-success); font-family: var(--font-mono); line-height: 1.1;">
+                    {{ "%.1f"|format(campus_total_kg or 0.0) }} kg
+                </div>
+                <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
+                    Saved by Brookes campus
+                </h2>
+                <p class="banner-sub" style="margin-top: 2px; margin-bottom: 0;">Total circular economy impact</p>
+                <div class="campus-sub-row" style="margin-top: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-2); font-size: 12px; color: var(--color-ink-secondary); display: flex; align-items: center; gap: 4px;">
+                    Powering sustainability with <strong class="font-mono" style="color: var(--color-success);">{{ campus_total_users or 0 }}</strong> active students.
+                </div>
+            </div>
+        </section>
+    </div>
 
     <!-- ─── TIER 1.5: SHADOW-BAN WARNING BANNER (Phase 2 — Trust < 50) ─── -->
     {% set trust_score = current_user.trust_score if current_user.trust_score is defined else 100 %}
@@ -46,7 +71,10 @@
 
     <div class="dashboard-tabs-container">
         <div class="dashboard-tabs">
-            <button type="button" id="tab-btn-claims" onclick="switchTab('claims')" class="dashboard-tab active-tab">
+            <button type="button" id="tab-btn-overview" onclick="switchTab('overview')" class="dashboard-tab active-tab">
+                Overview
+            </button>
+            <button type="button" id="tab-btn-claims" onclick="switchTab('claims')" class="dashboard-tab">
                 Active Claims
                 {% if active_claims_count > 0 %}
                     <span class="tab-badge">{{ active_claims_count }}</span>
@@ -65,6 +93,7 @@
 
     <!-- ACTIVE CLAIMS TAB CONTENT -->
     <div id="tab-content-claims" class="dashboard-tab-content">
+        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">Active Claims</h2>
         {% if pending_items %}
             <div class="claims-grid">
                 {% for item in pending_items %}
@@ -113,7 +142,8 @@
     </div>
 
     <!-- MY LISTINGS TAB CONTENT -->
-    <div id="tab-content-listings" class="dashboard-tab-content" style="display: none;">
+    <div id="tab-content-listings" class="dashboard-tab-content">
+        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">My Listings</h2>
         {% if my_listings %}
             <div class="listings-grid-blueprint">
                 {% for item in my_listings %}
@@ -177,7 +207,8 @@
     </div>
 
     <!-- PURCHASES TAB CONTENT -->
-    <div id="tab-content-purchases" class="dashboard-tab-content" style="display: none;">
+    <div id="tab-content-purchases" class="dashboard-tab-content">
+        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">Purchases</h2>
         {% if my_purchases %}
             <div class="purchases-list">
                 {% for item in my_purchases %}
@@ -230,8 +261,22 @@
             content.style.display = 'none';
         });
         
+        // Hide all section headers by default
+        document.querySelectorAll('.dashboard-section-header').forEach(header => {
+            header.style.display = 'none';
+        });
+        
         // Activate current tab
-        if (tab === 'claims') {
+        if (tab === 'overview') {
+            document.getElementById('tab-btn-overview').classList.add('active-tab');
+            document.getElementById('tab-content-claims').style.display = 'flex';
+            document.getElementById('tab-content-listings').style.display = 'flex';
+            document.getElementById('tab-content-purchases').style.display = 'flex';
+            // Show all section headers
+            document.querySelectorAll('.dashboard-section-header').forEach(header => {
+                header.style.display = 'block';
+            });
+        } else if (tab === 'claims') {
             document.getElementById('tab-btn-claims').classList.add('active-tab');
             document.getElementById('tab-content-claims').style.display = 'flex';
         } else if (tab === 'listings') {
@@ -243,6 +288,9 @@
         }
     }
 
-
+    // Initialize the overview tab on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        switchTab('overview');
+    });
 </script>
 {% endblock %}
