@@ -1,7 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch
 import pytest
-from app import mail
 from app.models import Item, User, CancellationRecord
 from app.utils.cancellation import calculate_hours_held, get_cancellation_tier
 
@@ -173,27 +172,28 @@ class TestCancellationTiers:
         """Email notification sent with correct subject and body contents to other party."""
         self._claim_item(db_session, sample_item, second_user)
 
-        # Flush any mock emails
-        with mail.record_messages() as outbox:
-            resp = second_auth_client.post(f"/items/{sample_item.id}/cancel-claim", follow_redirects=True)
-            assert resp.status_code == 200
-            
-            # Assert email sent to seller (since buyer cancelled)
-            assert len(outbox) == 1
-            email_msg = outbox[0]
-            assert email_msg.subject == f"A claim on {sample_item.title} has been cancelled"
-            assert sample_user.email in email_msg.recipients
-            assert "Cancelled by: buyer" in email_msg.body
-            assert f"Item name: {sample_item.title}" in email_msg.body
-            assert "Other User cancelled their claim on" in email_msg.body
-            assert f"/items/{sample_item.id}" in email_msg.body
+        from app.utils.emails import outbox
+        resp = second_auth_client.post(f"/items/{sample_item.id}/cancel-claim", follow_redirects=True)
+        assert resp.status_code == 200
+        
+        # Assert email sent to seller (since buyer cancelled)
+        assert len(outbox) == 1
+        email_msg = outbox[0]
+        assert email_msg.subject == f"A claim on {sample_item.title} has been cancelled"
+        assert sample_user.email in email_msg.recipients
+        assert "Cancelled by" in email_msg.html_content
+        assert "buyer" in email_msg.html_content
+        assert "Item name" in email_msg.html_content
+        assert sample_item.title in email_msg.html_content
+        assert "Other User cancelled their claim on" in email_msg.html_content
+        assert f"/items/{sample_item.id}" in email_msg.html_content
 
     def test_email_failure_resiliency(self, second_auth_client, sample_item, second_user, db_session):
         """Email sending failure does not abort or roll back the cancellation transaction."""
         self._claim_item(db_session, sample_item, second_user)
 
-        # Mock mail.send to raise an exception
-        with patch.object(mail, "send", side_effect=Exception("SMTP Server Down")):
+        # Mock send_email to raise an exception
+        with patch("app.routes.items.send_email", side_effect=Exception("API Down")):
             resp = second_auth_client.post(f"/items/{sample_item.id}/cancel-claim", follow_redirects=True)
             # The request should still complete successfully
             assert resp.status_code == 200

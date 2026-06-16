@@ -3,20 +3,112 @@
 
 {% block content %}
 <div class="auth-container">
-    <h2>Verify Your Email</h2>
-    <p style="margin-bottom: 1.5rem; color: var(--text-light); text-align: center;">
-        We've sent a 6-digit verification code to <strong>{{ email }}</strong>. Please enter the code below to activate your account.
-    </p>
-    <form method="POST" action="{{ url_for('auth.verify_email') }}" class="form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form__group">
-            <label for="code">6-Digit Verification Code</label>
-            <input type="text" id="code" name="code" placeholder="123456" pattern="\d{6}" maxlength="6" required style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;" autocomplete="one-time-code">
+    <!-- Icon -->
+    <div class="auth-header__icon">
+        <span class="material-symbols-outlined">mail</span>
+    </div>
+
+    <div class="auth-header">
+        <h1 class="auth-header__title">Check your email</h1>
+        <p class="auth-header__sub">
+            We sent a 6-digit code to <strong>{{ email }}</strong>. It expires in 15 minutes.
+        </p>
+    </div>
+
+    <!-- MAIN INTERACTION CARD -->
+    <div class="auth-card">
+        <form method="POST" action="{{ url_for('auth.verify_email') }}" id="otp-form" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="code" id="full-code-input" required>
+
+            <label for="otp-input-0" class="auth-label" style="text-align: center; margin-bottom: var(--space-2);">
+                6-Digit Verification Code
+            </label>
+
+            <!-- OTP blocks -->
+            <div class="otp-inputs-grid">
+                <input type="text" class="otp-digit otp-digit-box" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus>
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5">
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="confirm-btn" style="height: 48px; border-radius: var(--radius-md); font-weight: 600;" disabled>
+                Verify Email
+            </button>
+        </form>
+
+        <div class="auth-footer-links">
+            <span>Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a></span>
+            <span style="font-size: 11px; color: var(--color-ink-tertiary);">Limit 10 per hour</span>
         </div>
-        <button type="submit" class="btn btn--primary btn--block">Verify Account</button>
-    </form>
-    <p class="auth-container__footer">
-        Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a>
-    </p>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const otpForm = document.getElementById('otp-form');
+        const otpInputs = document.querySelectorAll('.otp-digit');
+        const fullCodeInput = document.getElementById('full-code-input');
+        const confirmBtn = document.getElementById('confirm-btn');
+
+        if (otpInputs.length && fullCodeInput) {
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('blur', function() {
+                    if (this.value.length === 1) {
+                        this.classList.add('otp-digit-box--success');
+                    } else {
+                        this.classList.remove('otp-digit-box--success');
+                    }
+                });
+
+                // Auto-advance
+                input.addEventListener('input', function () {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    
+                    if (this.value.length === 1) {
+                        this.classList.add('otp-digit-box--success');
+                        if (index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        }
+                    } else {
+                        this.classList.remove('otp-digit-box--success');
+                    }
+                    syncCodeValue();
+                });
+
+                // Backspace auto-retreat
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Backspace' && this.value.length === 0) {
+                        if (index > 0) {
+                            otpInputs[index - 1].focus();
+                            otpInputs[index - 1].value = '';
+                            otpInputs[index - 1].classList.remove('otp-digit-box--success');
+                            syncCodeValue();
+                        }
+                    }
+                });
+            });
+
+            function syncCodeValue() {
+                let currentVal = '';
+                otpInputs.forEach(input => {
+                    currentVal += input.value;
+                });
+                fullCodeInput.value = currentVal;
+                
+                if (currentVal.length === 6) {
+                    confirmBtn.disabled = false;
+                    otpForm.submit();
+                } else {
+                    confirmBtn.disabled = true;
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

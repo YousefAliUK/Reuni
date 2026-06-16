@@ -32,4 +32,7 @@ app/static/uploads/
 .DS_Store
 Thumbs.db
 .aider*
-/.rules
+.rules
+.agent*
+
+claude_fable_5_system_prompt.md

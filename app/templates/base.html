@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Reuni — A hyper-local campus circular economy marketplace.">
-    <title>{% block title %}Reuni{% endblock %}</title>
+    <meta name="description" content="Reuni — A hyper-local campus circular economy platform.">
+    <title>{% block title %}Reuni — Campus Circular Economy{% endblock %}</title>
 
-    <!-- Google Fonts — Plus Jakarta Sans -->
+    <!-- Google Fonts — Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Material Symbols (outlined) for icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
@@ -17,233 +17,588 @@
     <!-- App Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <!-- Inline Dark Theme Check to prevent light flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% if current_user.is_authenticated %}auth-shell-layout{% else %}guest-shell-layout{% endif %}">
 
-    <!-- Skip-to-content link for screen readers -->
+    <!-- Skip link for keyboard navigation -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- ─── Navbar ─── -->
+    <!-- ─── Desktop Top Navigation Bar ─── -->
     <nav class="navbar" aria-label="Main navigation">
-        <div class="container navbar__inner">
-            <!-- Brand -->
+        <div class="navbar__inner container">
+            <!-- Zone 1: Brand Logo -->
             <a href="{{ url_for('index') }}" class="navbar__brand" aria-label="Reuni home">
-                <div class="navbar__brand-logo">
-                    <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
-                </div>
-                <span class="navbar__brand-text">Reuni</span>
+                <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
+                <span class="navbar__brand-wordmark">Reuni</span>
             </a>
 
-            <!-- Center: Search -->
+            <!-- Zone 2: Search Bar -->
             <div class="navbar__center">
-                <form method="GET" action="{{ url_for('index') }}" class="navbar__search" id="navbar-search-form">
-                    <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
-                    <input
-                        type="search"
-                        name="q"
-                        class="navbar__search-input"
-                        placeholder="Search items..."
-                        value="{{ request.args.get('q', '') }}"
-                        aria-label="Search items"
-                        autocomplete="off"
-                    >
+                <form method="GET" action="{{ url_for('index') }}" class="navbar__search-form" id="desktop-search-form">
+                    <div class="navbar__search-input-wrapper">
+                        <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
+                        <input type="search" name="q" value="{{ search_query or '' }}" placeholder="Search items..." class="navbar__search-input" autocomplete="off" id="desktop-search-input" aria-label="Search items">
+                        {% if search_query %}
+                            <a href="{{ url_for('index', category=active_category) }}" class="navbar__search-clear" aria-label="Clear search">
+                                <span class="material-symbols-outlined">close</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                    <!-- Desktop Search Dropdown Panel -->
+                    <div class="navbar__search-dropdown" id="desktop-search-dropdown">
+                        <div class="navbar__search-dropdown-header">
+                            <span>Recent Searches</span>
+                            <button type="button" class="navbar__search-clear-history" id="desktop-search-clear-btn">Clear All</button>
+                        </div>
+                        <div class="navbar__search-chips" id="desktop-search-chips-container">
+                            <!-- Recent search chips will be inserted here by JS -->
+                        </div>
+                    </div>
                 </form>
             </div>
 
-            <!-- Right: Actions -->
+            <!-- Zone 3: Controls -->
             <div class="navbar__actions">
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('items.list_item') }}" class="navbar__sell-btn" title="Sell an item">
-                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                        <span class="navbar__sell-text">Sell</span>
-                    </a>
+                <button type="button" class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="material-symbols-outlined" id="theme-toggle-icon">light_mode</span>
+                </button>
 
-                    <!-- User dropdown -->
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('items.list_item') }}" class="btn btn--primary navbar__sell-btn">
+                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                        <span>List an Item</span>
+                    </a>
                     <div class="user-dropdown">
-                        <button class="user-dropdown__trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
-                            <span class="user-dropdown__avatar" aria-hidden="true">{{ current_user.name[0] }}</span>
+                        <button type="button" class="user-dropdown__trigger" id="profile-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-label="User dropdown menu">
+                            <span class="user-dropdown__avatar" aria-hidden="true">{{ current_user.name[0]|upper }}</span>
                         </button>
-                        <div class="user-dropdown__menu" role="menu">
+                        <div class="user-dropdown__menu" id="profile-dropdown-menu" role="menu">
                             <div class="user-dropdown__header" role="none">
-                                <strong>{{ current_user.name }}</strong>
-                                <span>{{ current_user.email }}</span>
+                                <span class="user-dropdown__header-name">{{ current_user.name }}</span>
+                                <span class="user-dropdown__header-email">{{ current_user.email }}</span>
                             </div>
                             <div class="user-dropdown__eco" role="none">
                                 <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                                <span>{{ "%.1f"|format(current_user.kg_saved_total) }} kg CO₂ saved</span>
+                                <span class="user-dropdown__eco-kg">{{ "%.1f"|format(current_user.kg_saved_total or 0.0) }} kg saved</span>
                             </div>
                             <hr class="user-dropdown__divider" role="none">
-                            {% if current_user.is_admin %}
-                                <a href="{{ url_for('admin.admin_partners') }}" class="user-dropdown__item" role="menuitem">
-                                    <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
-                                    Admin Panel
-                                </a>
-                            {% endif %}
-                            {% if current_user.is_partner or current_user.is_admin %}
-                                <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem">
-                                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
-                                    Partner Dashboard
-                                </a>
-                            {% endif %}
+                            <a href="{{ url_for('items.list_item') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                                <span>List an Item</span>
+                            </a>
                             <a href="{{ url_for('dashboard') }}" class="user-dropdown__item" role="menuitem">
                                 <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-                                Dashboard
+                                <span>My Dashboard</span>
                             </a>
                             <a href="{{ url_for('profile') }}" class="user-dropdown__item" role="menuitem">
                                 <span class="material-symbols-outlined" aria-hidden="true">person</span>
-                                Profile
+                                <span>My Profile</span>
                             </a>
                             <a href="{{ url_for('settings') }}" class="user-dropdown__item" role="menuitem">
                                 <span class="material-symbols-outlined" aria-hidden="true">settings</span>
-                                Settings
+                                <span>Settings</span>
                             </a>
-                            <form method="POST" action="{{ url_for('auth.logout') }}" class="user-dropdown__logout-form" role="none">
+                            
+                            {% if current_user.is_partner or current_user.is_admin %}
+                                <hr class="user-dropdown__divider" role="none">
+                                <a href="{{ url_for('partner.partner_dashboard') }}" class="user-dropdown__item" role="menuitem">
+                                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                                    <span>ESG Dashboard</span>
+                                </a>
+                            {% endif %}
+                            
+                            {% if current_user.is_admin %}
+                                <a href="{{ url_for('admin.admin_partners') }}" class="user-dropdown__item" role="menuitem">
+                                    <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+                                    <span>Admin Panel</span>
+                                </a>
+                            {% endif %}
+
+                            <hr class="user-dropdown__divider" role="none">
+                            <form method="POST" action="{{ url_for('auth.logout') }}" role="none">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="user-dropdown__item user-dropdown__item--danger" role="menuitem">
                                     <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-                                    Log Out
+                                    <span>Sign Out</span>
                                 </button>
                             </form>
                         </div>
                     </div>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="navbar__auth-link">Log in</a>
-                    <a href="{{ url_for('auth.register') }}" class="navbar__signup-btn">Sign up</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--ghost-login">Log in</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary-signup">Sign up</a>
                 {% endif %}
             </div>
         </div>
+    </nav>
 
-        <!-- Mobile search expansion -->
-        <div class="navbar__search-expand" id="mobile-search-bar">
-            <form method="GET" action="{{ url_for('index') }}" class="navbar__search-expand-form">
-                <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
+    <!-- ─── Mobile Top Bar ─── -->
+    <div class="mobile-top-bar">
+        <div class="mobile-top-bar__left">
+            {% if request.endpoint == 'index' or request.endpoint == 'dashboard' or request.endpoint == 'profile' or request.endpoint == 'settings' %}
+                <button type="button" class="mobile-top-bar__icon-btn" id="mobile-hamburger-btn" aria-label="Open menu">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            {% else %}
+                <button type="button" class="mobile-top-bar__icon-btn" onclick="if(document.referrer.includes(window.location.host)){history.back()}else{window.location.href='{{ url_for('index') }}'}" aria-label="Back">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+            {% endif %}
+        </div>
+        <div class="mobile-top-bar__center">
+            <span class="mobile-top-bar__wordmark">Reuni</span>
+        </div>
+        <div class="mobile-top-bar__right">
+            <button type="button" class="mobile-top-bar__icon-btn" id="mobile-theme-toggle" aria-label="Toggle theme">
+                <span class="material-symbols-outlined" id="mobile-theme-toggle-icon">light_mode</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── Mobile Navigation Drawer ─── -->
+    <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
+    <aside class="mobile-drawer" id="mobile-drawer" aria-label="Mobile navigation drawer">
+        <button type="button" class="mobile-drawer__close-btn" id="mobile-drawer-close" aria-label="Close menu">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+        
+        <div class="mobile-drawer__header">
+            {% if current_user.is_authenticated %}
+                <div class="mobile-drawer__avatar-circle">{{ current_user.name[0]|upper }}</div>
+                <div class="mobile-drawer__user-details">
+                    <span class="mobile-drawer__username">{{ current_user.name }}</span>
+                    <span class="mobile-drawer__email">{{ current_user.email }}</span>
+                </div>
+            {% else %}
+                <div class="mobile-drawer__avatar-circle"><span class="material-symbols-outlined">person</span></div>
+                <div class="mobile-drawer__user-details">
+                    <span class="mobile-drawer__username">Guest User</span>
+                    <span class="mobile-drawer__email">Sign in to list items</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <nav class="mobile-drawer__nav">
+            <a href="{{ url_for('index') }}" class="mobile-drawer__link {% if request.endpoint == 'index' %}mobile-drawer__link--active{% endif %}">
+                <span class="material-symbols-outlined" aria-hidden="true">home</span>
+                <span>Home / Browse</span>
+            </a>
+            <a href="{{ url_for('items.list_item') }}" class="mobile-drawer__link {% if request.endpoint == 'items.list_item' %}mobile-drawer__link--active{% endif %}">
+                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                <span>List an Item</span>
+            </a>
+
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="mobile-drawer__link {% if request.endpoint == 'dashboard' %}mobile-drawer__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+                    <span>My Dashboard</span>
+                </a>
+                <a href="{{ url_for('profile') }}" class="mobile-drawer__link {% if request.endpoint == 'profile' %}mobile-drawer__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                    <span>My Profile</span>
+                </a>
+                <a href="{{ url_for('settings') }}" class="mobile-drawer__link {% if request.endpoint == 'settings' %}mobile-drawer__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                    <span>Settings</span>
+                </a>
+                
+                {% if current_user.is_partner or current_user.is_admin %}
+                    <hr class="mobile-drawer__divider">
+                    <a href="{{ url_for('partner.partner_dashboard') }}" class="mobile-drawer__link {% if request.endpoint == 'partner.partner_dashboard' %}mobile-drawer__link--active{% endif %}">
+                        <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                        <span>ESG Dashboard</span>
+                    </a>
+                {% endif %}
+                
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.admin_partners') }}" class="mobile-drawer__link {% if request.endpoint == 'admin.admin_partners' %}mobile-drawer__link--active{% endif %}">
+                        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+                        <span>Admin Panel</span>
+                    </a>
+                {% endif %}
+
+                <hr class="mobile-drawer__divider">
+                <form method="POST" action="{{ url_for('auth.logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="mobile-drawer__link mobile-drawer__link--danger">
+                        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                        <span>Sign Out</span>
+                    </button>
+                </form>
+            {% else %}
+                <hr class="mobile-drawer__divider">
+                <a href="{{ url_for('auth.login') }}" class="mobile-drawer__link">
+                    <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                    <span>Log In</span>
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="mobile-drawer__link">
+                    <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+                    <span>Sign Up</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="mobile-drawer__footer">
+            <span>Reuni v3.0</span>
+        </div>
+    </aside>
+
+    <!-- ─── Mobile Bottom Tab Bar ─── -->
+    <nav class="mobile-tabs" aria-label="Mobile bottom navigation">
+        <a href="{{ url_for('index') }}" class="mobile-tabs__item {% if request.endpoint == 'index' %}mobile-tabs__item--active{% endif %}">
+            <span class="material-symbols-outlined" aria-hidden="true">home</span>
+            <span class="mobile-tabs__label">Home</span>
+        </a>
+        <button type="button" class="mobile-tabs__item" id="mobile-tab-search-btn" aria-label="Open search">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <span class="mobile-tabs__label">Search</span>
+        </button>
+        <a href="{{ url_for('items.list_item') }}" class="mobile-tabs__item mobile-tabs__item--sell" aria-label="Sell item">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        </a>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile') }}" class="mobile-tabs__item {% if request.endpoint == 'profile' %}mobile-tabs__item--active{% endif %}">
+                <span class="mobile-tabs__avatar" aria-hidden="true">{{ current_user.name[0]|upper }}</span>
+                <span class="mobile-tabs__label">Profile</span>
+            </a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}" class="mobile-tabs__item">
+                <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                <span class="mobile-tabs__label">Log in</span>
+            </a>
+        {% endif %}
+    </nav>
+
+    <!-- ─── Full-Screen Search Overlay ─── -->
+    <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Search overlay">
+        <div class="search-overlay__header">
+            <form method="GET" action="{{ url_for('index') }}" class="search-overlay__form">
+                <span class="material-symbols-outlined search-overlay__icon" aria-hidden="true">search</span>
                 <input
                     type="search"
                     name="q"
-                    class="navbar__search-expand-input"
+                    id="search-overlay-input"
+                    class="search-overlay__input"
                     placeholder="Search items..."
                     value="{{ request.args.get('q', '') }}"
                     aria-label="Search items"
                     autocomplete="off"
                 >
-                <button type="button" class="navbar__search-expand-close" id="mobile-search-close" aria-label="Close search">
+                <button type="button" class="search-overlay__close-btn" id="search-overlay-close" aria-label="Close search">
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
             </form>
         </div>
-    </nav>
-
-    <!-- ─── Flash Messages ─── -->
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert--{{ category }}" role="alert">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <div class="search-overlay__content container">
+            <div class="search-overlay__history" id="search-overlay-history">
+                <div class="search-overlay__history-header">
+                    <span class="search-overlay__history-title">Recent Searches</span>
+                    <button type="button" class="search-overlay__clear-btn" id="search-clear-btn">
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">delete</span>
+                        Clear all
+                    </button>
+                </div>
+                <div class="search-overlay__chips" id="search-recent-chips-container">
+                    <!-- Recent search chips will be inserted here by JS -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- ─── Main Content ─── -->
-    <main id="main-content" class="container main-content">
+    <!-- ─── Flash Message System ─── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container container">
+                {% for category, message in messages %}
+                    {% set clean_category = 'danger' if category in ['error', 'danger'] else category %}
+                    <div class="flash-alert flash-alert--{{ clean_category }}" role="alert">
+                        <span class="material-symbols-outlined flash-alert__icon" aria-hidden="true">
+                            {% if clean_category == 'success' %}
+                                check_circle
+                            {% elif clean_category == 'danger' %}
+                                error
+                            {% elif clean_category == 'warning' %}
+                                warning
+                            {% else %}
+                                info
+                            {% endif %}
+                        </span>
+                        <span class="flash-alert__message">{{ message }}</span>
+                        <button type="button" class="flash-alert__dismiss" aria-label="Dismiss alert" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ─── Main Content Grid ─── -->
+    {% block hero %}{% endblock %}
+    <main id="main-content" class="main-shell container">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- ─── Footer ─── -->
+    <!-- ─── Global Campus Impact Counter (Footer Widget) ─── -->
     <footer class="footer" role="contentinfo">
-        <div class="container footer__inner">
-            <div class="footer__brand">
-                <span class="material-symbols-outlined footer__icon" aria-hidden="true">recycling</span>
-                <span class="footer__name">Reuni</span>
+        <div class="footer__inner container">
+            <!-- Left: Impact Widget -->
+            <div class="footer__impact">
+                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                <span class="footer__impact-text">
+                    <strong class="footer__impact-weight">{{ "%.1f"|format(campus_total_kg or 0.0) }}</strong> kg saved at Brookes
+                </span>
             </div>
-            <nav class="footer__links" aria-label="Footer navigation">
-                <a href="{{ url_for('index') }}">Browse</a>
-                <a href="{{ url_for('privacy') }}">Privacy Policy</a>
-                {% if current_user.is_authenticated %}
-                <a href="{{ url_for('items.list_item') }}">List Item</a>
-                <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                {% else %}
-                <a href="{{ url_for('auth.login') }}">Log In</a>
-                <a href="{{ url_for('auth.register') }}">Sign Up</a>
-                {% endif %}
-            </nav>
-            <p class="footer__copy">&copy; 2026 Reuni &middot; Supporting UN SDG 12: Responsible Consumption &amp; Production</p>
+            
+            <!-- Right: Secondary Content -->
+            <div class="footer__secondary">
+                <a href="{{ url_for('privacy') }}" class="footer__link">Privacy Policy</a>
+                <span class="footer__dot" aria-hidden="true">&middot;</span>
+                <span class="footer__copy">© 2026 Reuni</span>
+            </div>
         </div>
     </footer>
 
-    <!-- ─── Mobile Bottom Tab Bar ─── -->
-    <nav class="mobile-tabs" aria-label="Mobile navigation">
-        <a href="{{ url_for('index') }}" class="mobile-tabs__item {% if request.endpoint == 'index' %}mobile-tabs__item--active{% endif %}">
-            <span class="material-symbols-outlined" aria-hidden="true">home</span>
-            <span>Home</span>
-        </a>
-        <button type="button" class="mobile-tabs__item" id="mobile-tab-search" aria-label="Search">
-            <span class="material-symbols-outlined" aria-hidden="true">search</span>
-            <span>Search</span>
-        </button>
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('items.list_item') }}" class="mobile-tabs__item mobile-tabs__item--sell">
-            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-            <span>Sell</span>
-        </a>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="mobile-tabs__item mobile-tabs__item--sell">
-            <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-            <span>Sell</span>
-        </a>
-        {% endif %}
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('profile') }}" class="mobile-tabs__item {% if request.endpoint == 'profile' %}mobile-tabs__item--active{% endif %}">
-            <span class="user-dropdown__avatar mobile-tabs__avatar" aria-hidden="true">{{ current_user.name[0] }}</span>
-            <span>Profile</span>
-        </a>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="mobile-tabs__item">
-            <span class="material-symbols-outlined" aria-hidden="true">person</span>
-            <span>Profile</span>
-        </a>
-        {% endif %}
-    </nav>
-
-
-    <!-- Dropdown + mobile search + mobile tabs -->
+    <!-- Dropdown + mobile search + mobile drawer + theme handler + search overlay JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // User dropdown
-            const trigger = document.querySelector('.user-dropdown__trigger');
-            const dropdown = document.querySelector('.user-dropdown');
-            if (trigger && dropdown) {
-                trigger.addEventListener('click', function (e) {
+            // Theme toggling logic
+            const themeToggle = document.getElementById('theme-toggle');
+            const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+            
+            function updateThemeUI(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                
+                const themeToggleIcon = document.getElementById('theme-toggle-icon');
+                if (themeToggleIcon) {
+                    themeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
+                }
+                
+                const mobileThemeToggleIcon = document.getElementById('mobile-theme-toggle-icon');
+                if (mobileThemeToggleIcon) {
+                    mobileThemeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
+                }
+            }
+            
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            updateThemeUI(currentTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    updateThemeUI(next);
+                });
+            }
+            if (mobileThemeToggle) {
+                mobileThemeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    updateThemeUI(next);
+                });
+            }
+
+            // User dropdown toggle (Desktop)
+            const dropdownTrigger = document.getElementById('profile-dropdown-trigger');
+            const dropdownMenu = document.getElementById('profile-dropdown-menu');
+            if (dropdownTrigger && dropdownMenu) {
+                dropdownTrigger.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    dropdown.classList.toggle('user-dropdown--open');
-                    trigger.setAttribute('aria-expanded', dropdown.classList.contains('user-dropdown--open'));
+                    const isOpen = dropdownMenu.classList.contains('user-dropdown__menu--open');
+                    if (isOpen) {
+                        dropdownMenu.classList.remove('user-dropdown__menu--open');
+                        dropdownTrigger.setAttribute('aria-expanded', 'false');
+                    } else {
+                        dropdownMenu.classList.add('user-dropdown__menu--open');
+                        dropdownTrigger.setAttribute('aria-expanded', 'true');
+                    }
                 });
+                
                 document.addEventListener('click', function () {
-                    dropdown.classList.remove('user-dropdown--open');
-                    trigger.setAttribute('aria-expanded', 'false');
+                    dropdownMenu.classList.remove('user-dropdown__menu--open');
+                    dropdownTrigger.setAttribute('aria-expanded', 'false');
                 });
             }
 
-            // Mobile search expand (from top bar or bottom tab)
-            const searchBar = document.getElementById('mobile-search-bar');
-            const searchClose = document.getElementById('mobile-search-close');
-            function openMobileSearch() {
-                if (searchBar) {
-                    searchBar.classList.add('navbar__search-expand--open');
-                    searchBar.querySelector('input').focus();
+            // Mobile Navigation Drawer (Hamburger menu)
+            const hamburgerBtn = document.getElementById('mobile-hamburger-btn');
+            const drawer = document.getElementById('mobile-drawer');
+            const backdrop = document.getElementById('mobile-drawer-backdrop');
+            const drawerClose = document.getElementById('mobile-drawer-close');
+            
+            function openDrawer() {
+                if (drawer && backdrop) {
+                    backdrop.classList.add('mobile-drawer-backdrop--open');
+                    drawer.classList.add('mobile-drawer--open');
                 }
             }
-            function closeMobileSearch() {
-                if (searchBar) {
-                    searchBar.classList.remove('navbar__search-expand--open');
+            
+            function closeDrawer() {
+                if (drawer && backdrop) {
+                    backdrop.classList.remove('mobile-drawer-backdrop--open');
+                    drawer.classList.remove('mobile-drawer--open');
                 }
             }
-            if (searchClose) searchClose.addEventListener('click', closeMobileSearch);
+            
+            if (hamburgerBtn) hamburgerBtn.addEventListener('click', openDrawer);
+            if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+            if (backdrop) backdrop.addEventListener('click', closeDrawer);
 
-            // Bottom tab search button
-            const searchBtn = document.getElementById('mobile-tab-search');
-            if (searchBtn) searchBtn.addEventListener('click', openMobileSearch);
+            // Desktop Search Form & Dropdown Panel
+            const desktopSearchForm = document.getElementById('desktop-search-form');
+            const desktopSearchInput = document.getElementById('desktop-search-input');
+            const desktopSearchDropdown = document.getElementById('desktop-search-dropdown');
+            const desktopSearchClearBtn = document.getElementById('desktop-search-clear-btn');
+            const desktopChipsContainer = document.getElementById('desktop-search-chips-container');
+
+            function renderDesktopRecentSearches() {
+                if (!desktopChipsContainer || !desktopSearchClearBtn) return;
+                const searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                if (searches.length === 0) {
+                    if (desktopSearchDropdown) desktopSearchDropdown.style.display = 'none';
+                    return;
+                }
+                if (desktopSearchDropdown && document.activeElement === desktopSearchInput) {
+                    desktopSearchDropdown.style.display = 'block';
+                }
+                desktopChipsContainer.innerHTML = '';
+                searches.forEach(search => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'recent-search-chip';
+                    chip.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">history</span><span>${search}</span>`;
+                    chip.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        desktopSearchInput.value = search;
+                        if (desktopSearchForm) desktopSearchForm.submit();
+                    });
+                    desktopChipsContainer.appendChild(chip);
+                });
+            }
+
+            if (desktopSearchInput) {
+                desktopSearchInput.addEventListener('focus', () => {
+                    renderDesktopRecentSearches();
+                });
+                document.addEventListener('click', (e) => {
+                    if (desktopSearchDropdown && desktopSearchForm && !desktopSearchForm.contains(e.target)) {
+                        desktopSearchDropdown.style.display = 'none';
+                    }
+                });
+            }
+
+            if (desktopSearchClearBtn) {
+                desktopSearchClearBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    localStorage.removeItem('recent_searches');
+                    if (desktopSearchDropdown) desktopSearchDropdown.style.display = 'none';
+                });
+            }
+
+            if (desktopSearchForm) {
+                desktopSearchForm.addEventListener('submit', () => {
+                    const query = desktopSearchInput.value.trim();
+                    if (query) {
+                        let searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                        searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
+                        localStorage.setItem('recent_searches', JSON.stringify(searches));
+                    }
+                });
+            }
+
+            // Mobile Full-screen Search Overlay
+            const searchOverlay = document.getElementById('search-overlay');
+            const searchOverlayClose = document.getElementById('search-overlay-close');
+            const searchOverlayInput = document.getElementById('search-overlay-input');
+            const mobileSearchTabBtn = document.getElementById('mobile-tab-search-btn');
+            const searchClearBtn = document.getElementById('search-clear-btn');
+            const chipsContainer = document.getElementById('search-recent-chips-container');
+            const overlayForm = searchOverlay?.querySelector('form');
+
+            function openSearchOverlay() {
+                if (searchOverlay) {
+                    searchOverlay.classList.add('search-overlay--open');
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(() => {
+                        searchOverlayInput.focus();
+                    }, 50);
+                    renderRecentSearches();
+                }
+            }
+
+            function closeSearchOverlay() {
+                if (searchOverlay) {
+                    searchOverlay.classList.remove('search-overlay--open');
+                    document.body.style.overflow = '';
+                }
+            }
+
+            function renderRecentSearches() {
+                if (!chipsContainer || !searchClearBtn) return;
+                const searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                const historySection = document.getElementById('search-overlay-history');
+                if (searches.length === 0) {
+                    if (historySection) historySection.style.display = 'none';
+                    return;
+                }
+                if (historySection) historySection.style.display = 'block';
+                chipsContainer.innerHTML = '';
+                searches.forEach(search => {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'recent-search-chip';
+                    chip.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">history</span><span>${search}</span>`;
+                    chip.addEventListener('click', () => {
+                        searchOverlayInput.value = search;
+                        if (overlayForm) overlayForm.submit();
+                    });
+                    chipsContainer.appendChild(chip);
+                });
+            }
+
+            if (mobileSearchTabBtn) mobileSearchTabBtn.addEventListener('click', openSearchOverlay);
+            if (searchOverlayClose) searchOverlayClose.addEventListener('click', closeSearchOverlay);
+
+            if (overlayForm) {
+                overlayForm.addEventListener('submit', () => {
+                    const query = searchOverlayInput.value.trim();
+                    if (query) {
+                        let searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                        searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
+                        localStorage.setItem('recent_searches', JSON.stringify(searches));
+                    }
+                });
+            }
+
+            if (searchClearBtn) {
+                searchClearBtn.addEventListener('click', () => {
+                    localStorage.removeItem('recent_searches');
+                    renderRecentSearches();
+                });
+            }
+
+            // Auto-dismiss flash alerts after 5 seconds
+            const flashAlerts = document.querySelectorAll('.flash-alert');
+            flashAlerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('flash-alert--fade-out');
+                    alert.addEventListener('animationend', function() {
+                        alert.remove();
+                    });
+                    // Fallback to remove in case animation is blocked
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 500);
+                }, 5000);
+            });
         });
     </script>
 

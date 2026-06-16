@@ -2,11 +2,13 @@ import re
 from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
-from flask_mail import Message
-from app import db, mail
+from app import db
+from app.utils.emails import send_email
 from app.models import User
 from app.utils.decorators import admin_required
 from app.utils.tokens import generate_partner_invite_token
+
+from app.utils.email_validation import extract_university_domain
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -22,6 +24,12 @@ def admin_partners():
 @admin_required
 def generate_invite():
     university_domain = request.form.get("university_domain", "").strip().lower()
+    
+    # If a full email address was entered, extract the domain portion
+    if "@" in university_domain:
+        extracted = extract_university_domain(university_domain)
+        if extracted:
+            university_domain = extracted
     
     if not re.match(r"^[a-zA-Z0-9.-]+\.ac\.uk$", university_domain):
         flash("Please enter a valid .ac.uk university domain.", "danger")
@@ -57,12 +65,19 @@ def deactivate_partner(user_id):
     
     # Send deactivation notification email
     try:
-        msg = Message(
-            subject="Reuni Account Deactivation",
-            recipients=[user.email]
+        email_html = (
+            f"<p>Hello {user.name},</p>"
+            f"<p>Your Reuni partner access for <strong>{user.partner_university or 'your university'}</strong> "
+            f"has been deactivated.</p>"
+            f"<p>Contact support if this is unexpected.</p>"
+            f"<p>— The Reuni team</p>"
         )
-        msg.body = f"Hello {user.name},\n\nYour Reuni partner access for {user.partner_university or 'your university'} has been deactivated. Contact support if this is unexpected.\n\n— The Reuni team"
-        mail.send(msg)
+        send_email(
+            to_email=user.email,
+            to_name=user.name,
+            subject="Reuni Account Deactivation",
+            html_content=email_html
+        )
     except Exception as e:
         current_app.logger.error(f"Failed to send deactivation email to {user.email}: {e}")
         

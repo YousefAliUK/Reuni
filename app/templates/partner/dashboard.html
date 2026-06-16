@@ -2,187 +2,223 @@
 {% block title %}Partner Dashboard — Reuni{% endblock %}
 
 {% block content %}
-<div class="partner-dashboard">
+<div class="esg-container">
+    
     <!-- ─── Dashboard Header ─── -->
-    <div class="partner-dashboard__header">
-        <div class="partner-dashboard__header-main">
-            <div class="partner-dashboard__avatar-wrapper">
+    <div class="esg-header">
+        <div class="esg-title-block">
+            <div class="esg-logo-wrapper">
                 {% if logo_url %}
-                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="partner-dashboard__logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="esg-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 {% endif %}
-                <div class="partner-dashboard__avatar" style="{% if logo_url %}display: none;{% endif %}">
+                <div style="font-weight: 700; font-size: 20px; color: var(--color-primary); width: 100%; height: 100%; display: {% if logo_url %}none{% else %}flex{% endif %}; align-items: center; justify-content: center;">
                     {{ uni_initials }}
                 </div>
             </div>
-            <div class="partner-dashboard__info">
-                <h1>{{ uni_name }} Dashboard</h1>
-                <p class="partner-dashboard__institution">Sustainability Dashboard</p>
+            <div>
+                <h1 class="esg-title">
+                    {% if is_global %}Global Sustainability Dashboard{% else %}{{ uni_name }} Dashboard{% endif %}
+                </h1>
+                <p class="esg-subtitle">Sustainability & Impact Report</p>
             </div>
         </div>
-        <div class="partner-dashboard__scope-badge">
-            <span class="material-symbols-outlined">domain</span>
-            <span>@{{ uni_domain or "global" }}</span>
-        </div>
-    </div>
-
-    <!-- ─── KPI Metrics Row ─── -->
-    <div class="partner-kpis">
-        <!-- KPI 1: Waste Diverted -->
-        <div class="partner-kpi-card partner-kpi-card--waste">
-            <div class="partner-kpi-card__main">
-                <span class="partner-kpi-card__label">Waste Diverted</span>
-                <span class="partner-kpi-card__value">
-                    {% if total_kg_saved >= 1000 %}
-                        {{ "%.1f"|format(total_kg_saved / 1000) }} tons
-                    {% else %}
-                        {{ "%.0f"|format(total_kg_saved) }} kg
-                    {% endif %}
-                </span>
-                <span class="partner-kpi-card__subtext">
-                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">swap_horiz</span>
-                    Across {{ total_items_exchanged }} items exchanged
-                </span>
-            </div>
-            <div class="partner-kpi-card__icon-wrapper">
-                <span class="material-symbols-outlined">recycling</span>
-            </div>
-        </div>
-
-        <!-- KPI 2: Active Students -->
-        <div class="partner-kpi-card partner-kpi-card--students">
-            <div class="partner-kpi-card__main">
-                <span class="partner-kpi-card__label">Active Students</span>
-                <span class="partner-kpi-card__value">{{ "%d"|format(total_verified_students) }}</span>
-                <span class="partner-kpi-card__subtext">
-                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">group</span>
-                    Verified on platform
-                </span>
-            </div>
-            <div class="partner-kpi-card__icon-wrapper">
-                <span class="material-symbols-outlined">person_add</span>
-            </div>
-        </div>
-
-        <!-- KPI 3: Est. Carbon Offset -->
-        <div class="partner-kpi-card partner-kpi-card--carbon">
-            <div class="partner-kpi-card__main">
-                <span class="partner-kpi-card__label">Est. Carbon Offset</span>
-                <span class="partner-kpi-card__value">
-                    {% set CO2_kg = total_kg_saved * 2.5 %}
-                    {% if CO2_kg >= 1000 %}
-                        {{ "%.1f"|format(CO2_kg / 1000) }} tons
-                    {% else %}
-                        {{ "%.0f"|format(CO2_kg) }} kg CO₂e
-                    {% endif %}
-                </span>
-                <span class="partner-kpi-card__subtext">
-                    {% set trees = CO2_kg / 22 %}
-                    <span class="material-symbols-outlined partner-kpi-card__trend-icon">eco</span>
-                    Equivalent to {{ "%.0f"|format(trees) }} trees / year
-                </span>
-            </div>
-            <div class="partner-kpi-card__icon-wrapper">
-                <span class="material-symbols-outlined">cloud</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ─── Main Content Grid ─── -->
-    <div class="partner-grid">
         
-        <!-- Column 1: Category Distribution -->
-        <div class="partner-card">
-            <div class="partner-card__header">
-                <div>
-                    <h2 class="partner-card__title">Category Distribution</h2>
-                    <p class="partner-card__subtitle">Items saved from landfill by type</p>
+        <div class="esg-actions">
+            <!-- Admin-only domain scope dropdown selector (Visual Mockup for B2B) -->
+            {% if is_global %}
+                <div class="scope-selector-mock" style="position: relative; display: inline-flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-ink-tertiary);">filter_list</span>
+                    <select disabled style="height: 40px; padding: 0 var(--space-4) 0 var(--space-2); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: not-allowed; opacity: 0.85;">
+                        <option selected>Scope: All Universities</option>
+                        <option>Oxford Brookes University</option>
+                        <option>University of Oxford</option>
+                    </select>
                 </div>
+            {% endif %}
+            
+            <div class="esg-timestamp">
+                Last updated: <span id="last-updated-time">--:--</span>
             </div>
-            <div class="partner-card__body">
-                {% if categories_list %}
-                    <div class="category-distribution">
-                        {% for cat in categories_list %}
-                            <div class="category-row">
-                                <div class="category-row__header">
-                                    <span class="category-row__name">
-                                        <span class="material-symbols-outlined category-row__icon">{{ cat.icon }}</span>
-                                        {{ cat.category }}
-                                    </span>
-                                    <span class="category-row__meta">
-                                        <span class="category-row__percentage">{{ "%.0f"|format(cat.percentage) }}%</span>
-                                        <span class="category-row__weight">({{ "%.1f"|format(cat.kg) }} kg, {{ cat.count }} exchanged)</span>
-                                    </span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-bar__fill progress-bar__fill--{{ cat.category | lower }}" style="width: {{ cat.percentage }}%;"></div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="partner-empty">
-                        <span class="material-symbols-outlined partner-empty__icon">bar_chart</span>
-                        <p class="partner-empty__text">No category statistics available yet.</p>
-                    </div>
-                {% endif %}
-            </div>
+            
+            <button onclick="window.print();" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+                <span>Download report</span>
+            </button>
         </div>
+    </div>
 
-        <!-- Column 2: Live Circulation Log -->
-        <div class="partner-card">
-            <div class="partner-card__header">
-                <div>
-                    <h2 class="partner-card__title">Live Circulation Log</h2>
-                    <p class="partner-card__subtitle">Real-time circular transactions on campus</p>
-                </div>
-                <span class="partner-card__badge-live">
-                    <span class="live-dot"></span>
-                    Live
+    <!-- ─── ROW 1: KPI Metrics Row (4-column grid with Card A dominant) ─── -->
+    <div class="esg-metric-grid">
+        
+        <!-- CARD A — Total kg Saved (DOMINANT, teal background, eco icon) -->
+        <div class="esg-card esg-card--dominant">
+            <div class="esg-card-icon-back">
+                <span class="material-symbols-outlined" style="font-size: 80px; color: #ffffff;">eco</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num esg-card-num--large font-mono">
+                    {{ "%.1f"|format(total_kg_saved) }}
                 </span>
+                <span class="esg-card-label esg-card-label--light">kilograms saved from landfill</span>
             </div>
-            <div class="partner-card__body">
-                {% if recent_exchanges %}
-                    <div class="circulation-log">
-                        {% for log in recent_exchanges %}
-                            <div class="circulation-row">
-                                <div class="circulation-row__icon-container circulation-row__icon-container--{{ log.category | lower }}">
-                                    <span class="material-symbols-outlined">{{ log.icon }}</span>
-                                </div>
-                                <div class="circulation-row__details">
-                                    <span class="circulation-row__title">{{ log.title }}</span>
-                                    <div class="circulation-row__meta">
-                                        <span class="circulation-row__category">{{ log.category }}</span>
-                                        <span class="circulation-row__dot"></span>
-                                        <span class="circulation-row__time">{{ log.time_ago }}</span>
-                                    </div>
-                                </div>
-                                <div class="circulation-row__impact">
-                                    <span class="impact-badge">+{{ "%.1f"|format(log.kg_saved) }} kg</span>
-                                </div>
+            <span class="esg-card-hint esg-card-hint--light">Since platform launch</span>
+        </div>
+
+        <!-- CARD B — Items Exchanged -->
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">recycling</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
+                    {{ total_items_exchanged }}
+                </span>
+                <span class="esg-card-label">items exchanged</span>
+            </div>
+            <span class="esg-card-hint">Verified student exchanges</span>
+        </div>
+
+        <!-- CARD C — Verified Students -->
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">school</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
+                    {{ total_verified_students }}
+                </span>
+                <span class="esg-card-label">verified students</span>
+            </div>
+            <span class="esg-card-hint">Active on platform</span>
+        </div>
+
+        <!-- CARD D — CO₂ Prevented -->
+        <div class="esg-card">
+            <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
+                <span class="material-symbols-outlined" style="font-size: 80px;">co2</span>
+            </div>
+            <div style="position: relative; z-index: 1;">
+                <span class="esg-card-num font-mono">
+                    {{ "%.1f"|format(total_kg_saved) }} kg
+                </span>
+                <span class="esg-card-label">CO₂e prevented</span>
+            </div>
+            <span class="esg-card-hint">Carbon equivalent avoided</span>
+        </div>
+    </div>
+
+    <!-- ─── ROW 2: Category Distribution Panel vs Live Circulation Log (Split Asymmetric) ─── -->
+    <div class="esg-split-layout">
+        
+        <!-- LEFT PANEL (2fr) — Category Distribution Panel -->
+        <div class="esg-panel category-distribution">
+            <h2 class="esg-panel-title">Exchanges by Category</h2>
+            
+            <div class="category-distribution-list">
+                {% if categories_list %}
+                    {% for cat in categories_list %}
+                        <div class="category-distribution-row">
+                            <div class="category-distribution-row__info">
+                                <span class="material-symbols-outlined category-distribution-row__icon">{{ cat.icon }}</span>
+                                <span class="category-distribution-row__name">{{ cat.category }}</span>
                             </div>
-                        {% endfor %}
-                    </div>
+                            <div class="category-distribution-row__bar-container">
+                                <div class="category-distribution-row__bar-fill" style="width: {{ cat.percentage }}%;"></div>
+                            </div>
+                            <div class="category-distribution-row__stats">
+                                <span>{{ cat.count }} {% if cat.count == 1 %}exchanged{% else %}exchanges{% endif %}</span>
+                                <span class="category-distribution-row__divider">&middot;</span>
+                                <span class="category-distribution-row__weight font-mono">{{ "%.1f"|format(cat.kg) }} kg</span>
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% else %}
-                    <div class="partner-empty">
-                        <span class="material-symbols-outlined partner-empty__icon">history</span>
-                        <p class="partner-empty__text">No completed transactions recorded yet.</p>
-                        {% if not is_global %}
-                            <p class="partner-empty__subtext" style="font-size: 0.8125rem; color: var(--clr-text-muted); margin-top: 0.25rem;">
-                                Exchanges will appear here in real time as students complete handshakes.
-                            </p>
-                        {% endif %}
+                    <div style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary); font-size: 14px;">
+                        No category statistics available yet.
                     </div>
                 {% endif %}
             </div>
         </div>
 
+        <!-- RIGHT PANEL (1fr) — Live Circulation Log -->
+        <div class="esg-panel circulation-log">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <h2 class="esg-panel-title" style="margin: 0;">Recent Exchanges</h2>
+                <span class="pulse-dot" title="Live circulation update stream"></span>
+            </div>
+            
+            <div class="circulation-log-list">
+                {% if recent_exchanges %}
+                    {% for log in recent_exchanges %}
+                        <div class="circulation-log-row">
+                            <div class="circulation-log-item">
+                                <div class="circulation-log-item__icon">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">{{ log.icon }}</span>
+                                </div>
+                                <div class="circulation-log-item__details">
+                                    <span class="circulation-log-item__title">{{ log.title | truncate(24, True) }}</span>
+                                    <span class="circulation-log-item__category">{{ log.category }}</span>
+                                </div>
+                            </div>
+                            <div class="circulation-log-stats">
+                                <span class="circulation-log-stats__weight">+{{ "%.1f"|format(log.kg_saved) }} kg</span>
+                                <span class="circulation-log-stats__time">{{ log.time_ago }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: var(--space-8); color: var(--color-ink-tertiary); font-size: 13px;">
+                        No recent exchanges recorded.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
-    <!-- ─── Footnote / Data Disclosure ─── -->
-    <div class="partner-dashboard__footer">
-        <span class="material-symbols-outlined">verified</span>
-        <p>UK/EU GDPR Compliant Log. Individual student names, emails, and transaction codes are redacted to preserve user privacy. Data updates in real time.</p>
+    <!-- ─── ROW 3: ESG COPY BLOCK (for report extraction) ─── -->
+    <div class="esg-report-card">
+        <div class="esg-report-header">
+            <h2 class="esg-report-eyebrow">For Your ESG Report</h2>
+            <button id="copy-esg-btn" onclick="copyESGText()" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary); cursor: pointer;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                <span>Copy text</span>
+            </button>
+        </div>
+        
+        <p id="esg-report-text" class="esg-report-text">
+            {{ uni_name }} students exchanged {{ total_items_exchanged }} items via Reuni, diverting an estimated {{ "%.1f"|format(total_kg_saved) }} kg of goods from landfill in line with UN SDG 12.
+        </p>
     </div>
+
+    <!-- ─── GDPR Footnote ─── -->
+    <div style="display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-tertiary); font-size: 12px; padding-top: var(--space-2);">
+        <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">verified</span>
+        <span>UK/EU GDPR Compliant Log. Student identities are protected. Data updates in real time.</span>
+    </div>
+
 </div>
-{% endblock %}
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Last updated timestamp
+        const timeEl = document.getElementById('last-updated-time');
+        if (timeEl) {
+            const now = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        }
+    });
+
+    function copyESGText() {
+        const text = document.getElementById('esg-report-text').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copy-esg-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">check</span><span style="color: var(--color-success);">Copied!</span>';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}

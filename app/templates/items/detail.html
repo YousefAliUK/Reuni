@@ -1,124 +1,252 @@
 {% extends "base.html" %}
 {% block title %}{{ item.title }} — Reuni{% endblock %}
+{% block mobile_title %}{{ item.title | truncate(28, True) }}{% endblock %}
 
 {% block content %}
-<div class="detail">
-    <a href="{{ url_for('index') }}" class="back-link">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-        Back to Marketplace
-    </a>
+<div class="detail-wrapper">
+    
+    <!-- Clean Back Navigation Link -->
+    <div class="back-navigation">
+        <a href="{{ url_for('index') }}" class="back-link">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            <span>Back to Browse</span>
+        </a>
+    </div>
 
-    <div class="detail__layout">
-        <!-- ─── Image ─── -->
-        <div class="detail__image-wrap">
-            {% if item.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
-                 alt="Photo of {{ item.title }}"
-                 class="detail__image">
-            {% else %}
-            <div class="detail__image-placeholder">
-                <span class="material-symbols-outlined">image</span>
+    <!-- Detail Layout Grid -->
+    <div class="detail-container">
+        
+        <!-- LEFT COLUMN: Item Photo -->
+        <div class="detail-photo-pane">
+            <div class="detail-photo">
+                {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Photo of {{ item.title }}" class="detail-photo__img">
+                {% else %}
+                    <div class="detail-photo__fallback">
+                        <span class="material-symbols-outlined" aria-hidden="true">image</span>
+                    </div>
+                {% endif %}
+                
+                {% if item.is_sold %}
+                    <div class="detail-photo__ribbon ribbon--sold">Sold</div>
+                {% elif item.buyer_id %}
+                    <div class="detail-photo__ribbon ribbon--claimed">Claimed</div>
+                {% endif %}
             </div>
-            {% endif %}
-            {% if item.is_sold %}
-            <span class="detail__sold-overlay">Sold</span>
-            {% endif %}
         </div>
 
-        <!-- ─── Info ─── -->
-        <div class="detail__info">
-            <div class="detail__badges">
-                <span class="pill pill--active">{{ item.category }}</span>
-                <span class="detail__condition">{{ item.condition }}</span>
-            </div>
-
-            <h1 class="detail__title">{{ item.title }}</h1>
-
-            <div class="detail__price-row">
-                {% if item.is_free %}
-                    <span class="detail__price detail__price--free">Free</span>
+        <!-- RIGHT COLUMN: Info Panel -->
+        <div class="detail-info">
+            
+            <!-- Category and Condition Tags -->
+            <div class="detail-info__badges">
+                <span class="category-chip">{{ item.category }}</span>
+                {% if item.condition == 'New' %}
+                    <span class="condition-chip cond--success">New</span>
+                {% elif item.condition == 'Like New' %}
+                    <span class="condition-chip cond--success">Like New</span>
+                {% elif item.condition == 'Good' %}
+                    <span class="condition-chip cond--primary">Good</span>
                 {% else %}
-                    <span class="detail__price">&pound;{{ "%.2f"|format(item.price) }}</span>
+                    <span class="condition-chip cond--warning">{{ item.condition }}</span>
                 {% endif %}
-                <span class="detail__eco">
-                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
-                    {{ item.kg_saved }} kg saved
-                </span>
             </div>
 
-            {% if item.description %}
-            <div class="detail__description">
-                <h2>Description</h2>
-                <p>{{ item.description }}</p>
-            </div>
-            {% endif %}
+            <!-- Title -->
+            <h1 class="detail-info__title">{{ item.title }}</h1>
+            
+            <!-- Listed by sub-label -->
+            <p class="detail-info__seller">
+                Listed by <span style="font-weight: 500; color: var(--color-ink-primary);">{{ item.seller.name }}</span>
+            </p>
 
-            <div class="detail__seller-card">
-                <div class="detail__seller-avatar">{{ item.seller.name[0] }}</div>
-                <div>
-                    <strong>{{ item.seller.name }}</strong>
-                    <span class="detail__seller-label">Seller</span>
+            <!-- Price -->
+            <div class="detail-info__price-row">
+                {% if item.is_free %}
+                    <span class="detail-info__price price--free">Free</span>
+                {% else %}
+                    <span class="detail-info__price">£{{ "%.2f"|format(item.price) }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Eco Impact Block -->
+            <div class="eco-block">
+                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                <div class="eco-block__text">
+                    <span class="eco-block__title">Saving <span class="font-mono">{{ "%.1f"|format(item.kg_saved) }}</span> kg from landfill</span>
+                    <span class="eco-block__sub">Based on WRAP UK material weight data</span>
                 </div>
             </div>
 
-            <!-- ─── Action Buttons ─── -->
-            <div class="detail__actions">
+            <!-- Description -->
+            {% if item.description %}
+            <div class="detail-description">
+                <div class="detail-description__content" id="detail-desc-content">
+                    {{ item.description }}
+                </div>
+                {% if item.description|length > 150 %}
+                    <button type="button" class="desc-toggle-btn" id="desc-toggle">Show more</button>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Seller Info Card -->
+            <div class="seller-info-card">
+                <div class="seller-info-card__avatar">
+                    {{ item.seller.name[0]|upper }}
+                </div>
+                <div class="seller-info-card__details">
+                    <span class="seller-info-card__name">{{ item.seller.name }}</span>
+                    <span class="seller-info-card__meta">Listed on {{ item.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+            </div>
+
+            <hr class="detail-divider">
+
+            <!-- Desktop-Only CTA Actions Panel -->
+            <div class="detail-cta-actions hide-on-mobile">
                 {% if item.is_sold %}
-                    <div class="detail__claimed-banner">
-                        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                        <div>
-                            <strong>This item has been claimed</strong>
-                            <span>by {{ item.buyer.name if item.buyer else "someone" }}</span>
+                    {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
+                        <div class="success-celebration-pane">
+                            <span class="material-symbols-outlined success-icon" aria-hidden="true">check_circle</span>
+                            <h2>Exchange complete!</h2>
+                            <div class="kg-counter" id="celebration-kg-value" data-target="{{ item.kg_saved }}">0.0 kg</div>
+                            <p class="kg-counter-label">saved from landfill</p>
                         </div>
-                    </div>
+                    {% else %}
+                        <button class="btn btn--block btn--disabled" disabled>Sold</button>
+                    {% endif %}
                 {% elif item.buyer_id and not item.is_sold %}
-                    <!-- Pending handshake -->
-                    <div class="detail__pending-banner">
-                        <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
-                        <div>
-                            <strong>Handshake in progress</strong>
-                            {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
-                            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary btn--sm" style="margin-top: 0.5rem;">
-                                Go to PIN Page
+                    {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
+                        <div class="claimed-state-panel">
+                            <div class="claimed-state-header">
+                                <span class="material-symbols-outlined" aria-hidden="true">timer</span>
+                                <div>
+                                    <div class="panel-heading">Claimed &middot; Pending pickup</div>
+                                    <div class="panel-subtext">Currently reserved by {{ item.buyer.name }}</div>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary btn--accent btn--block" style="text-decoration: none;">
+                                View PIN handshake &rarr;
                             </a>
-                            {% else %}
-                            <span>This item has a pending claim</span>
-                            {% endif %}
                         </div>
-                    </div>
+                    {% else %}
+                        <button class="btn btn--block btn--disabled" disabled>Currently claimed</button>
+                    {% endif %}
                 {% elif current_user.is_authenticated and item.seller_id == current_user.id %}
-                    <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--primary">
-                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">edit</span>
-                        Edit Listing
-                    </a>
-                    <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}"
-                          onsubmit="return confirm('Are you sure you want to delete this listing?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn--danger">
-                            <span class="material-symbols-outlined btn__icon" aria-hidden="true">delete</span>
-                            Delete
-                        </button>
-                    </form>
+                    <div class="owner-btn-group">
+                        <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="text-decoration: none;">Edit listing</a>
+                        <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--outline btn--danger" style="width: 100%;">Delete listing</button>
+                        </form>
+                    </div>
+                {% elif has_cancelled_before %}
+                    <button class="btn btn--block btn--disabled" disabled style="opacity: 0.4;">Unavailable (Previous claim cancelled)</button>
+                    <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You cancelled a previous claim on this item.</p>
                 {% elif current_user.is_authenticated %}
                     <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn--buy btn--lg">
-                            <span class="material-symbols-outlined btn__icon" aria-hidden="true">shopping_cart</span>
-                            {% if item.is_free %}Claim This Item{% else %}Buy for &pound;{{ "%.2f"|format(item.price) }}{% endif %}
+                        <button type="submit" class="btn btn--primary btn--block btn--accent">
+                            {% if item.is_free %}Claim this item{% else %}Pay and Claim{% endif %}
                         </button>
                     </form>
+                    <p style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-align: center; margin-top: var(--space-2);">You'll receive the pickup PIN. Cash/transfer at handoff.</p>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--lg">
-                        <span class="material-symbols-outlined btn__icon" aria-hidden="true">login</span>
-                        Log In to Buy
+                    <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--block btn--accent" style="text-decoration: none;">
+                        Log in to claim this item
                     </a>
                 {% endif %}
             </div>
-
-            <p class="detail__timestamp">
-                Listed {{ item.created_at.strftime('%d %b %Y') }}
-            </p>
         </div>
     </div>
 </div>
+
+<!-- MOBILE STICKY CTA FOOTER (visible only on mobile) -->
+<div class="show-on-mobile detail-cta-container">
+    {% if item.is_sold %}
+        <button class="btn btn--block btn--disabled" disabled>Sold</button>
+    {% elif item.buyer_id and not item.is_sold %}
+        {% if current_user.is_authenticated and (current_user.id == item.buyer_id or current_user.id == item.seller_id) %}
+            <a href="{{ url_for('items.pin_page', item_id=item.id) }}" class="btn btn--primary btn--block btn--accent" style="text-decoration: none;">
+                View PIN handshake &rarr;
+            </a>
+        {% else %}
+            <button class="btn btn--block btn--disabled" disabled>Currently claimed</button>
+        {% endif %}
+    {% elif current_user.is_authenticated and item.seller_id == current_user.id %}
+        <div class="owner-btn-group" style="width: 100%;">
+            <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--outline" style="flex: 1; text-decoration: none;">Edit</a>
+            <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this listing?')" style="flex: 1;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn--outline btn--danger" style="width: 100%;">Delete</button>
+            </form>
+        </div>
+    {% elif has_cancelled_before %}
+        <button class="btn btn--block btn--disabled" disabled>Unavailable (Claim cancelled)</button>
+    {% elif current_user.is_authenticated %}
+        <form method="POST" action="{{ url_for('items.buy_item', item_id=item.id) }}" style="width: 100%;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--primary btn--block btn--accent" style="width: 100%;">
+                {% if item.is_free %}Claim for Free{% else %}Claim &middot; £{{ "%.2f"|format(item.price) }}{% endif %}
+            </button>
+        </form>
+    {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn--primary btn--block btn--accent" style="width: 100%; text-decoration: none;">
+            Log in to claim
+        </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Description Show More Toggle
+        const descContent = document.getElementById('detail-desc-content');
+        const descToggle = document.getElementById('desc-toggle');
+        
+        if (descContent && descToggle) {
+            descContent.style.maxHeight = '150px';
+            descContent.style.overflow = 'hidden';
+            descContent.style.transition = 'max-height var(--duration-mid) var(--ease-out)';
+            
+            descToggle.addEventListener('click', function() {
+                if (descContent.style.maxHeight === '150px') {
+                    descContent.style.maxHeight = '1000px';
+                    descToggle.textContent = 'Show less';
+                } else {
+                    descContent.style.maxHeight = '150px';
+                    descToggle.textContent = 'Show more';
+                }
+            });
+        }
+
+        // Celebratory count-up animation for KG Saved
+        const valueEl = document.getElementById('celebration-kg-value');
+        if (valueEl && valueEl.dataset.target) {
+            const target = parseFloat(valueEl.dataset.target);
+            const duration = 1200; // ms
+            const start = 0;
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // easeOutExpo curve
+                const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                const currentVal = start + (target - start) * ease;
+                
+                valueEl.textContent = `${currentVal.toFixed(1)} kg`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+    });
+</script>
 {% endblock %}

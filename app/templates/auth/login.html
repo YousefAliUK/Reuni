@@ -2,24 +2,105 @@
 {% block title %}Login — Reuni{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Log In</h2>
-    <form method="POST" action="{{ url_for('auth.login') }}" class="form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form__group">
-            <label for="email">University Email</label>
-            <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required>
+<div class="split-layout" style="display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 64px - 140px); margin: -24px calc(-1 * var(--container-pad-x)) -48px calc(-1 * var(--container-pad-x));">
+    <style>
+        @media (min-width: 768px) {
+            .split-layout {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .split-layout__right {
+                display: flex !important;
+            }
+        }
+    </style>
+    
+    <!-- Left column: Form -->
+    <div class="split-layout__left">
+        <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: var(--space-6);">
+            <!-- Logo mark -->
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <div style="background: var(--color-primary); width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="color: #ffffff; font-size: 20px;">recycling</span>
+                </div>
+                <span style="font-family: var(--font-sans); font-weight: 700; font-size: 20px; color: var(--color-ink-primary);">Reuni</span>
+            </div>
+
+            <div>
+                <h1 style="font-size: 26px; font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1);">Welcome back</h1>
+                <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0;">Sign in to your Brookes account</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="auth-form-group">
+                    <label for="email" class="auth-label">University Email</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">mail</span>
+                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required class="auth-input" style="padding-left: 44px;">
+                    </div>
+                </div>
+
+                <div class="auth-form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1);">
+                        <label for="password" class="auth-label" style="margin: 0;">Password</label>
+                        <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 13px; color: var(--color-primary); text-decoration: none;">Forgot password?</a>
+                    </div>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required class="auth-input" style="padding-left: 44px; padding-right: 44px;">
+                        <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%; margin-top: var(--space-2);">Log In</button>
+            </form>
+
+            <div class="auth-footer-links" style="text-align: left; margin-top: var(--space-2);">
+                <span>New here? <a href="{{ url_for('auth.register') }}">Register</a></span>
+            </div>
         </div>
-        <div class="form__group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="••••••••" required>
-            <a href="{{ url_for('auth.forgot_password') }}" class="forgot-password-link">Forgot password?</a>
+    </div>
+
+    <!-- Right column: Brand Panel -->
+    <div class="split-layout__right">
+        <div style="position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 60%); pointer-events: none;"></div>
+        
+        <div style="position: relative; z-index: 1; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
+            <span class="material-symbols-outlined" style="font-size: 72px; color: rgba(255,255,255,0.9); margin-bottom: var(--space-2);">eco</span>
+            
+            <div style="font-family: var(--font-mono); font-size: 56px; font-weight: 800; line-height: 1; color: #ffffff; letter-spacing: var(--track-tight);">
+                {{ "%.1f"|format(campus_total_kg or 0) }}kg
+            </div>
+            
+            <p style="font-size: 18px; font-weight: 500; color: rgba(255,255,255,0.95); margin: 0; line-height: var(--lead-title);">
+                saved by {{ campus_total_users or 0 }} Brookes students
+            </p>
+            
+            <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin: 0; line-height: var(--lead-body);">
+                Every item exchanged is one less in landfill.
+            </p>
         </div>
-        <button type="submit" class="btn btn--primary btn--block">Log In</button>
-    </form>
-    <p class="auth-container__footer">
-        Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up</a><br>
-        By logging in, you agree to our <a href="{{ url_for('privacy') }}">Privacy Policy</a>
-    </p>
+    </div>
 </div>
+
+<script>
+    function togglePasswordVisibility(id) {
+        var input = document.getElementById(id);
+        if (!input) return;
+        var triggerBtn = input.nextElementSibling;
+        if (!triggerBtn) return;
+        var icon = triggerBtn.querySelector('.material-symbols-outlined');
+        if (!icon) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+        }
+    }
+</script>
 {% endblock %}

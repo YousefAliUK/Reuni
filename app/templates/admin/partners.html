@@ -1,101 +1,161 @@
 {% extends "base.html" %}
-{% block title %}Manage Partners — Reuni{% endblock %}
+{% block title %}Partner Management — Reuni{% endblock %}
 
 {% block content %}
-<div class="dashboard">
-    <div class="dashboard__header">
-        <div class="dashboard__avatar">
-            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 2.25rem;">admin_panel_settings</span>
+<div class="admin-container">
+
+    <!-- ─── Page Header Row ─── -->
+    <div class="admin-header">
+        <div class="admin-title-block">
+            <!-- Admin Control Panel -->
+            <h1 class="admin-title">Partner Management</h1>
+            <span class="admin-badge">Admin Panel</span>
         </div>
-        <div class="dashboard__user-info">
-            <h1>Admin Control Panel</h1>
-            <p class="dashboard__email">Manage Reuni University Partners</p>
-        </div>
+        <button type="button" id="btn-toggle-invite" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;" onclick="toggleInviteForm()">
+            <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+            <span>Invite partner university</span>
+        </button>
     </div>
 
-    <!-- ─── Generate Invite Form ─── -->
-    <section class="dashboard__section">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">mail</span>
-            Generate Partner Invitation Link
+    <!-- ─── INVITE FORM (Expandable Panel, Hidden by Default) ─── -->
+    <div id="invite-form-panel" class="admin-card" style="{% if not invite_url %}display: none;{% endif %}">
+        <h2 class="admin-card-title">
+            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;">mail</span>
+            <span>Generate Partner Invitation Link</span>
         </h2>
-        <div class="dash-item" style="padding: clamp(1rem, 4vw, 1.5rem); display: block; border-radius: 12px; background: var(--bg-card, #ffffff); border: 1px solid var(--border-color, #e2e8f0); cursor: default;">
-            <form method="POST" action="{{ url_for('admin.generate_invite') }}" class="form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="form__group" style="margin-bottom: 0; flex: 1 1 200px; min-width: 150px;">
-                    <label for="university_domain">University Domain</label>
-                    <input type="text" id="university_domain" name="university_domain" placeholder="e.g. brookes.ac.uk" required style="width: 100%;">
+        
+        <form method="POST" action="{{ url_for('admin.generate_invite') }}" class="admin-invite-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="admin-form-group">
+                <label for="university_domain" class="form-label" style="margin-bottom: var(--space-1);">University Domain</label>
+                <input type="text" id="university_domain" name="university_domain" placeholder="e.g. brookes.ac.uk" required class="form-input" style="background: var(--color-surface);">
+            </div>
+            
+            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); padding: 0 var(--space-6); font-weight: 600; cursor: pointer;">
+                Generate invite link
+            </button>
+        </form>
+
+        {% if invite_url %}
+            <!-- Success generated URL block -->
+            <div class="admin-invite-result">
+                <p class="admin-invite-result__title">Invitation link generated successfully.</p>
+                <p class="admin-invite-result__text">Copy and send this link manually to the staff member from <strong>{{ university_domain }}</strong>:</p>
+                
+                <div class="admin-invite-link-wrapper">
+                    <code id="invite-link-code" class="admin-invite-link-code">{{ invite_url }}</code>
+                    <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" onclick="navigator.clipboard.writeText('{{ invite_url }}'); const icon = this.querySelector('.material-symbols-outlined'); icon.textContent = 'done'; setTimeout(() => { icon.textContent = 'content_copy' }, 1000);" title="Copy link">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">content_copy</span>
+                    </button>
                 </div>
-                <button type="submit" class="btn btn--primary" style="height: 42px; flex-shrink: 0;">Generate Invitation Link</button>
-            </form>
+                <span style="font-size: 11px; color: var(--color-ink-tertiary);">Expires in 48 hours</span>
+            </div>
+        {% endif %}
+    </div>
 
-            {% if invite_url %}
-                <div style="margin-top: 1.5rem; padding: clamp(0.75rem, 3vw, 1rem); border-radius: 8px; background: var(--bg-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0);">
-                    <p style="font-weight: 600; color: var(--color-primary, #10b981); margin-bottom: 0.5rem;">Invitation link generated successfully.</p>
-                    <p style="font-size: 0.875rem; color: var(--color-text-muted, #64748b); margin-bottom: 0.5rem;">Copy and send this link manually to the staff member from <strong>{{ university_domain }}</strong>:</p>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <input type="text" readonly value="{{ invite_url }}" style="flex: 1 1 180px; min-width: 0; padding: 0.5rem; font-family: monospace; font-size: 0.875rem; border: 1px solid var(--border-color, #e2e8f0); border-radius: 4px; background: #fff;" onclick="this.select();">
-                        <button type="button" class="btn btn--secondary" onclick="navigator.clipboard.writeText('{{ invite_url }}'); alert('Copied to clipboard');" style="padding: 0 1rem; height: 38px; flex-shrink: 0;">Copy</button>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-    </section>
-
-    <!-- ─── Partners Directory ─── -->
-    <section class="dashboard__section">
-        <h2>
-            <span class="material-symbols-outlined heading-icon" aria-hidden="true">group</span>
-            Active Partners
-        </h2>
-
-        {% if partners %}
-            <div style="overflow-x: auto; width: 100%; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; background: var(--bg-card, #ffffff);">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="background: var(--bg-hover, #f8fafc); border-bottom: 1px solid var(--border-color, #e2e8f0);">
-                            <th style="padding: 1rem;">Name</th>
-                            <th style="padding: 1rem;">Email</th>
-                            <th style="padding: 1rem;">Scoped University</th>
-                            <th style="padding: 1rem;">Joined Date</th>
-                            <th style="padding: 1rem;">Status</th>
-                            <th style="padding: 1rem; text-align: center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+    <!-- ─── PARTNERS TABLE ─── -->
+    <div class="admin-card" style="padding: 0; overflow: hidden;">
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>University</th>
+                        <th>Partner Email</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if partners %}
                         {% for partner in partners %}
-                            <tr style="border-bottom: 1px solid var(--border-color, #e2e8f0);">
-                                <td style="padding: 1rem; font-weight: 600;">{{ partner.name }}</td>
-                                <td style="padding: 1rem;">{{ partner.email }}</td>
-                                <td style="padding: 1rem;"><span style="font-family: monospace;">{{ partner.partner_university }}</span></td>
-                                <td style="padding: 1rem; color: var(--color-text-muted, #64748b);">{{ partner.created_at.strftime('%Y-%m-%d') }}</td>
-                                <td style="padding: 1rem;">
+                            <tr id="row-{{ partner.id }}">
+                                <!-- Normal State Cells -->
+                                <td class="normal-cell-{{ partner.id }}">
+                                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                                        <img src="https://www.google.com/s2/favicons?sz=64&domain={{ partner.partner_university }}" alt="" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" onerror="this.style.display='none'">
+                                        <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ partner.partner_university }}</span>
+                                    </div>
+                                </td>
+                                <td class="normal-cell-{{ partner.id }}" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                    {{ partner.email }}
+                                </td>
+                                <td class="normal-cell-{{ partner.id }}">
                                     {% if partner.is_active %}
-                                        <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: #e6fffa; color: #00875a;">Active</span>
+                                        <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; background: var(--color-success-muted); color: var(--color-success);">Active</span>
                                     {% else %}
-                                        <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: #ffebeb; color: #e53e3e;">Deactivated</span>
+                                        <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; background: var(--color-surface-raised); color: var(--color-ink-tertiary);">Deactivated</span>
                                     {% endif %}
                                 </td>
-                                <td style="padding: 1rem; text-align: center;">
+                                <td class="normal-cell-{{ partner.id }}" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-tertiary);">
+                                    {{ partner.created_at.strftime('%Y-%m-%d') }}
+                                </td>
+                                <td class="normal-cell-{{ partner.id }}" style="text-align: center;">
                                     {% if partner.is_active %}
-                                        <form method="POST" action="{{ url_for('admin.deactivate_partner', user_id=partner.id) }}" onsubmit="return confirm('Are you sure you want to deactivate partner {{ partner.email }}? This takes effect immediately.');" style="display: inline-block;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn--danger btn--sm" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; height: auto;">Deactivate</button>
-                                        </form>
+                                        <button type="button" class="admin-deactivate-btn" onclick="toggleDeactivateConfirm('{{ partner.id }}', true)">Deactivate</button>
                                     {% else %}
-                                        <span style="color: var(--color-text-muted, #64748b); font-size: 0.85rem;">Disabled</span>
+                                        <span style="color: var(--color-ink-tertiary); font-size: 13px;">Disabled</span>
                                     {% endif %}
+                                </td>
+                                
+                                <!-- Confirm State Cell -->
+                                <td class="confirm-cell-{{ partner.id }} admin-confirm-cell" colspan="5" style="display: none;">
+                                    <div class="admin-confirm-wrapper">
+                                        <span class="admin-confirm-text">Confirm deactivate partner {{ partner.email }}?</span>
+                                        <div class="admin-confirm-actions">
+                                            <form method="POST" action="{{ url_for('admin.deactivate_partner', user_id=partner.id) }}" style="margin: 0; padding: 0; display: inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn--danger btn--sm" style="padding: 4px 12px; font-size: 12px; height: auto;">Yes, deactivate</button>
+                                            </form>
+                                            <button type="button" class="btn btn--outline btn--sm" onclick="toggleDeactivateConfirm('{{ partner.id }}', false)" style="padding: 4px 12px; font-size: 12px; height: auto;">Cancel</button>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="dashboard__empty">
-                <p>No partner accounts exist in the database.</p>
-            </div>
-        {% endif %}
-    </section>
+                    {% else %}
+                        <tr style="height: 120px;">
+                            <td colspan="5" style="text-align: center; vertical-align: middle; color: var(--color-ink-tertiary); font-size: var(--type-body);">
+                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);">group</span>
+                                <span>No partners yet. Invite your first university.</span>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleInviteForm() {
+        const panel = document.getElementById('invite-form-panel');
+        if (panel) {
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                document.getElementById('university_domain').focus();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+    }
+
+    function toggleDeactivateConfirm(partnerId, showConfirm) {
+        const normalCells = document.querySelectorAll('.normal-cell-' + partnerId);
+        const confirmCell = document.querySelector('.confirm-cell-' + partnerId);
+        
+        if (normalCells.length && confirmCell) {
+            if (showConfirm) {
+                normalCells.forEach(cell => cell.style.display = 'none');
+                confirmCell.style.display = 'table-cell';
+            } else {
+                normalCells.forEach(cell => cell.style.display = 'table-cell');
+                confirmCell.style.display = 'none';
+            }
+        }
+    }
+</script>
 {% endblock %}

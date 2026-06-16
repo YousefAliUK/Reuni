@@ -2,104 +2,426 @@
 {% block title %}List an Item — Reuni{% endblock %}
 
 {% block content %}
-<div class="list-item-container" id="list-item-app">
+<div class="listing-form-container" id="list-item-app">
     <!-- Back button -->
-    <a href="{{ url_for('index') }}" class="back-link" aria-label="Go back to marketplace">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+    <a href="{{ url_for('index') }}" class="back-link hide-on-mobile">
+        <span class="material-symbols-outlined">arrow_back</span>
         Back to Marketplace
     </a>
 
-    <h2>
-        <span class="material-symbols-outlined heading-icon" aria-hidden="true">sell</span>
-        List an Item
-    </h2>
-    <p class="subtitle">Fill in the details below to give your item a second life.</p>
+    <h1 class="auth-header__title" style="text-align: left; font-size: var(--type-display); margin-bottom: var(--space-1);">List an item</h1>
+    <p class="auth-header__sub" style="text-align: left; margin-bottom: var(--space-8);">It takes 60 seconds. No shipping. Campus pickup only.</p>
 
-    <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data"
-        class="form form--compact">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- FORM CARD -->
+    <div class="listing-form-card">
+        
+        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <!-- Image Upload (REQUIRED) -->
-        <div class="form__group">
-            <label for="image">Photo <span class="required" aria-label="required">*</span></label>
-            <div class="image-upload image-upload--compact">
-                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp"
-                    class="image-upload__input" aria-label="Upload item photo" required>
-                <div class="image-upload__placeholder">
-                    <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
-                    <span>Click or drag to upload</span>
-                    <span class="image-upload__hint">JPG, PNG or WebP</span>
+            <!-- Photo Upload zone (First on mobile via CSS order) -->
+            <div class="list-photo-field form-group">
+                <label class="form-label">Photo (required)</label>
+                
+                <div id="photo-upload-zone">
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" required class="image-upload__input">
+                    
+                    <div id="upload-placeholder" class="upload-placeholder">
+                        <span class="material-symbols-outlined">upload_file</span>
+                        <span class="upload-placeholder__text">Click to upload or drag here</span>
+                        <span class="upload-placeholder__hint">JPG, PNG, WEBP &middot; Max 5MB</span>
+                    </div>
+
+                    <img id="photo-preview" src="" alt="Upload preview" class="photo-preview-img">
+                    
+                    <!-- Remove photo button -->
+                    <button type="button" id="remove-photo-btn" class="remove-photo-badge">
+                        ✕ Remove
+                    </button>
                 </div>
-                <img src="" alt="Upload preview" class="image-upload__preview" style="display: none;">
             </div>
-        </div>
 
-        <div class="form__group">
-            <label for="title">Title <span class="required" aria-label="required">*</span></label>
-            <input type="text" id="title" name="title" placeholder='e.g. "Organic Chemistry Textbook"' required
-                maxlength="140">
-        </div>
+            <!-- Title -->
+            <div class="form-group">
+                <div class="form-label-row">
+                    <label for="title" class="form-label">Title</label>
+                    <span id="title-char-counter" class="form-counter">0/80</span>
+                </div>
+                <input type="text" id="title" name="title" placeholder="e.g. IKEA desk lamp, Canon AE-1 film camera…" required maxlength="80" class="form-input">
+            </div>
 
-        <div class="form__group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="2"
-                placeholder="Brief description (optional)"></textarea>
-        </div>
-
-        <div class="form__row">
-            <div class="form__group">
-                <label for="category">Category <span class="required" aria-label="required">*</span></label>
-                <select id="category" name="category" required aria-describedby="eco-preview-text">
+            <!-- Category -->
+            <div class="form-group">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" required class="form-select">
                     <option value="" disabled selected>Select a category</option>
                     {% for cat in categories %}
-                    <option value="{{ cat }}">{{ cat }}</option>
+                        <option value="{{ cat }}">{{ cat }}</option>
                     {% endfor %}
                 </select>
+                
+                <!-- Dynamic Live Category Weight Preview -->
+                <div id="live-eco-preview" class="eco-preview-banner">
+                    <span class="eco-preview-content">
+                        <span class="material-symbols-outlined">eco</span>
+                        <span id="live-eco-text">Selecting category...</span>
+                    </span>
+                </div>
             </div>
 
-            <div class="form__group">
-                <label for="condition">Condition <span class="required" aria-label="required">*</span></label>
-                <select id="condition" name="condition" required>
+            <!-- Condition -->
+            <div class="form-group">
+                <label class="form-label">Condition</label>
+                <!-- Hidden original select -->
+                <select id="condition" name="condition" required style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none;">
                     <option value="" disabled selected>Select condition</option>
                     {% for cond in conditions %}
-                    <option value="{{ cond }}">{{ cond }}</option>
+                        <option value="{{ cond }}">{{ cond }}</option>
                     {% endfor %}
                 </select>
+                
+                <!-- Custom Segmented Buttons -->
+                <div class="condition-btns-container">
+                    {% for cond in conditions %}
+                        <button type="button" class="condition-btn" data-value="{{ cond }}">
+                            {{ cond }}
+                        </button>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
 
-        <div class="form__row">
-            <div class="form__group">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="is_free" name="is_free">
-                    This item is <strong>free</strong>
-                </label>
+            <!-- Price -->
+            <div class="form-group">
+                <label class="form-label">Price</label>
+                <!-- Hidden original elements -->
+                <input type="checkbox" id="is_free" name="is_free" style="display: none;">
+                
+                <!-- Custom Segmented Toggle -->
+                <div class="price-toggle-container" style="margin-bottom: var(--space-1);">
+                    <button type="button" id="price-toggle-free" class="price-toggle-btn">
+                        Free
+                    </button>
+                    <button type="button" id="price-toggle-paid" class="price-toggle-btn">
+                        Set Price
+                    </button>
+                </div>
+
+                <!-- Numerical Input Box -->
+                <div id="price-input-container" style="display: none;">
+                    <div class="price-input-wrapper">
+                        <span class="price-input-symbol">£</span>
+                        <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00" inputmode="decimal" class="form-input price-input-field">
+                    </div>
+                    <small class="form-helper-text">
+                        Cash or bank transfer at handoff. No platform fees.
+                    </small>
+                </div>
             </div>
-            <div class="form__group">
-                <label for="price">Price (&pound;)</label>
-                <input type="number" id="price" name="price" min="0" step="0.01" placeholder="0.00">
+
+            <!-- Description -->
+            <div class="form-group">
+                <div class="form-label-row">
+                    <label for="description" class="form-label">Description (optional)</label>
+                    <span id="desc-char-counter" class="form-counter">0/2000</span>
+                </div>
+                <textarea id="description" name="description" rows="4" maxlength="2000" placeholder="Any details buyers should know — size, age, minor wear…" class="form-textarea"></textarea>
             </div>
-        </div>
 
-        <!-- ─── kg Saved Preview ─── -->
-        <div class="eco-preview eco-preview--compact" style="display: none;" role="status" aria-live="polite">
-            <span class="material-symbols-outlined eco-preview__icon" aria-hidden="true">eco</span>
-            <div class="eco-preview__text" id="eco-preview-text">
-                <strong><span id="kg-saved-display">0.0</span> kg saved</strong>
-                <span>from landfill when this item finds a new home</span>
+            <!-- DESKTOP FORM ACTIONS (In-flow, hidden on mobile) -->
+            <div class="hide-on-mobile" style="display: flex; flex-direction: column; gap: var(--space-4); margin-top: var(--space-2);">
+                <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">
+                    List this item
+                </button>
+                <div style="text-align: center; margin-top: var(--space-2);">
+                    <a href="{{ url_for('index') }}" style="font-size: 13px; color: var(--color-ink-tertiary); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-tertiary)'">Discard</a>
+                </div>
             </div>
-        </div>
 
-        <script type="application/json" id="category-weights">{{ category_weights | tojson | safe }}</script>
+            <!-- MOBILE FORM ACTIONS (Sticky bottom, visible only on mobile) -->
+            <div class="show-on-mobile list-submit-container">
+                <button type="submit" class="btn btn--primary" style="font-weight: 600;">
+                    List this item
+                </button>
+            </div>
+        </form>
+    </div>
 
-        <button type="submit" class="btn btn--primary btn--block">
-            <span class="material-symbols-outlined btn__icon" aria-hidden="true">check_circle</span>
-            List Item
-        </button>
-    </form>
+    <!-- Trust signals -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: var(--space-6); color: var(--color-ink-tertiary); font-size: 12px; padding-bottom: var(--space-12);">
+        <span class="material-symbols-outlined" style="font-size: 14px;">lock</span>
+        <span>Your contact details are only shared after a claim is made.</span>
+    </div>
 </div>
+
+<style>
+    @media (max-width: 767px) {
+        .list-photo-field {
+            order: -1; /* Puts photo first on mobile screens */
+        }
+    }
+</style>
+
+<script type="application/json" id="category-weights">{{ category_weights | tojson | safe }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categoryWeights = JSON.parse(document.getElementById('category-weights').textContent);
+        
+        // 1. Character Counters
+        const titleInput = document.getElementById('title');
+        const titleCounter = document.getElementById('title-char-counter');
+        if (titleInput && titleCounter) {
+            titleInput.addEventListener('input', function() {
+                titleCounter.textContent = `${titleInput.value.length}/80`;
+            });
+        }
+
+        const descInput = document.getElementById('description');
+        const descCounter = document.getElementById('desc-char-counter');
+        if (descInput && descCounter) {
+            descInput.addEventListener('input', function() {
+                descCounter.textContent = `${descInput.value.length}/2000`;
+            });
+        }
+
+        // 2. Category Weights Preview
+        const categorySelect = document.getElementById('category');
+        const liveEcoPreview = document.getElementById('live-eco-preview');
+        const liveEcoText = document.getElementById('live-eco-text');
+
+        if (categorySelect && liveEcoPreview && liveEcoText) {
+            categorySelect.addEventListener('change', function() {
+                const category = categorySelect.value;
+                if (category && categoryWeights[category] !== undefined) {
+                    const w = categoryWeights[category];
+                    liveEcoText.textContent = `Selecting '${category}' saves ~${w.toFixed(1)} kg CO₂e prevented`;
+                    liveEcoPreview.classList.add('eco-preview-banner--visible');
+                } else {
+                    liveEcoPreview.classList.remove('eco-preview-banner--visible');
+                }
+            });
+        }
+
+        // 3. Condition Segmented Buttons
+        const conditionSelect = document.getElementById('condition');
+        const conditionBtns = document.querySelectorAll('.condition-btn');
+        if (conditionSelect && conditionBtns.length) {
+            conditionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    conditionSelect.value = btn.dataset.value;
+                    
+                    // Reset styling via classes
+                    conditionBtns.forEach(b => b.classList.remove('active'));
+                    
+                    // Select style via class
+                    btn.classList.add('active');
+                });
+            });
+            
+            // Set initial selected if present
+            if (conditionSelect.value) {
+                const active = Array.from(conditionBtns).find(b => b.dataset.value === conditionSelect.value);
+                if (active) active.click();
+            }
+        }
+
+        // 4. Free vs Set Price Segmented Switcher
+        const isFreeCheckbox = document.getElementById('is_free');
+        const priceToggleFree = document.getElementById('price-toggle-free');
+        const priceTogglePaid = document.getElementById('price-toggle-paid');
+        const priceInputContainer = document.getElementById('price-input-container');
+        const priceInput = document.getElementById('price');
+
+        function setPriceMode(isFree) {
+            isFreeCheckbox.checked = isFree;
+            
+            if (isFree) {
+                priceToggleFree.classList.add('active-free');
+                priceTogglePaid.classList.remove('active-paid');
+                priceInputContainer.style.display = 'none';
+                priceInput.value = '';
+                priceInput.required = false;
+            } else {
+                priceToggleFree.classList.remove('active-free');
+                priceTogglePaid.classList.add('active-paid');
+                priceInputContainer.style.display = 'block';
+                priceInput.required = true;
+            }
+        }
+
+        if (priceToggleFree && priceTogglePaid) {
+            priceToggleFree.addEventListener('click', () => setPriceMode(true));
+            priceTogglePaid.addEventListener('click', () => setPriceMode(false));
+            
+            // Initial price state
+            setPriceMode(isFreeCheckbox.checked !== false);
+        }
+
+        // 5. Image Upload Preview Zone & Remove button
+        const fileInput = document.querySelector('#photo-upload-zone input[type="file"]');
+        const uploadZone = document.getElementById('photo-upload-zone');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const photoPreview = document.getElementById('photo-preview');
+        const removePhotoBtn = document.getElementById('remove-photo-btn');
+
+        if (uploadZone && fileInput) {
+            uploadZone.addEventListener('click', (e) => {
+                if (e.target !== fileInput && e.target !== removePhotoBtn) {
+                    fileInput.click();
+                }
+            });
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    fileInput.files = e.dataTransfer.files;
+                    previewFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files && fileInput.files[0]) {
+                    previewFile(fileInput.files[0]);
+                }
+            });
+
+            if (removePhotoBtn) {
+                removePhotoBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    fileInput.value = '';
+                    photoPreview.src = '';
+                    photoPreview.style.display = 'none';
+                    removePhotoBtn.style.display = 'none';
+                    uploadPlaceholder.style.display = 'flex';
+                });
+            }
+
+            function previewFile(file) {
+                const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!allowed.includes(file.type)) {
+                    alert('Please upload a JPG, PNG, or WebP image.');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreview.src = e.target.result;
+                    photoPreview.style.display = 'block';
+                    removePhotoBtn.style.display = 'inline-flex';
+                    uploadPlaceholder.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Form Loading/Submitting state validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Remove previous error styling and messages
+            const existingErrors = form.querySelectorAll('.custom-error-msg');
+            existingErrors.forEach(el => el.remove());
+            
+            const photoZone = document.getElementById('photo-upload-zone');
+            const condContainer = document.querySelector('.condition-btns-container');
+            const categorySelect = document.getElementById('category');
+            const titleInput = document.getElementById('title');
+            const priceInput = document.getElementById('price');
+            
+            if (photoZone) photoZone.classList.remove('error');
+            if (condContainer) condContainer.classList.remove('error');
+            if (categorySelect) categorySelect.classList.remove('error');
+            if (titleInput) titleInput.classList.remove('error');
+            if (priceInput) priceInput.classList.remove('error');
+
+            // 1. Validate Photo
+            const imageInput = document.getElementById('image');
+            if (imageInput && imageInput.hasAttribute('required') && imageInput.files.length === 0) {
+                isValid = false;
+                if (photoZone) {
+                    photoZone.classList.add('error');
+                    const errMsg = document.createElement('div');
+                    errMsg.className = 'custom-error-msg';
+                    errMsg.textContent = 'Please upload a photo of your item.';
+                    photoZone.parentNode.appendChild(errMsg);
+                }
+            }
+
+            // 2. Validate Title
+            if (titleInput && !titleInput.value.trim()) {
+                isValid = false;
+                titleInput.classList.add('error');
+                const errMsg = document.createElement('div');
+                errMsg.className = 'custom-error-msg';
+                errMsg.textContent = 'Please enter a title.';
+                titleInput.parentNode.appendChild(errMsg);
+            }
+
+            // 3. Validate Category
+            if (categorySelect && !categorySelect.value) {
+                isValid = false;
+                categorySelect.classList.add('error');
+                const errMsg = document.createElement('div');
+                errMsg.className = 'custom-error-msg';
+                errMsg.textContent = 'Please select a category.';
+                categorySelect.parentNode.appendChild(errMsg);
+            }
+
+            // 4. Validate Condition
+            const conditionSelect = document.getElementById('condition');
+            if (conditionSelect && !conditionSelect.value) {
+                isValid = false;
+                if (condContainer) {
+                    condContainer.classList.add('error');
+                    const errMsg = document.createElement('div');
+                    errMsg.className = 'custom-error-msg';
+                    errMsg.textContent = 'Please select the condition of your item.';
+                    condContainer.parentNode.appendChild(errMsg);
+                }
+            }
+
+            // 5. Validate Price if not free
+            const isFreeCheckbox = document.getElementById('is_free');
+            if (isFreeCheckbox && !isFreeCheckbox.checked && priceInput) {
+                const priceVal = parseFloat(priceInput.value);
+                if (isNaN(priceVal) || priceVal < 0) {
+                    isValid = false;
+                    priceInput.classList.add('error');
+                    const errMsg = document.createElement('div');
+                    errMsg.className = 'custom-error-msg';
+                    errMsg.textContent = 'Please enter a valid price.';
+                    priceInput.parentNode.appendChild(errMsg);
+                }
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                // Scroll to the first error element
+                const firstError = form.querySelector('.custom-error-msg');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+
+            // Find both submit buttons (desktop and mobile sticky)
+            const submitBtns = form.querySelectorAll('button[type="submit"]');
+            submitBtns.forEach(submitBtn => {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Listing<span class="warning-pulse">...</span>';
+            });
+        });
+    });
+</script>
 {% endblock %}

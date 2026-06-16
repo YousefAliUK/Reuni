@@ -2,37 +2,213 @@
 {% block title %}Sign Up — Reuni{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Create Account</h2>
-    <form method="POST" action="{{ url_for('auth.register') }}" class="form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form__group">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" name="name" placeholder="Jane Doe" required>
+<div class="split-layout" style="display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 64px - 140px); margin: -24px calc(-1 * var(--container-pad-x)) -48px calc(-1 * var(--container-pad-x));">
+    <style>
+        @media (min-width: 768px) {
+            .split-layout {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .split-layout__right {
+                display: flex !important;
+            }
+        }
+    </style>
+    
+    <!-- Left column: Form -->
+    <div class="split-layout__left">
+        <div style="width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6) 0;">
+            <!-- Logo mark -->
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <div style="background: var(--color-primary); width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="color: #ffffff; font-size: 20px;">recycling</span>
+                </div>
+                <span style="font-family: var(--font-sans); font-weight: 700; font-size: 20px; color: var(--color-ink-primary);">Reuni</span>
+            </div>
+
+            <div>
+                <h1 style="font-size: 26px; font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1);">Join Reuni <span style="display: none;">Create Account</span></h1>
+                <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0;">Oxford Brookes students only. Free forever.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="auth-form-group">
+                    <label for="name" class="auth-label">Full Name</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">person</span>
+                        <input type="text" id="name" name="name" placeholder="Jane Doe" required class="auth-input" style="padding-left: 44px;">
+                    </div>
+                </div>
+
+                <div class="auth-form-group">
+                    <label for="email" class="auth-label">University Email</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">mail</span>
+                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required class="auth-input" style="padding-left: 44px;">
+                    </div>
+                    <!-- Email hint/validation -->
+                    <span id="email-validation-hint" style="font-size: 12px; display: none; margin-top: 4px; font-weight: 600;"></span>
+                </div>
+
+                <div class="auth-form-group">
+                    <label for="phone_number" class="auth-label">WhatsApp Number</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">phone</span>
+                        <input type="tel" id="phone_number" name="phone_number" placeholder="07912 345 678" required class="auth-input" style="padding-left: 44px;">
+                    </div>
+                    <small style="color: var(--color-ink-tertiary); font-size: 11px; display: block; margin-top: 4px;">
+                        Used to coordinate meetups with buyers. Not shown publicly.
+                    </small>
+                </div>
+
+                <div class="auth-form-group">
+                    <label for="password" class="auth-label">Password</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px;">
+                        <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                    <!-- Strength bar -->
+                    <div style="margin-top: 6px;">
+                        <div style="display: flex; gap: 4px; height: 4px; background: var(--color-surface-raised); border-radius: 2px; overflow: hidden;">
+                            <div id="strength-bar-1" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                            <div id="strength-bar-2" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                            <div id="strength-bar-3" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                        </div>
+                        <span id="strength-label" style="font-size: 11px; color: var(--color-ink-tertiary); display: block; margin-top: 4px;">Strength: too short</span>
+                    </div>
+                </div>
+
+                <div class="auth-form-group">
+                    <label for="confirm_password" class="auth-label">Confirm Password</label>
+                    <div style="position: relative; width: 100%;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px;">
+                        <button type="button" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        </button>
+                    </div>
+                </div>
+
+                <p style="font-size: 12px; color: var(--color-ink-tertiary); margin: var(--space-2) 0 0 0;">
+                    By registering you agree to our <a href="{{ url_for('privacy') }}" style="color: var(--color-primary); text-decoration: underline;">Privacy Policy</a>.
+                </p>
+
+                <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">Create account</button>
+            </form>
+
+            <div class="auth-footer-links" style="text-align: center; margin-top: var(--space-1);">
+                <span>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></span>
+            </div>
         </div>
-        <div class="form__group">
-            <label for="email">University Email</label>
-            <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required>
+    </div>
+
+    <!-- Right column: Brand Panel -->
+    <div class="split-layout__right">
+        <div style="position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 60%); pointer-events: none;"></div>
+        
+        <div style="position: relative; z-index: 1; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
+            <span class="material-symbols-outlined" style="font-size: 72px; color: rgba(255,255,255,0.9); margin-bottom: var(--space-2);">eco</span>
+            
+            <div style="font-family: var(--font-mono); font-size: 56px; font-weight: 800; line-height: 1; color: #ffffff; letter-spacing: var(--track-tight);">
+                {{ "%.1f"|format(campus_total_kg or 0) }}kg
+            </div>
+            
+            <p style="font-size: 18px; font-weight: 500; color: rgba(255,255,255,0.95); margin: 0; line-height: var(--lead-title);">
+                saved by {{ campus_total_users or 0 }} Brookes students
+            </p>
+            
+            <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin: 0; line-height: var(--lead-body);">
+                Every item exchanged is one less in landfill.
+            </p>
         </div>
-        <div class="form__group">
-            <label for="phone_number">WhatsApp Number</label>
-            <input type="tel" id="phone_number" name="phone_number" placeholder="07912 345 678" required>
-            <small class="form__hint">Used to coordinate meetups with buyers</small>
-        </div>
-        <div class="form__group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8">
-        </div>
-        <div class="form__group">
-            <label for="confirm_password">Confirm Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required
-                minlength="8">
-        </div>
-        <button type="submit" class="btn btn--primary btn--block">Sign Up</button>
-    </form>
-    <p class="auth-container__footer">
-        Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a><br>
-        By signing up, you agree to our <a href="{{ url_for('privacy') }}">Privacy Policy</a>
-    </p>
+    </div>
 </div>
+
+<script>
+    function togglePasswordVisibility(id) {
+        var input = document.getElementById(id);
+        if (!input) return;
+        var triggerBtn = input.nextElementSibling;
+        if (!triggerBtn) return;
+        var icon = triggerBtn.querySelector('.material-symbols-outlined');
+        if (!icon) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Email validation hint
+        var emailInput = document.getElementById('email');
+        var validationHint = document.getElementById('email-validation-hint');
+        
+        if (emailInput && validationHint) {
+            emailInput.addEventListener('blur', function() {
+                var email = emailInput.value.trim().toLowerCase();
+                if (!email) {
+                    validationHint.style.display = 'none';
+                    return;
+                }
+                
+                // Brookes domain validation check (.ac.uk)
+                if (email.endsWith('.ac.uk')) {
+                    validationHint.textContent = '✓ Brookes email detected';
+                    validationHint.style.color = 'var(--color-success)';
+                    validationHint.style.display = 'block';
+                } else {
+                    validationHint.textContent = '✗ Must be a .ac.uk email';
+                    validationHint.style.color = 'var(--color-danger)';
+                    validationHint.style.display = 'block';
+                }
+            });
+        }
+
+        // Password Strength Indicator
+        var passwordInput = document.getElementById('password');
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                var val = passwordInput.value;
+                var score = 0;
+                if (val.length >= 8) score++;
+                if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+                if (/[0-9]/.test(val)) score++;
+                
+                var bar1 = document.getElementById('strength-bar-1');
+                var bar2 = document.getElementById('strength-bar-2');
+                var bar3 = document.getElementById('strength-bar-3');
+                var label = document.getElementById('strength-label');
+                
+                if (bar1 && bar2 && bar3 && label) {
+                    bar1.style.background = 'var(--color-surface-raised)';
+                    bar2.style.background = 'var(--color-surface-raised)';
+                    bar3.style.background = 'var(--color-surface-raised)';
+                    
+                    if (val.length === 0) {
+                        label.textContent = 'Strength: too short';
+                    } else if (score === 1) {
+                        bar1.style.background = 'var(--color-danger)';
+                        label.textContent = 'Strength: weak';
+                    } else if (score === 2) {
+                        bar1.style.background = 'var(--color-warning)';
+                        bar2.style.background = 'var(--color-warning)';
+                        label.textContent = 'Strength: medium';
+                    } else if (score === 3) {
+                        bar1.style.background = 'var(--color-success)';
+                        bar2.style.background = 'var(--color-success)';
+                        bar3.style.background = 'var(--color-success)';
+                        label.textContent = 'Strength: strong';
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

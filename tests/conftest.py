@@ -126,3 +126,11 @@ def make_test_image(fmt="JPEG", size=(10, 10), color="red"):
     img.save(buf, format=fmt, quality=85)
     buf.seek(0)
     return buf
+
+
+@pytest.fixture(autouse=True)
+def clear_emails_outbox():
+    """Clear the centralized mock outbox before every test execution."""
+    from app.utils.emails import outbox
+    outbox.clear()
+
