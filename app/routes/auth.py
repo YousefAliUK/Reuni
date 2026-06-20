@@ -1,6 +1,7 @@
 import re
 import secrets
 from datetime import datetime, timezone, timedelta
+from html import escape as html_escape
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
@@ -37,8 +38,6 @@ def _normalise_phone(raw: str) -> str:
 
 
 def send_otp_email(name: str, email: str, code: str):
-    from html import escape as html_escape
-
     safe_name = html_escape(name)
     safe_code = html_escape(code)
     email_html = (
@@ -78,6 +77,10 @@ def register():
         # --- Basic validation ---
         if not email or not name or not password or not phone_raw:
             flash("All fields are required.", "danger")
+            return redirect(url_for("auth.register"))
+
+        if len(name) > 80:
+            flash("Name must be 80 characters or fewer.", "danger")
             return redirect(url_for("auth.register"))
 
         # Domain format validation
@@ -208,7 +211,7 @@ def register():
         try:
             send_otp_email(user.name, email, otp_code)
         except Exception as e:
-            current_app.logger.error(f"Failed to send verification email: {e}")
+            current_app.logger.error(f"Failed to send verification email to user {user.id}: {e}")
 
         session['verify_email'] = email
         flash("We've sent a 6-digit verification code to your university email. Please check your inbox.", "success")
@@ -392,7 +395,7 @@ def resend_verification():
             try:
                 send_otp_email(user.name, email, otp_code)
             except Exception as e:
-                current_app.logger.error(f"Failed to send resend email: {e}")
+                current_app.logger.error(f"Failed to send resend email to user {user.id}: {e}")
 
         session['verify_email'] = email
         flash("If that email is registered and unverified, we've sent a new verification code.", "success")
@@ -420,6 +423,10 @@ def invite_register(token):
 
         if not name or not email or not password or not confirm_password:
             flash("All fields are required.", "danger")
+            return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
+
+        if len(name) > 80:
+            flash("Name must be 80 characters or fewer.", "danger")
             return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
 
         if password != confirm_password:
@@ -466,10 +473,13 @@ def invite_register(token):
 
         # Send welcome email
         try:
-            login_url = url_for("auth.login", _external=True)
+            base = current_app.config.get("BASE_URL", "").rstrip("/")
+            login_url = f"{base}{url_for('auth.login')}"
+            safe_name = html_escape(name)
+            safe_domain = html_escape(university_domain)
             email_html = (
-                f"<p>Hello {name},</p>\n"
-                f"<p>Your Reuni partner account for <strong>{university_domain}</strong> has been successfully created.</p>\n"
+                f"<p>Hello {safe_name},</p>\n"
+                f"<p>Your Reuni partner account for <strong>{safe_domain}</strong> has been successfully created.</p>\n"
                 f"<p>Click the button below to log in and access your partner dashboard.</p>\n"
                 f"<div style=\"text-align:center; margin: 24px 0;\">\n"
                 f"    <a href=\"{login_url}\" class=\"btn-primary\">Log In to Dashboard</a>\n"
@@ -491,8 +501,14 @@ def invite_register(token):
     return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
 
 
+def forgot_password_key_func():
+    if request.method == "POST":
+        return request.form.get('email', '').strip().lower()
+    return get_remote_address()
+
+
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
-@limiter.limit("3 per hour", key_func=lambda: request.form.get('email', '').strip().lower())
+@limiter.limit("3 per hour", key_func=forgot_password_key_func)
 def forgot_password():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
@@ -502,14 +518,16 @@ def forgot_password():
         if email:
             if email.endswith("@deleted.reuni") or email.startswith("deleted_"):
                 flash("If an account exists with that email, a reset link has been sent.", "info")
-                return redirect(url_for("auth.forgot_password", success=1, email=email))
+                return redirect(url_for("auth.forgot_password", success=1))
 
             user = User.query.filter_by(email=email).first()
             if user and user.is_verified and user.deletion_pending_until is None:
                 token = generate_password_reset_token(user.email, user.password_hash, current_app.config["SECRET_KEY"])
-                reset_url = url_for("auth.reset_password", token=token, _external=True)
+                base = current_app.config.get("BASE_URL", "").rstrip("/")
+                reset_url = f"{base}{url_for('auth.reset_password', token=token)}"
                 
-                email_html = f"""<p>Hi {user.name},</p>
+                safe_name = html_escape(user.name)
+                email_html = f"""<p>Hi {safe_name},</p>
 <p>We received a request to reset the password for your Reuni account.</p>
 <p>Click the button below to set a new password. This link expires in 1 hour.</p>
 <div style="text-align:center; margin: 24px 0;">
@@ -527,10 +545,10 @@ def forgot_password():
                         html_content=email_html
                     )
                 except Exception as e:
-                    current_app.logger.warning(f"Failed to send password reset email to {email}: {e}")
+                    current_app.logger.warning(f"Failed to send password reset email to user {user.id}: {e}")
 
         flash("If an account exists with that email, a reset link has been sent.", "info")
-        return redirect(url_for("auth.forgot_password", success=1, email=email))
+        return redirect(url_for("auth.forgot_password", success=1))
 
     return render_template("auth/forgot_password.html")
 

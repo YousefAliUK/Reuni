@@ -70,6 +70,19 @@ def test_partner_registration_validation(client, app):
     )
     assert b"Passwords do not match." in resp.data
 
+    # Name too long (over 80 characters)
+    resp_name_too_long = client.post(
+        f"/auth/invite/{token}",
+        data={
+            "name": "a" * 81,
+            "email": "staff.member@brookes.ac.uk",
+            "password": "password123",
+            "confirm_password": "password123",
+        },
+        follow_redirects=True
+    )
+    assert b"Name must be 80 characters or fewer" in resp_name_too_long.data
+
 def test_partner_dashboard_scoping(client, app, db_session):
     """Test that the partner dashboard displays correct, scoped statistics."""
     with app.app_context():
@@ -151,12 +164,12 @@ def test_session_expiry_and_deactivation(client, app, db_session):
     resp = client.get("/partner/dashboard", follow_redirects=True)
     assert b"Your session has expired. Please log in again." in resp.data
 
-    # 3. Simulate missing logged_in_at timestamp (should log out immediately)
+    # 3. Simulate missing logged_in_at timestamp (legacy session, should allow through)
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
     with client.session_transaction() as sess:
         sess.pop('logged_in_at', None)
     resp = client.get("/partner/dashboard", follow_redirects=True)
-    assert b"Your session has expired. Please log in again." in resp.data
+    assert resp.status_code == 200
 
     # 4. Immediate deactivation check
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)

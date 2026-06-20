@@ -10,11 +10,19 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     """Base configuration shared across all environments."""
     SECRET_KEY = os.environ.get("SECRET_KEY")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///" + os.path.join(basedir, "..", "instance", "unicycle.db"),
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    # Database Configuration
+    _db_url = os.environ.get("DATABASE_URL")
+    if _db_url and _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+        
+    SQLALCHEMY_DATABASE_URI = _db_url or (
+        "sqlite:///" + os.path.join(basedir, "..", "instance", "reuni.db")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Background Scheduler Config
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "true").lower() == "true"
 
     LATE_THRESHOLD_HOURS = 24
     AUTO_EXPIRY_HOURS = 72
@@ -39,13 +47,7 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
-    # Flask-Mail configuration
-    # MAIL_SERVER = os.environ.get("MAIL_SERVER")
-    # MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
-    # MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-    # MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    # MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
-    # MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
+    # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL")
     MAIL_DEFAULT_SENDER = os.environ.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
@@ -88,4 +90,11 @@ class ProductionConfig(Config):
             raise RuntimeError(
                 "SECRET_KEY environment variable is not set. "
                 "Refusing to start in production without a secure secret key."
+            )
+        if not cls.BASE_URL:
+            raise RuntimeError(
+                "BASE_URL environment variable is not set. "
+                "All email links (PIN notifications, cancellation emails, password resets) "
+                "will be broken without it. Set BASE_URL=https://your-domain.com in your "
+                "Railway environment variables."
             )

@@ -20,8 +20,13 @@
     <!-- Inline Dark Theme Check to prevent light flash -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } catch (e) {
+                // localStorage unavailable (restricted browser, incognito) — default to light
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
         })();
     </script>
 
@@ -373,22 +378,33 @@
             const themeToggle = document.getElementById('theme-toggle');
             const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
             
+            // localStorage helper with graceful fallback for restricted browsers
+            function lsGet(key, fallback) {
+                try { return localStorage.getItem(key); } catch(e) { return fallback; }
+            }
+            function lsSet(key, value) {
+                try { localStorage.setItem(key, value); } catch(e) { /* restricted — silently skip */ }
+            }
+            function lsRemove(key) {
+                try { localStorage.removeItem(key); } catch(e) { /* restricted — silently skip */ }
+            }
+
             function updateThemeUI(theme) {
                 document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-                
+                lsSet('theme', theme);
+
                 const themeToggleIcon = document.getElementById('theme-toggle-icon');
                 if (themeToggleIcon) {
                     themeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
                 }
-                
+
                 const mobileThemeToggleIcon = document.getElementById('mobile-theme-toggle-icon');
                 if (mobileThemeToggleIcon) {
                     mobileThemeToggleIcon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
                 }
             }
-            
-            const currentTheme = localStorage.getItem('theme') || 'light';
+
+            const currentTheme = lsGet('theme') || 'light';
             updateThemeUI(currentTheme);
             
             if (themeToggle) {
@@ -461,7 +477,7 @@
 
             function renderDesktopRecentSearches() {
                 if (!desktopChipsContainer || !desktopSearchClearBtn) return;
-                const searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                const searches = JSON.parse(lsGet('recent_searches') || '[]');
                 if (searches.length === 0) {
                     if (desktopSearchDropdown) desktopSearchDropdown.style.display = 'none';
                     return;
@@ -474,7 +490,14 @@
                     const chip = document.createElement('button');
                     chip.type = 'button';
                     chip.className = 'recent-search-chip';
-                    chip.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">history</span><span>${search}</span>`;
+                    const icon = document.createElement('span');
+                    icon.className = 'material-symbols-outlined';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.style.fontSize = '14px';
+                    icon.textContent = 'history';
+                    const label = document.createElement('span');
+                    label.textContent = search;
+                    chip.append(icon, label);
                     chip.addEventListener('click', (e) => {
                         e.stopPropagation();
                         desktopSearchInput.value = search;
@@ -498,7 +521,7 @@
             if (desktopSearchClearBtn) {
                 desktopSearchClearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    localStorage.removeItem('recent_searches');
+                    lsRemove('recent_searches');
                     if (desktopSearchDropdown) desktopSearchDropdown.style.display = 'none';
                 });
             }
@@ -507,9 +530,9 @@
                 desktopSearchForm.addEventListener('submit', () => {
                     const query = desktopSearchInput.value.trim();
                     if (query) {
-                        let searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                        let searches = JSON.parse(lsGet('recent_searches') || '[]');
                         searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
-                        localStorage.setItem('recent_searches', JSON.stringify(searches));
+                        lsSet('recent_searches', JSON.stringify(searches));
                     }
                 });
             }
@@ -543,7 +566,7 @@
 
             function renderRecentSearches() {
                 if (!chipsContainer || !searchClearBtn) return;
-                const searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                const searches = JSON.parse(lsGet('recent_searches') || '[]');
                 const historySection = document.getElementById('search-overlay-history');
                 if (searches.length === 0) {
                     if (historySection) historySection.style.display = 'none';
@@ -555,7 +578,14 @@
                     const chip = document.createElement('button');
                     chip.type = 'button';
                     chip.className = 'recent-search-chip';
-                    chip.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">history</span><span>${search}</span>`;
+                    const icon = document.createElement('span');
+                    icon.className = 'material-symbols-outlined';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.style.fontSize = '14px';
+                    icon.textContent = 'history';
+                    const label = document.createElement('span');
+                    label.textContent = search;
+                    chip.append(icon, label);
                     chip.addEventListener('click', () => {
                         searchOverlayInput.value = search;
                         if (overlayForm) overlayForm.submit();
@@ -571,16 +601,16 @@
                 overlayForm.addEventListener('submit', () => {
                     const query = searchOverlayInput.value.trim();
                     if (query) {
-                        let searches = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+                        let searches = JSON.parse(lsGet('recent_searches') || '[]');
                         searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
-                        localStorage.setItem('recent_searches', JSON.stringify(searches));
+                        lsSet('recent_searches', JSON.stringify(searches));
                     }
                 });
             }
 
             if (searchClearBtn) {
                 searchClearBtn.addEventListener('click', () => {
-                    localStorage.removeItem('recent_searches');
+                    lsRemove('recent_searches');
                     renderRecentSearches();
                 });
             }

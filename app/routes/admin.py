@@ -36,7 +36,8 @@ def generate_invite():
         return redirect(url_for("admin.admin_partners"))
         
     token = generate_partner_invite_token(university_domain, current_app.config["SECRET_KEY"])
-    invite_url = url_for("auth.invite_register", token=token, _external=True)
+    base = current_app.config.get("BASE_URL", "").rstrip("/")
+    invite_url = f"{base}{url_for('auth.invite_register', token=token)}"
     
     # Audit log entry
     current_app.logger.info(
@@ -56,8 +57,8 @@ def deactivate_partner(user_id):
         return redirect(url_for("admin.admin_partners"))
         
     user = db.session.get(User, user_id)
-    if not user:
-        flash("User not found.", "danger")
+    if not user or user.role != "partner":
+        flash("Partner not found.", "danger")
         return redirect(url_for("admin.admin_partners"))
         
     user.is_active = False
@@ -65,9 +66,10 @@ def deactivate_partner(user_id):
     
     # Send deactivation notification email
     try:
+        from html import escape as html_escape
         email_html = (
-            f"<p>Hello {user.name},</p>"
-            f"<p>Your Reuni partner access for <strong>{user.partner_university or 'your university'}</strong> "
+            f"<p>Hello {html_escape(user.name)},</p>"
+            f"<p>Your Reuni partner access for <strong>{html_escape(user.partner_university or 'your university')}</strong> "
             f"has been deactivated.</p>"
             f"<p>Contact support if this is unexpected.</p>"
             f"<p>— The Reuni team</p>"

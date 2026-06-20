@@ -41,6 +41,11 @@ def init_scheduler(app):
     if app.testing:
         return
 
+    # Gate scheduler execution (disable in multi-worker production configurations)
+    if not app.config.get("SCHEDULER_ENABLED", True):
+        app.logger.info("GDPR BackgroundScheduler disabled by config (SCHEDULER_ENABLED=False).")
+        return
+
     # In debug mode, Werkzeug runs a reloader process.
     # Prevent scheduler from starting in the reloader master process.
     # If app.debug is False (production), WERKZEUG_RUN_MAIN is not set, so this check will not block.

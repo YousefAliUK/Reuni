@@ -35,4 +35,15 @@ Thumbs.db
 .rules
 .agent*
 
-claude_fable_5_system_prompt.md
+# 1. Ignore all markdown files in the parent/root directory
+/*.md
+
+# 2. Exceptions: Allow specific files to be tracked
+!/README.md
+!/IMPORTANT.md
+!/product_specification.md
+!/REUNI_DESIGN_BLUEPRINT_ADDENDUM.md
+!/REUNI_DESIGN_BLUEPRINT_v3.md
+
+/*.json
+

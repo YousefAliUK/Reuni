@@ -74,7 +74,9 @@
                                 <!-- Normal State Cells -->
                                 <td class="normal-cell-{{ partner.id }}">
                                     <div style="display: flex; align-items: center; gap: var(--space-2);">
-                                        <img src="https://www.google.com/s2/favicons?sz=64&domain={{ partner.partner_university }}" alt="" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" onerror="this.style.display='none'">
+                                        {% set logo_path = 'img/logos/' + partner.partner_university + '.png' %}
+                                        <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ partner.partner_university }}" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                        <span style="display:none; width:20px; height:20px; border-radius:4px; background:var(--color-primary-muted); color:var(--color-primary); font-size:9px; font-weight:700; align-items:center; justify-content:center;">{{ partner.partner_university[:2].upper() }}</span>
                                         <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ partner.partner_university }}</span>
                                     </div>
                                 </td>

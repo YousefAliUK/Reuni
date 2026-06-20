@@ -213,7 +213,7 @@
             
             descToggle.addEventListener('click', function() {
                 if (descContent.style.maxHeight === '150px') {
-                    descContent.style.maxHeight = '1000px';
+                    descContent.style.maxHeight = descContent.scrollHeight + 'px';
                     descToggle.textContent = 'Show less';
                 } else {
                     descContent.style.maxHeight = '150px';

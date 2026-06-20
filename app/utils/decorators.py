@@ -15,7 +15,10 @@ def verified_required(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_verified:
+        if not current_user.is_authenticated:
+            flash("Please log in to access this feature.", "warning")
+            return redirect(url_for("auth.login"))
+        if not current_user.is_verified:
             flash("Please verify your email to access this feature.", "warning")
             return redirect(url_for("auth.resend_verification"))
         return f(*args, **kwargs)
@@ -28,7 +31,10 @@ def partner_required(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role not in ("partner", "admin"):
+        if not current_user.is_authenticated:
+            flash("Please log in to access this feature.", "warning")
+            return redirect(url_for("auth.login"))
+        if current_user.role not in ("partner", "admin"):
             flash("You do not have permission to access the partner dashboard.", "danger")
             return redirect(url_for("dashboard"))
         return f(*args, **kwargs)
@@ -41,7 +47,10 @@ def admin_required(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
+        if not current_user.is_authenticated:
+            flash("Please log in to access this feature.", "warning")
+            return redirect(url_for("auth.login"))
+        if not current_user.is_admin:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function

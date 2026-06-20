@@ -40,7 +40,7 @@
                         </a>
                     </div>
                 {% else %}
-                    <h1 class="marketplace-hero__title">Welcome back, {{ current_user.name.split()[0] }}!</h1>
+                    <h1 class="marketplace-hero__title">Welcome back, {{ (current_user.name.split() or [''])[0] or current_user.name }}!</h1>
                     <p class="marketplace-hero__subtitle">Divert waste from landfill by listing items you no longer need, or browse what's available today.</p>
                     
                     <div class="marketplace-hero__stats">
@@ -504,6 +504,13 @@
 
                     // 8. Update browser history URL
                     history.pushState(null, '', url);
+                })
+                .catch(err => {
+                    // Network failure — restore opacity so the page remains usable
+                    const grid = document.getElementById('marketplace-grid');
+                    if (grid) grid.style.opacity = '1';
+                    console.warn('[Reuni] AJAX filter failed, falling back to full reload:', err);
+                    window.location.href = url;
                 });
         }
 
@@ -651,7 +658,8 @@
                             const countText = countEl.textContent.trim().replace(/\D+/g, '');
                             applyBtn.textContent = `Apply — ${countText} results`;
                         }
-                    });
+                    })
+                    .catch(() => { /* network error: apply button count stays stale, acceptable */ });
             });
 
             // Intercept mobile form submission to use AJAX

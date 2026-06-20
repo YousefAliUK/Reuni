@@ -27,6 +27,10 @@ def upgrade():
                existing_type=sa.FLOAT(),
                type_=sa.Numeric(precision=10, scale=2, asdecimal=False),
                existing_nullable=True)
+        # pin_code is expanded from VARCHAR(4) to String(256) to store bcrypt hashes.
+        # The PIN shown to users is still 4 digits; it is hashed with
+        # werkzeug.security.generate_password_hash() before DB storage (see items.py).
+        # Downgrading truncates to 4 chars — only safe if no active claims exist.
         batch_op.alter_column('pin_code',
                existing_type=sa.VARCHAR(length=4),
                type_=sa.String(length=256),

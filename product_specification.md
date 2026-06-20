@@ -42,13 +42,13 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 
 | Layer            | Technology                                                                                                  |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| Backend          | Python 3.x, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Migrate, Flask-Limiter, Flask-Mail   |
+| Backend          | Python 3.x, Flask 3.1, Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-Migrate, Flask-Limiter               |
 | Database         | SQLite (dev/test) → PostgreSQL (prod)                                                                       |
 | Frontend         | Jinja2 templates, Vanilla CSS + JS (no build step)                                                          |
 | CSS              | Vanilla CSS design system (Plus Jakarta Sans font, WCAG AA accessible)                                      |
 | Image processing | Pillow (resize, EXIF strip, format validation, JPEG compilation)                                            |
 | Auth & Timers    | Session-based via Flask-Login, passwords hashed with Werkzeug (scrypt), tokens timed with `itsdangerous`     |
-| Email            | Brevo SDK (transactional OTP emails) + Flask-Mail (all other transactional emails)                           |
+| Email            | Brevo API SDK (all transactional, password reset, PIN handshake, cancellation, and verification emails)     |
 | Background Jobs  | APScheduler `BackgroundScheduler` (nightly GDPR anonymisation cron at 2 AM)                                 |
 
 ### 2.2 Current Feature Set (Built)
@@ -60,21 +60,24 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 - ✅ **Rate limiting:** Limiter middleware protects auth-sensitive routes (login capped at 10/min, resend-verification at 10/hour, forgot-password at 3/hour).
 - ✅ **Open redirect prevention:** Login redirects check and reject external absolute URLs to prevent phishing.
 - ✅ **Session hijacking security:** Permanent sessions last 7 days with secure attributes (`HttpOnly`, `SameSite=Lax`, and `Secure` cookies enforced in non-development modes).
-- ✅ **Forgot password / Password reset:** Self-service password reset via a time-limited signed email link (1-hour expiry via `itsdangerous`). Token is salted with the user's current password hash — automatically invalidated once the password changes. Rate-limited to 3 requests per hour per email address.
+- ✅ **Forgot password / Password reset:** Self-service password reset via a time-limited signed email link (1-hour expiry via `itsdangerous`). Token is salted with the user's current password hash — automatically invalidated once the password changes. Rate-limited to 3 requests per hour per email address. Redirect success URL strips email parameters to prevent PII leakage to history and logs.
 
 #### Marketplace & Listing Management
-- ✅ **Item Listing & Uploads:** Students can list items with titles, descriptions (max 2000 chars), categories, conditions, prices, or mark them as free.
+- ✅ **Item Listing & Uploads:** Students can list items with titles, descriptions (max 2000 chars), categories, conditions, prices, or mark them as free. Enforces a price greater than zero (£ > 0.00) for all paid listings.
 - ✅ **Image Processing Pipeline:** Validates uploads against whitelisted extensions (JPG, PNG, WebP), verifies format integrity using Pillow, resizes to a max dimension of 800px, strips metadata/EXIF tags for privacy, saves with secure UUID-based filenames, and limits files to 5MB.
-- ✅ **Marketplace Browse:** Real-time search (wildcard-escaped), category filtering, price-type filter (free vs. paid), and price range filtering (min/max), using cursor/index pagination (12 items per page).
+- ✅ **Marketplace Browse:** Real-time search (wildcard-escaped), category filtering, price-type filter (free vs. paid), and price range filtering (min/max), using standard page-based pagination (12 items per page).
 - ✅ **Listing Lifecycle Management:** Ownership-guarded editing and deletion of listings (blocked once a transaction is pending or sold).
 
 #### Transaction Verification (PIN Handshake Protocol)
 - ✅ **Physical Verification Scheme:** Cements physical collection via a secure 4-digit PIN exchange. PIN is generated atomically on claim:
   - **Free Item (£0):** Seller holds the PIN; Buyer inputs it on their phone to confirm receipt.
   - **Paid Item (£):** Buyer holds the PIN; Seller inputs it to confirm collection after receiving payment.
+- ✅ **Role-Aware Instructions:** Customized headers guide users (e.g. Free seller vs. Paid seller) on when and who to reveal the PIN to.
 - ✅ **PIN Expiry & Rate Limiting:** Timed 72-hour PIN auto-expiry. Capped at 3 failed attempts to enter the PIN before the claim is automatically cancelled and the item is returned to "Available".
 - ✅ **PIN Email Delivery & Resend:** Automatically emails PIN codes to the respective code holder; features a resend action rate-limited to 3 times per hour.
 - ✅ **WhatsApp Bypass:** Phone numbers normalized (normalizes local 07 to `+44`) and validated as unique to detect alt accounts. The seller's phone number is securely revealed to the buyer only after claiming, with a pre-formatted message link to coordinate meeting.
+- ✅ **Phone Number Masking:** Displays masked phone numbers on-screen (e.g., showing only prefix and last 4 digits) to protect user PII from shoulder-surfing/screenshots while preserving deep-linked coordinates.
+- ✅ **Visual Viewport Keyboard Helper:** Uses the `visualViewport` resize listener on mobile devices to dynamically center input cards and prevent soft keyboard layout overlap.
 
 #### Reputation & Cancellation Management
 - ✅ **Manual Cancellation Tiers:** Implemented structured tiers for claimed items cancelled before completion.
@@ -91,8 +94,9 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
   - Total real `kg saved` from landfill (calculated dynamically from category weights).
   - Total verified student accounts at their university.
   - Categorical distribution breakdown of successfully exchanged items.
-- ✅ **Partner Session Security:** Automatic session validation enforcing a hard 7-day session expiry (partner role is logged out and redirected to login).
-- ✅ **Partner Dashboard Enhancements:** Dashboard shows a live circulation log (5 most recent exchanges with relative timestamps), category distribution with icons, and automatically fetches and caches university logos from the Google Favicon API.
+- ✅ **Partner Session Security:** Automatic session validation enforcing a hard 7-day session expiry (partner role is logged out and redirected to login). Legacy sessions lacking timestamps are safely bypassed.
+- ✅ **Partner Dashboard Enhancements:** Dashboard shows a live circulation log (5 most recent exchanges with relative timestamps), category distribution with icons, and uses local static logo files with initials fallback to prevent tracking.
+- ✅ **Scientific Carbon Footprint Metrics:** Calculates carbon equivalent savings (`total_co2e` in kg CO₂e) based on item categories and WRAP/DEFRA conversion factors rather than duplicating landfill weight metrics.
 
 #### Account Management & GDPR
 - ✅ **Account Settings:** Authenticated users can update their phone number (uniqueness-enforced, E.164 normalisation) and change their password (complexity policy: 8+ chars, mixed case, digit required) from a dedicated settings page.
@@ -116,7 +120,7 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 - ✅ **SQL Injection Prevention:** Parameterized SQL queries enforced through SQLAlchemy ORM.
 - ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy`. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
 - ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, deactivation events, and GDPR actions.
-- ✅ **189 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
+- ✅ **193 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
 
 ---
 
@@ -198,21 +202,21 @@ No native app. The web app is designed mobile-first with a responsive layout. PW
 
 | Screen                   | Layout                              | Navigation                                                   |
 | ------------------------ | ----------------------------------- | ------------------------------------------------------------ |
-| **Mobile** (<1024px)     | Single column, full-width cards     | Bottom tab bar (Home, Search, ➕ Sell, Profile) — **4 tabs** |
-| **Desktop** (≥1024px)    | Sidebar (240px) + content area      | Sticky top navbar + persistent left sidebar                  |
+| **Mobile** (<1024px)     | Single column, full-width cards     | Bottom tab bar (Home, Search, Sell, Profile) — **4 tabs**, plus Mobile Top Bar with hamburger button |
+| **Desktop** (≥1024px)    | Sidebar-free max-width 1100px grid  | Sticky top navbar (Brand, Search form, "List an Item" CTA) + Profile Dropdown |
 
 **Mobile bottom tab bar (4 items, fixed at bottom of screen):**
 - **Home** → `/` (marketplace browse)
-- **Search** → opens a full-screen search overlay (not a new page)
+- **Search** → opens a full-screen search overlay dialog (with accessible focus trap and Escape-key dismiss)
 - **Sell** → `/items/new` (or `/auth/login` if unauthenticated)
 - **Profile** → `/profile` (shows first initial avatar if logged in, or `/auth/login` if not)
 
-**Desktop sidebar links (authenticated users only):**
-My Dashboard → Browse Items → List an Item → My Profile → ESG Dashboard (partners/admin only) → Admin Panel (admin only) → Settings → Sign Out
+**Desktop User Profile Dropdown links (authenticated users only):**
+List an Item → My Dashboard → My Profile → Settings → ESG Dashboard (partners/admin only) → Admin Panel (admin only) → Sign Out
 
-**Mobile hamburger drawer:** A slide-in drawer from the right (triggered by ☰ button in the navbar) mirrors the sidebar links for authenticated users.
+**Mobile hamburger drawer:** A slide-in drawer from the left (triggered by ☰ button in the mobile top bar, animating via `translateX(-100%)` to `0` using custom ease transitions) mirrors the profile dropdown options for authenticated users.
 
-> **Mobile-first rule:** Design for phone first, then `@media (min-width: 1024px)` enables the sidebar layout. The breakpoint is 1024px, not 768px.
+> **Mobile-first rule:** Design for phone first, then `@media (min-width: 1024px)` overrides mobile-specific fixed overlays and enables the desktop navbar dropdown layout. The breakpoint is 1024px, not 768px.
 
 ---
 
@@ -289,17 +293,17 @@ sequenceDiagram
 
 The PIN page displays clear safety instructions to both parties:
 
-> 🤝 **Safe Exchange Guide**
+> **Safe Exchange Guide**
 >
 > 1. Meet in a **public space on campus** (library, SU, café)
 > 2. Buyer: inspect the item first
 > 3. Seller: confirm you've received payment (cash, bank transfer — check your app)
 > 4. Both phones out — PIN holder shows PIN, other party types it in
-> 5. **Both confirm the on-screen "✅ Complete" before walking away**
+> 5. **Both confirm the on-screen "Complete" before walking away**
 
 For items above **£100**, an additional advisory appears:
 
-> ⚠️ _"For high-value items, we recommend meeting at the SU reception desk and completing the exchange with both phones visible."_
+> _"For high-value items, we recommend meeting at the SU reception desk and completing the exchange with both phones visible."_ (Rendered with the Google Material Symbol warning icon).
 
 #### Edge Cases
 
@@ -442,9 +446,17 @@ Three tiers of environmental data, each serving a different purpose:
 **For the university ESG dashboard:**
 
 - "_Oxford Brookes students saved **2,847 kg** from landfill in 2026–27_"
-- Breakdown by category (Furniture: 1,200 kg, Electronics: 890 kg, etc.)
-- Month-by-month trend chart
-- Year-on-year comparison (when data exists)
+- **Scientific CO₂e Avoided:** Calculated based on WRAP/DEFRA Waste Hierarchy material-specific emission factors (avoided kg of CO₂e per kg diverted from landfill):
+  - **Electronics:** 40.0
+  - **Furniture:** 7.5
+  - **Clothing:** 5.0
+  - **Sports:** 4.0
+  - **Kitchenware:** 3.0
+  - **Books:** 1.5
+  - **Stationery:** 1.0
+  - **Other:** 3.0
+- Breakdown of both physical landfill weight saved (kg) and equivalent emissions offset (kg CO₂e) by category.
+- Month-by-month trend chart and year-on-year comparison (when data exists).
 
 ---
 
@@ -732,6 +744,10 @@ erDiagram
     ITEMS ||--o{ CANCELLATION_RECORDS : references
 ```
 
+> **Data Integrity and Constraints Note:**
+> - The `items` table implements a database-level check constraint (`CheckConstraint('length(description) <= 2000')`) to enforce the 2000-character description limit across SQLite and production PostgreSQL environments.
+> - The `cancellation_records` table foreign keys (`item_id`, `cancelled_by_id`, and `other_party_id`) are configured with `ON DELETE RESTRICT` to serve as a database-level guard rail. Since users are anonymised in-place rather than hard-deleted, and unsold listings' cancellation records are explicitly cleaned up programmatically in application code before item deletion, this preserves the audit logs for B2B reporting and prevents accidental deletions.
+
 ---
 
 ### Future Schema (Phase 2+)
@@ -768,7 +784,7 @@ New tables:
 
 | Area               | Implementation                                                                                            |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
-| Password hashing   | Werkzeug PBKDF2+SHA256 with salt                                                                          |
+| Password hashing   | Werkzeug defaults (scrypt)                                                                                |
 | Password strength  | Server-side enforcement: minimum 8 characters, requiring mixed case (upper/lower) and a digit.             |
 | CSRF protection    | Flask-WTF `CSRFProtect` on all POST forms                                                                 |
 | SQL injection      | SQLAlchemy ORM parameterises all queries                                                                  |
@@ -784,7 +800,8 @@ New tables:
 | Rate Limiting         | Middleware controls all sensitive entry points (login, OTP resend, forgot password, PIN resend, account delete) |
 | Password reset tokens | `itsdangerous` signed tokens, 1-hour expiry, salted with current password hash (auto-invalidated on change)  |
 | Account deletion      | Two-phase GDPR deletion: immediate deactivation → 30-day cooldown → nightly anonymisation at 2 AM           |
-| DB migrations         | Flask-Migrate (Alembic) — version-controlled schema changes                                                  |
+| DB migrations         | Flask-Migrate (Alembic) — version-controlled schema changes, executed manually (`flask db upgrade`) in production (preventing race conditions) |
+| CLI Admin Promotion  | `promote_admin.py` is restricted to development environments (`app.debug=True`) and uses cryptographically secure random passwords to prevent accidental credential leakage in server logs. |
 
 ### Planned (Production)
 
@@ -802,6 +819,6 @@ New tables:
 | University off-season (summer) — run marketplace or shut down? | **Run normally, freeze leaderboard.** Marketplace stays open, rankings pause.                                              |
 | Multi-university data isolation?                               | **Schema-ready** (`university_domain` column on both users and items). No cross-university data leakage by default.        |
 | Payment integration?                                           | **Not needed for MVP.** All transactions are in-person cash/bank transfer. Platform shows price, doesn't process payments. |
-| Email notifications?                                           | **Implemented** via Brevo API (OTP verification) and Flask-Mail (password reset links, PIN handshakes, claim cancellation alerts, GDPR deletion claim cancellations, partner welcome/deactivation emails). |
+| Email notifications?                                           | **Implemented** via Brevo API SDK (all transactional and verification emails including OTP, password resets, PIN handshakes, cancellation alerts, GDPR deletion notifications, and partner welcome/deactivation emails; no Flask-Mail dependency). |
 | Real-time chat?                                                | **Permanently deferred.** WhatsApp bypass handles all communication needs. Building chat is technical debt with no ROI.    |
 | QR Code Handshake?                                             | **Deferred to Phase 2.** An alternative option where the PIN holder displays a QR code encoding the PIN, which the other party scans to confirm physical exchange. |

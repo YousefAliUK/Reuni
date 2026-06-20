@@ -196,7 +196,7 @@ class TestEditItem:
             "price": "-10.00",
             "image": (img, "test.jpg")
         }, content_type="multipart/form-data", follow_redirects=True)
-        assert b"Price cannot be negative" in resp_create.data
+        assert b"price greater than zero" in resp_create.data
 
         # Edit negative price
         resp_edit = auth_client.post(f"/items/{sample_item.id}/edit", data={
@@ -206,7 +206,7 @@ class TestEditItem:
             "condition": "Good",
             "price": "-5.00",
         }, content_type="multipart/form-data", follow_redirects=True)
-        assert b"Price cannot be negative" in resp_edit.data
+        assert b"price greater than zero" in resp_edit.data
 
 
 class TestDeleteItem:
@@ -260,3 +260,45 @@ class TestCategoryWeightsAPI:
         resp = client.get("/items/api/category-weights")
         data = resp.get_json()
         assert len(data) == len(CATEGORIES)
+
+
+class TestNaNPriceSubmissions:
+
+    def test_nan_price_create_and_edit(self, auth_client, sample_item):
+        """NaN and infinity prices should be rejected on create and edit routes."""
+        # Create NaN price
+        resp_create_nan = auth_client.post("/items/new", data={
+            "title": "NaN Price Item",
+            "description": "Test",
+            "category": "Electronics",
+            "condition": "New",
+            "price": "nan",
+            "image": (make_test_image(), "test.jpg")
+        }, content_type="multipart/form-data", follow_redirects=True)
+        assert b"Please enter a valid price." in resp_create_nan.data
+
+        # Create Inf price
+        resp_create_inf = auth_client.post("/items/new", data={
+            "title": "Inf Price Item",
+            "description": "Test",
+            "category": "Electronics",
+            "condition": "New",
+            "price": "inf",
+            "image": (make_test_image(), "test.jpg")
+        }, content_type="multipart/form-data", follow_redirects=True)
+        assert b"Please enter a valid price." in resp_create_inf.data
+
+        # Edit NaN price
+        resp_edit_nan = auth_client.post(f"/items/{sample_item.id}/edit", data={
+            "title": "Test Textbook",
+            "description": "Updated description",
+            "category": "Books",
+            "condition": "Good",
+            "price": "nan",
+        }, content_type="multipart/form-data", follow_redirects=True)
+        assert b"Please enter a valid price." in resp_edit_nan.data
+
+    def test_nan_price_search_filters(self, client, db_session):
+        """Search filters with NaN or Inf prices should ignore the filter cleanly."""
+        resp_nan = client.get("/?min_price=nan&max_price=inf")
+        assert resp_nan.status_code == 200
