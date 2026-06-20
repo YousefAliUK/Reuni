@@ -40,13 +40,7 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
-    # Flask-Mail configuration
-    # MAIL_SERVER = os.environ.get("MAIL_SERVER")
-    # MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
-    # MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-    # MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    # MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
-    # MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
+    # Brevo configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL")
     MAIL_DEFAULT_SENDER = os.environ.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
