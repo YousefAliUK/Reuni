@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from sqlalchemy import func
+import re
 from app import db
 from app.models import Item, User
 from app.utils.decorators import partner_required
@@ -17,6 +18,20 @@ UNIVERSITY_NAMES = {
     "imperial.ac.uk": "Imperial College London",
     "manchester.ac.uk": "University of Manchester",
     "ed.ac.uk": "University of Edinburgh"
+}
+
+# Per-category CO₂e conversion factors (kg CO₂e avoided per kg diverted from landfill).
+# Source: WRAP / DEFRA Waste Hierarchy material-specific emission factors.
+# These represent the avoided emissions from manufacturing equivalent new goods.
+CO2E_FACTORS = {
+    'Electronics': 40.0,  # High — semiconductor/rare earth manufacturing footprint
+    'Furniture':    7.5,  # Wood/composite manufacturing
+    'Clothing':     5.0,  # Textile production (cotton, synthetic)
+    'Kitchenware':  3.0,  # Mixed metals/ceramics
+    'Sports':       4.0,  # Mixed materials
+    'Books':        1.5,  # Paper/pulp
+    'Stationery':   1.0,  # Paper/lightweight materials
+    'Other':        3.0,  # Conservative default
 }
 
 CATEGORY_ICONS = {
@@ -86,7 +101,12 @@ def ensure_uni_logo(domain):
     logo_dir = os.path.join(current_app.static_folder, "img", "logos")
     os.makedirs(logo_dir, exist_ok=True)
     
-    logo_filename = f"{domain}.png"
+    # Sanitize domain to prevent path traversal
+    safe_domain = re.sub(r'[^a-zA-Z0-9.-]', '', domain)
+    if not safe_domain or safe_domain != domain:
+        return None
+    
+    logo_filename = f"{safe_domain}.png"
     logo_path = os.path.join(logo_dir, logo_filename)
     
     if os.path.exists(logo_path):
@@ -185,10 +205,22 @@ def partner_dashboard():
             "icon": CATEGORY_ICONS.get(item.category, "extension")
         })
 
+    # 6. CO₂e prevented — computed from categories_data using WRAP/DEFRA factors.
+    #    This is separate from total_kg_saved (physical weight) and represents the
+    #    estimated climate impact of the circular economy activity.
+    total_co2e = round(
+        sum(
+            float(kg or 0.0) * CO2E_FACTORS.get(cat, 3.0)
+            for cat, _count, kg in categories_data
+        ),
+        1
+    )
+
     return render_template(
         "partner/dashboard.html",
         total_items_exchanged=total_items_exchanged,
         total_kg_saved=float(total_kg_saved),
+        total_co2e=total_co2e,
         total_verified_students=total_verified_students,
         categories_list=categories_list,
         recent_exchanges=recent_exchanges,
@@ -198,5 +230,3 @@ def partner_dashboard():
         uni_domain=uni_domain,
         logo_url=logo_url
     )
-
-

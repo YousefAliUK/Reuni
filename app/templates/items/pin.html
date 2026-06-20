@@ -172,7 +172,7 @@
                 <span class="material-symbols-outlined" style="color: #25D366; font-size: 24px;">chat</span>
                 <div>
                     <div style="font-weight: 600; color: var(--color-ink-primary); font-size: var(--type-small);">WhatsApp coordination</div>
-                    <div style="font-size: 12px; color: var(--color-ink-secondary);">Chat securely with {{ partner_user.name }} ({{ partner_user.phone_number }})</div>
+                    <div style="font-size: 12px; color: var(--color-ink-secondary);">Chat securely with {{ partner_user.name }} ({{ partner_user.phone_number | mask_phone }})</div>
                 </div>
             </div>
             <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary); font-size: 18px;">arrow_forward</span>
@@ -264,6 +264,16 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Initialize safe exchange details accordion behavior
+        const detailsEl = document.getElementById('safe-exchange-details');
+        if (detailsEl) {
+            // Keep open by default on desktop for better visibility
+            if (window.innerWidth >= 1024) {
+                detailsEl.setAttribute('open', '');
+            }
+            // Allow normal toggle functionality on all screen sizes
+        }
+
         // 1. PIN Holder Expiry Countdown
         const countdownEl = document.getElementById('expiry-countdown');
         if (countdownEl && countdownEl.dataset.expires) {
@@ -473,7 +483,6 @@
         }
 
         // 3. Safe Exchange Guide Accordion Init
-        const detailsEl = document.getElementById('safe-exchange-details');
         if (detailsEl) {
             if (window.innerWidth >= 1024) {
                 detailsEl.setAttribute('open', '');
@@ -483,12 +492,17 @@
                     }
                 });
             } else {
-                const guideSeen = localStorage.getItem('pin_guide_seen');
-                if (!guideSeen) {
+                try {
+                    const guideSeen = localStorage.getItem('pin_guide_seen');
+                    if (!guideSeen) {
+                        detailsEl.setAttribute('open', '');
+                        localStorage.setItem('pin_guide_seen', 'true');
+                    } else {
+                        detailsEl.removeAttribute('open');
+                    }
+                } catch (e) {
+                    // localStorage unavailable — just open the guide by default
                     detailsEl.setAttribute('open', '');
-                    localStorage.setItem('pin_guide_seen', 'true');
-                } else {
-                    detailsEl.removeAttribute('open');
                 }
             }
         }

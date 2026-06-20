@@ -89,16 +89,20 @@ def create_app(config_class=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    if app.config.get("TESTING"):
+        @app.before_request
+        def expire_session_for_testing():
+            db.session.expire_all()
+
     @app.before_request
     def enforce_session_rules():
         from datetime import datetime, timezone, timedelta
-
-        # Expire session cache to ensure fresh data in concurrent/test environments
-        db.session.expire_all()
-
+        
         # 1. Deactivated account check — applies to all roles
         user_id = session.get("_user_id")
         if user_id:
+        
+            # Fresh query to get current account status, only fetch the user we need
             user = db.session.get(User, int(user_id))
             if user and not user.is_active:
                 logout_user()
@@ -111,6 +115,10 @@ def create_app(config_class=None):
             if logged_in_at_str:
                 try:
                     logged_in_at = datetime.fromisoformat(logged_in_at_str)
+                    # Strip tzinfo defensively — stored as naive UTC but guard against
+                    # any future change that adds timezone info to the isoformat string.
+                    if logged_in_at.tzinfo is not None:
+                        logged_in_at = logged_in_at.replace(tzinfo=None)
                     now = datetime.now(timezone.utc).replace(tzinfo=None)
                     if now - logged_in_at > timedelta(days=7):
                         logout_user()
@@ -121,10 +129,10 @@ def create_app(config_class=None):
                     logout_user()
                     return redirect(url_for("auth.login"))
             else:
-                # Force logout if timestamp is missing to avoid silent skip
-                logout_user()
-                flash("Your session has expired. Please log in again.", "info")
-                return redirect(url_for("auth.login"))
+                # Legacy session from before the logged_in_at feature was introduced.
+                # Initialize the timestamp to the current time so they get a 7-day grace period
+                # starting now, rather than bypassing the security check indefinitely.
+                session['logged_in_at'] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -137,6 +145,31 @@ def create_app(config_class=None):
     app.register_blueprint(items_bp)
     app.register_blueprint(partner_bp)
     app.register_blueprint(admin_bp)
+
+    # ── Jinja2 custom filters ──
+    @app.template_filter('mask_phone')
+    def mask_phone_filter(phone: str) -> str:
+        """
+        Masks a phone number for display, showing the country code prefix and
+        the last 4 digits only. Used on the PIN page to protect PII from
+        shoulder-surfing and accidental screenshots.
+
+        Examples:
+            '+447912345678' → '+44 •• •• 5678'
+            '+14155552671'  → '+1 •• •• 2671'
+        """
+        if not phone or len(phone) < 5:
+            return '•••• ••••'
+        suffix = phone[-4:]
+        # Keep the country code: '+' plus digits up to first space or up to 3 chars
+        if phone.startswith('+44'):
+            prefix = '+44'
+        elif phone.startswith('+1'):
+            prefix = '+1'
+        else:
+            # Generic: take everything up to but not including the last 7 digits
+            prefix = phone[:max(2, len(phone) - 7)]
+        return f"{prefix} \u2022\u2022 \u2022\u2022 {suffix}"
 
     # ── Marketplace home page (merged browse + landing) ──
     @app.route("/")
@@ -171,12 +204,20 @@ def create_app(config_class=None):
         # Apply Price Range Filters (Min & Max)
         if min_price:
             try:
-                query = query.filter(Item.price >= float(min_price))
+                val = float(min_price)
+                import math
+                if math.isnan(val) or math.isinf(val):
+                    raise ValueError
+                query = query.filter(Item.price >= val)
             except ValueError:
                 pass
         if max_price:
             try:
-                query = query.filter(Item.price <= float(max_price))
+                val = float(max_price)
+                import math
+                if math.isnan(val) or math.isinf(val):
+                    raise ValueError
+                query = query.filter(Item.price <= val)
             except ValueError:
                 pass
 
@@ -420,6 +461,7 @@ def create_app(config_class=None):
             flash("Partner accounts cannot be deleted directly. Please contact the administrator to offboard your institution.", "danger")
             return redirect(url_for("settings"))
 
+        from html import escape as html_escape
         from app.models import Item, CancellationRecord
         from app.utils.emails import send_email
         from datetime import datetime, timezone, timedelta
@@ -440,8 +482,8 @@ def create_app(config_class=None):
                 seller = item.seller
                 if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
                     email_html = (
-                        f"<p>Hello {seller.name},</p>"
-                        f"<p>The claim on the item \"<strong>{item.title}</strong>\" has been cancelled "
+                        f"<p>Hello {html_escape(seller.name)},</p>"
+                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
                         f"because the buyer's account has been deactivated for deletion.</p>"
                         f"<p>The item is now available back on the marketplace.</p>"
                         f"<p>— The Reuni team</p>"
@@ -456,7 +498,7 @@ def create_app(config_class=None):
                 app.logger.warning(f"Failed to send deletion claim cancellation email to seller: {mail_err}")
 
         # Active claims where the user is the seller:
-        seller_claims = Item.query.filter(Item.seller_id == user_id, Item.buyer_id != None, Item.is_sold == False).all()
+        seller_claims = Item.query.filter(Item.seller_id == user_id, Item.buyer_id.is_not(None), Item.is_sold == False).all()
         for item in seller_claims:
             buyer = item.buyer
             # Cancel the claim
@@ -470,8 +512,8 @@ def create_app(config_class=None):
             try:
                 if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
                     email_html = (
-                        f"<p>Hello {buyer.name},</p>"
-                        f"<p>The claim on the item \"<strong>{item.title}</strong>\" has been cancelled "
+                        f"<p>Hello {html_escape(buyer.name)},</p>"
+                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
                         f"because the seller's account has been deactivated for deletion.</p>"
                         f"<p>— The Reuni team</p>"
                     )
@@ -580,10 +622,10 @@ def create_app(config_class=None):
     from app.scheduler import init_scheduler
     init_scheduler(app)
 
-    if not app.testing and not app.debug:
-        with app.app_context():
-            from flask_migrate import upgrade
-            upgrade()
+    # NOTE: Migrations must be run manually as a separate deploy step:
+    # $ flask db upgrade
+    # Do NOT run upgrade() here — it is unsafe in production with multiple
+    # Gunicorn workers (race conditions, blocking startup, no rollback path).
 
     return app
 

@@ -157,8 +157,8 @@ class TestBuyItem:
 
         resp = second_auth_client.get(f"/items/{sample_item.id}/pin")
         assert resp.status_code == 200
-        assert sample_user.phone_number.encode() in resp.data
-        assert b"wa.me" in resp.data
+        assert f"wa.me/{sample_user.phone_number[1:]}".encode() in resp.data
+        assert "+44 \u2022\u2022 \u2022\u2022 0005".encode("utf-8") in resp.data
 
     def test_expired_pin_auto_cancels(self, auth_client, sample_item, second_user, db_session):
         """Visiting PIN page after 72h should auto-cancel the claim."""

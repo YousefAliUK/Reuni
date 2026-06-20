@@ -10,6 +10,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     """Base configuration shared across all environments."""
     SECRET_KEY = os.environ.get("SECRET_KEY")
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
         "sqlite:///" + os.path.join(basedir, "..", "instance", "unicycle.db"),
@@ -88,4 +89,11 @@ class ProductionConfig(Config):
             raise RuntimeError(
                 "SECRET_KEY environment variable is not set. "
                 "Refusing to start in production without a secure secret key."
+            )
+        if not cls.BASE_URL:
+            raise RuntimeError(
+                "BASE_URL environment variable is not set. "
+                "All email links (PIN notifications, cancellation emails, password resets) "
+                "will be broken without it. Set BASE_URL=https://your-domain.com in your "
+                "Railway environment variables."
             )

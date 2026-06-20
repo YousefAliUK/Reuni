@@ -387,12 +387,12 @@
             const isFreeCheckbox = document.getElementById('is_free');
             if (isFreeCheckbox && !isFreeCheckbox.checked && priceInput) {
                 const priceVal = parseFloat(priceInput.value);
-                if (isNaN(priceVal) || priceVal < 0) {
+                if (isNaN(priceVal) || priceVal <= 0) {
                     isValid = false;
                     priceInput.classList.add('error');
                     const errMsg = document.createElement('div');
                     errMsg.className = 'custom-error-msg';
-                    errMsg.textContent = 'Please enter a valid price.';
+                    errMsg.textContent = 'Please enter a price greater than zero.';
                     priceInput.parentNode.appendChild(errMsg);
                 }
             }

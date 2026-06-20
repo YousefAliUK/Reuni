@@ -224,7 +224,7 @@
                             
                             <div class="purchase-row__details">
                                 <h3 class="purchase-row__title"><a href="{{ url_for('items.detail', item_id=item.id) }}" style="text-decoration: none; color: inherit;">{{ item.title }}</a></h3>
-                                <span class="purchase-row__meta">Seller: {{ item.seller.name }} &middot; Purchased on {{ item.created_at.strftime('%b %d, %Y') }}</span>
+                                <span class="purchase-row__meta">Seller: {{ item.seller.name }}{% if item.created_at %} &middot; Purchased on {{ item.created_at.strftime('%b %d, %Y') }}{% endif %}</span>
                             </div>
                         </div>
                         

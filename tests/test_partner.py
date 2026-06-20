@@ -151,12 +151,12 @@ def test_session_expiry_and_deactivation(client, app, db_session):
     resp = client.get("/partner/dashboard", follow_redirects=True)
     assert b"Your session has expired. Please log in again." in resp.data
 
-    # 3. Simulate missing logged_in_at timestamp (should log out immediately)
+    # 3. Simulate missing logged_in_at timestamp (legacy session, should allow through)
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
     with client.session_transaction() as sess:
         sess.pop('logged_in_at', None)
     resp = client.get("/partner/dashboard", follow_redirects=True)
-    assert b"Your session has expired. Please log in again." in resp.data
+    assert resp.status_code == 200
 
     # 4. Immediate deactivation check
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)

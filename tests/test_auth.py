@@ -771,3 +771,50 @@ class TestResetPassword:
         }, follow_redirects=True)
         assert b"must contain at least one uppercase letter, one lowercase letter, and one digit" in resp2.data
 
+
+class TestEmailHtmlEscaping:
+
+    @patch("app.routes.auth.send_email")
+    def test_forgot_password_escapes_user_name(self, mock_send, client, db_session):
+        """Forgot password email should HTML escape user.name to prevent injection."""
+        user = User(
+            email="xssname@brookes.ac.uk",
+            name="<script>alert('xss')</script> Name",
+            phone_number="+447700100088",
+            is_verified=True,
+            university_domain="brookes.ac.uk"
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        client.post("/auth/forgot-password", data={"email": "xssname@brookes.ac.uk"}, follow_redirects=True)
+        assert mock_send.called
+        args, kwargs = mock_send.call_args
+        html_content = kwargs.get("html_content")
+        assert "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt; Name" in html_content
+        assert "<script>alert('xss')</script> Name" not in html_content
+
+    @patch("app.routes.auth.send_email")
+    def test_invite_register_escapes_welcome_email(self, mock_send, client, app):
+        """Partner registration should escape partner name in welcome email."""
+        from app.utils.tokens import generate_partner_invite_token
+        with app.app_context():
+            token = generate_partner_invite_token("brookes.ac.uk", app.config["SECRET_KEY"])
+            
+        client.post(
+            f"/auth/invite/{token}",
+            data={
+                "name": "<b>HTML Name</b>",
+                "email": "partner.xss@brookes.ac.uk",
+                "password": "password123",
+                "confirm_password": "password123",
+            },
+            follow_redirects=True
+        )
+        assert mock_send.called
+        args, kwargs = mock_send.call_args
+        html_content = kwargs.get("html_content")
+        assert "&lt;b&gt;HTML Name&lt;/b&gt;" in html_content
+        assert "<b>HTML Name</b>" not in html_content
+

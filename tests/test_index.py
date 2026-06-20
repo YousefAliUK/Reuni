@@ -162,12 +162,13 @@ class TestProfilePage:
 
     def test_profile_bought_excludes_pending(self, second_auth_client, second_user, db_session, sample_item):
         """Profile bought count should exclude items claimed but not verified/sold yet."""
+        import re
+        from bs4 import BeautifulSoup
         from app.models import Item
 
         # 1. Initially, second_user has not claimed anything. Bought/recycled stats should be 0.
         resp = second_auth_client.get("/profile")
         assert resp.status_code == 200
-        # Check that '0' exists in the body (there may be multiple, but we check if we load fine)
 
         # Let's set the buyer of the sample_item to second_user and keep is_sold=False (pending PIN)
         sample_item.buyer_id = second_user.id
@@ -178,13 +179,22 @@ class TestProfilePage:
         resp = second_auth_client.get("/profile")
         assert resp.status_code == 200
         
-        # We can extract the HTML content or check for the specific label structure
+        # Parse HTML to verify stats
         data_str = resp.data.decode("utf-8")
         assert "Bought" in data_str
         assert "Items recycled" in data_str
         
-        # Verify that total_bought is 0 by inspecting the stat element
-        assert "0" in data_str  # Simple check
+        # Robust check for 0 value in bought stat specifically
+        soup = BeautifulSoup(resp.data, "html.parser")
+        bought_label = soup.find(string=re.compile("Bought"))
+        assert bought_label is not None, "Bought label not found"
+        bought_value = bought_label.find_next().text.strip()
+        assert bought_value == "0", f"Expected bought count to be 0, got {bought_value}"
+
+        recycled_label = soup.find(string=re.compile("Items recycled"))
+        assert recycled_label is not None, "Items recycled label not found"
+        recycled_value = recycled_label.find_next().text.strip()
+        assert recycled_value == "0", f"Expected recycled count to be 0, got {recycled_value}"
 
         # 3. Mark the item as sold (simulating a completed transaction with PIN handshake)
         sample_item.is_sold = True
@@ -193,9 +203,15 @@ class TestProfilePage:
         # 4. Check the profile again. Now bought and recycled should be 1.
         resp = second_auth_client.get("/profile")
         assert resp.status_code == 200
-        data_str_after = resp.data.decode("utf-8")
         
-        # Let's assert that "1" is now present in the page representing the bought stat
-        assert "1" in data_str_after
+        # Verify updated stats
+        soup_after = BeautifulSoup(resp.data, "html.parser")
+        bought_label_after = soup_after.find(string=re.compile("Bought"))
+        assert bought_label_after is not None, "Bought label not found after sale"
+        bought_value_after = bought_label_after.find_next().text.strip()
+        assert bought_value_after == "1", f"Expected bought count to be 1, got {bought_value_after}"
 
-
+        recycled_label_after = soup_after.find(string=re.compile("Items recycled"))
+        assert recycled_label_after is not None, "Items recycled label not found after sale"
+        recycled_value_after = recycled_label_after.find_next().text.strip()
+        assert recycled_value_after == "1", f"Expected recycled count to be 1, got {recycled_value_after}"

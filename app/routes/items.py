@@ -7,7 +7,9 @@ and the PIN-handshake flow for completing transactions.
 import os
 import uuid
 import secrets
+import math
 from datetime import datetime, timezone, timedelta
+from html import escape as html_escape
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -145,8 +147,11 @@ def list_item():
             except (ValueError, TypeError):
                 flash("Please enter a valid price.", "danger")
                 return redirect(url_for("items.list_item"))
-            if price < 0:
-                flash("Price cannot be negative.", "danger")
+            if math.isnan(price) or math.isinf(price):
+                flash("Please enter a valid price.", "danger")
+                return redirect(url_for("items.list_item"))
+            if price <= 0:
+                flash("Please enter a price greater than zero.", "danger")
                 return redirect(url_for("items.list_item"))
 
         if not title or category not in CATEGORIES or condition not in CONDITION_CHOICES:
@@ -244,8 +249,11 @@ def edit_item(item_id):
             except (ValueError, TypeError):
                 flash("Please enter a valid price.", "danger")
                 return redirect(url_for("items.edit_item", item_id=item.id))
-            if price < 0:
-                flash("Price cannot be negative.", "danger")
+            if math.isnan(price) or math.isinf(price):
+                flash("Please enter a valid price.", "danger")
+                return redirect(url_for("items.edit_item", item_id=item.id))
+            if price <= 0:
+                flash("Please enter a price greater than zero.", "danger")
                 return redirect(url_for("items.edit_item", item_id=item.id))
 
         if not title or category not in CATEGORIES or condition not in CONDITION_CHOICES:
@@ -406,8 +414,10 @@ def buy_item(item_id):
 
     try:
         holder = item.seller if item.is_free else current_user
-        email_html = f"""<p>Hi {holder.name},</p>
-<p>An exchange has been initiated for the item "<strong>{item.title}</strong>" on Reuni.</p>
+        safe_name = html_escape(holder.name)
+        safe_title = html_escape(item.title)
+        email_html = f"""<p>Hi {safe_name},</p>
+<p>An exchange has been initiated for the item "<strong>{safe_title}</strong>" on Reuni.</p>
 <p>Your 4-digit transaction PIN is:</p>
 <div class="code-block">{pin}</div>
 <p>Please keep this PIN secure.</p>
@@ -516,7 +526,6 @@ def confirm_pin(item_id):
         flash("The claim has expired. The item is available again.", "info")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    from werkzeug.security import check_password_hash
     entered_pin = request.form.get("pin", "").strip()
 
     if not check_password_hash(item.pin_code, entered_pin):
@@ -678,21 +687,26 @@ def cancel_claim_route(item_id):
     # Send after db.session.commit() — never inside the transaction
     try:
         other_party_role = "seller" if cancelled_by_role == "buyer" else "buyer"
+        safe_canceller_name = html_escape(canceller_name)
+        safe_item_title = html_escape(item_title)
+        
         tier_msg = get_tier_message_for_other_party(
             tier=tier,
             role=other_party_role,
-            name=canceller_name,
-            item=item_title,
+            name=safe_canceller_name,
+            item=safe_item_title,
             hours=hours_held
         )
-        item_link = url_for("items.detail", item_id=item_id, _external=True)
+        base = current_app.config.get("BASE_URL", "").rstrip("/")
+        item_link = f"{base}{url_for('items.detail', item_id=item_id)}"
 
+        safe_other_name = html_escape(other_party.name)
         email_html = (
-            f"<p>Hello {other_party.name},</p>"
-            f"<p>The claim on the item \"<strong>{item_title}</strong>\" has been cancelled.</p>"
+            f"<p>Hello {safe_other_name},</p>"
+            f"<p>The claim on the item \"<strong>{safe_item_title}</strong>\" has been cancelled.</p>"
             f"<ul class=\"cancellation-list\">"
-            f"<li><strong>Cancelled by:</strong> {cancelled_by_role}</li>"
-            f"<li><strong>Item name:</strong> {item_title}</li>"
+            f"<li><strong>Cancelled by:</strong> {html_escape(cancelled_by_role)}</li>"
+            f"<li><strong>Item name:</strong> {safe_item_title}</li>"
             f"</ul>"
             f"<p>{tier_msg}</p>"
             f"<p>You can view the item listing back on the marketplace here: <a href=\"{item_link}\">{item_link}</a></p>"
@@ -739,7 +753,6 @@ def resend_pin(item_id):
     if not is_holder:
         abort(403)
 
-    from werkzeug.security import generate_password_hash
     pin = f"{secrets.randbelow(10000):04d}"
     item.pin_code = generate_password_hash(pin)
     item.pin_attempts = 0
@@ -753,8 +766,10 @@ def resend_pin(item_id):
         return redirect(url_for("items.pin_page", item_id=item.id))
 
     try:
-        email_html = f"""<p>Hi {holder.name},</p>
-<p>A new 4-digit transaction PIN has been generated for "<strong>{item.title}</strong>":</p>
+        safe_name = html_escape(holder.name)
+        safe_title = html_escape(item.title)
+        email_html = f"""<p>Hi {safe_name},</p>
+<p>A new 4-digit transaction PIN has been generated for "<strong>{safe_title}</strong>":</p>
 <div class="code-block">{pin}</div>
 <p>{"Share this PIN with the buyer when they collect the item." if item.is_free else "Show this PIN to the seller after you have inspected the item and confirmed payment."}</p>
 <p>— The Reuni team</p>"""

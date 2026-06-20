@@ -7,6 +7,8 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
+import sqlalchemy as sa
+
 
 # ──────────────────────────────────────────────
 # Category Weights Mapping  (Category → Weight)
@@ -45,15 +47,15 @@ class User(UserMixin, db.Model):
     phone_number = db.Column(db.String(20), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     kg_saved_total = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
-    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default='0')
+    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default=sa.text('false'))
     locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
-    role = db.Column(db.String(20), nullable=False, default='student', server_default='student')
+    role = db.Column(db.String(20), nullable=False, default='student', server_default=sa.text('student'))
     partner_university = db.Column(db.String(100), nullable=True)
-    is_active = db.Column(db.Boolean, default=True, nullable=False, server_default='1')
+    is_active = db.Column(db.Boolean, default=True, nullable=False, server_default=sa.text('true'))
     deletion_pending_until = db.Column(db.DateTime, nullable=True)
 
     # Email ownership verification fields
@@ -116,10 +118,15 @@ class User(UserMixin, db.Model):
 # ──────────────────────────────────────────────
 class Item(db.Model):
     __tablename__ = "items"
+    __table_args__ = (
+        # Enforce max description length at DB level.
+        # The backend also validates this in Python (items.py), so this is belt-and-suspenders.
+        db.CheckConstraint('length(description) <= 2000', name='ck_items_description_length'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(140), nullable=False)
-    description = db.Column(db.Text, db.CheckConstraint('length(description) <= 2000'), default="")
+    description = db.Column(db.Text, default="")
     category = db.Column(db.String(60), nullable=False)
     condition = db.Column(db.String(20), nullable=False)
     price = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)

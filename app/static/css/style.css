@@ -155,10 +155,13 @@ input[type="search"]::-webkit-search-cancel-button {
     --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);       /* Primary reveals */
     --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);   /* Spring elements, badges */
     --ease-smooth:   cubic-bezier(0.32, 0.72, 0, 1);       /* Navigation, overlays */
+    --ease-out-expo: var(--ease-out);                      /* Alias — same curve as ease-out */
+    --ease-in:       cubic-bezier(0.4, 0, 1, 1);           /* Accelerating ease-in */
 
     /* Duration Scale */
     --duration-fast:   150ms;  /* Hover color, border states */
     --duration-mid:    250ms;  /* Button state changes */
+    --duration-normal: var(--duration-mid);                /* Alias for --duration-mid */
     --duration-slow:   350ms;  /* Card reveals, drawer slides */
     --duration-xslow:  500ms;  /* Page transitions, modal entrance */
 
@@ -198,10 +201,10 @@ input[type="search"]::-webkit-search-cancel-button {
     --color-ink-secondary:   #D6D3D1;  /* Stone-300 — readable on surface-raised (passes 4.5:1) */
     --color-ink-tertiary:    #87807B;  /* Stone-500 — timestamps, placeholders (readable on dark surfaces) */
     --color-primary:         #2DD4BF;  /* Teal-400 — lightened for contrast. NOTE: NEVER use with white text */
-    --color-primary-hover:   inherit;
+    --color-primary-hover:   #5EEAD4;  /* Teal-300 — lighter hover for dark surfaces */
     --color-primary-muted:   rgba(45, 212, 191, 0.15);
     --color-accent:          #F97316;  /* Orange-500 */
-    --color-accent-hover:    inherit;
+    --color-accent-hover:    #FB923C;  /* Orange-400 — lighter hover for dark surfaces */
     --color-accent-muted:    rgba(249, 115, 22, 0.15);
     --color-danger:          #F87171;  /* Red-400 */
     --color-danger-muted:    rgba(248, 113, 113, 0.15);
@@ -232,7 +235,14 @@ input[type="search"]::-webkit-search-cancel-button {
 [data-theme="dark"] .btn--accent:hover,
 [data-theme="dark"] .category-chip--active,
 [data-theme="dark"] .category-chip--active:hover,
-[data-theme="dark"] span.pagination__link {
+[data-theme="dark"] span.pagination__link,
+[data-theme="dark"] .btn--primary-signup,
+[data-theme="dark"] .filter-price-go,
+[data-theme="dark"] .segmented-control__btn--active,
+[data-theme="dark"] .condition-btn.active,
+[data-theme="dark"] .price-toggle-btn.active-paid,
+[data-theme="dark"] .pill-toggle__segment--active-paid,
+[data-theme="dark"] .mobile-tabs__item--sell .material-symbols-outlined {
     color: var(--color-bg) !important;
 }
 
@@ -5808,7 +5818,9 @@ body {
     box-shadow: var(--shadow-modal);
     z-index: var(--z-drawer);
     transform: translateX(-100%);
-    transition: transform var(--duration-slow) var(--ease-smooth);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform var(--duration-slow) var(--ease-smooth), visibility 0s linear var(--duration-slow);
     padding: var(--space-6) var(--space-6) var(--space-8);
     display: flex;
     flex-direction: column;
@@ -5816,6 +5828,9 @@ body {
 }
 .mobile-drawer--open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform var(--duration-slow) var(--ease-smooth);
 }
 .mobile-drawer__close-btn {
     position: absolute;
@@ -7240,12 +7255,15 @@ body {
     padding: var(--space-4);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-mid) var(--ease-out);
+    visibility: hidden;
+    transition: opacity var(--duration-mid) var(--ease-out), visibility 0s linear var(--duration-mid);
 }
 
 .modal-overlay.modal-overlay--open {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
+    transition: opacity var(--duration-mid) var(--ease-out);
 }
 
 .modal-card {
@@ -7297,6 +7315,9 @@ body {
     flex-direction: column;
     align-items: center;
     gap: var(--space-6);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .auth-header {

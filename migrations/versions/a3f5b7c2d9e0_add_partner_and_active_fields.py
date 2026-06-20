@@ -18,9 +18,9 @@ depends_on = None
 def upgrade():
     # User model alterations
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('role', sa.String(length=20), nullable=False, server_default='student'))
+        batch_op.add_column(sa.Column('role', sa.String(length=20), nullable=False, server_default=sa.text('student')))
         batch_op.add_column(sa.Column('partner_university', sa.String(length=100), nullable=True))
-        batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=False, server_default='1'))
+        batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('true')))
         batch_op.alter_column('phone_number',
                existing_type=sa.String(length=20),
                nullable=True)
@@ -29,8 +29,16 @@ def upgrade():
     with op.batch_alter_table('items', schema=None) as batch_op:
         batch_op.add_column(sa.Column('university_domain', sa.String(length=100), nullable=True))
 
-    # Data migration: copy university_domain from users to items
-    op.execute("UPDATE items SET university_domain = (SELECT university_domain FROM users WHERE users.id = items.seller_id)")
+    # Data migration: copy university_domain from users to items.
+    # The WHERE guard prevents NULLs if seller_id is missing or references a deleted user.
+    op.execute("""
+        UPDATE items
+        SET university_domain = (
+            SELECT university_domain FROM users WHERE users.id = items.seller_id
+        )
+        WHERE seller_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM users WHERE users.id = items.seller_id)
+    """)
 
 
 def downgrade():

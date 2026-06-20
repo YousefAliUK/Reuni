@@ -1,4 +1,5 @@
 from flask import current_app
+from markupsafe import escape
 from brevo import Brevo
 from brevo.transactional_emails import SendTransacEmailRequestSender, SendTransacEmailRequestToItem
 from brevo.core.api_error import ApiError
@@ -16,7 +17,7 @@ def wrap_in_brand_template(subject: str, to_name: str, inner_content_html: str) 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{subject}</title>
+    <title>{escape(subject)}</title>
     <style>
         body {{
             margin: 0;
@@ -199,8 +200,8 @@ def send_email(to_email: str, to_name: str, subject: str, html_content: str) -> 
         )
         return True
     except ApiError as e:
-        current_app.logger.error(f"Brevo API error sending email to {to_email}: {e}")
+        current_app.logger.error(f"Brevo API error sending email: {e}")
         return False
     except Exception as e:
-        current_app.logger.error(f"Unexpected error sending email to {to_email}: {e}")
+        current_app.logger.error(f"Unexpected error sending email: {e}")
         return False
