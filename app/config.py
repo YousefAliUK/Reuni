@@ -11,11 +11,18 @@ class Config:
     """Base configuration shared across all environments."""
     SECRET_KEY = os.environ.get("SECRET_KEY")
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        "sqlite:///" + os.path.join(basedir, "..", "instance", "unicycle.db"),
+    # Database Configuration
+    _db_url = os.environ.get("DATABASE_URL")
+    if _db_url and _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+        
+    SQLALCHEMY_DATABASE_URI = _db_url or (
+        "sqlite:///" + os.path.join(basedir, "..", "instance", "reuni.db")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Background Scheduler Config
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "true").lower() == "true"
 
     LATE_THRESHOLD_HOURS = 24
     AUTO_EXPIRY_HOURS = 72
@@ -40,7 +47,7 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
-    # Brevo configuration
+    # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL")
     MAIL_DEFAULT_SENDER = os.environ.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")

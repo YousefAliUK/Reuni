@@ -112,6 +112,17 @@ class TestRegister:
         }, follow_redirects=True)
         assert b"valid phone number" in resp.data
 
+    def test_register_name_too_long(self, client):
+        """Registration with a name longer than 80 characters should fail."""
+        resp = client.post("/auth/register", data={
+            "email": "newlongname@university.ac.uk",
+            "name": "a" * 81,
+            "phone_number": "07912345678",
+            "password": "StrongPass123",
+            "confirm_password": "StrongPass123",
+        }, follow_redirects=True)
+        assert b"Name must be 80 characters or fewer" in resp.data
+
 
 class TestLogin:
 

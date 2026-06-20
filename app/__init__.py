@@ -622,6 +622,16 @@ def create_app(config_class=None):
     from app.scheduler import init_scheduler
     init_scheduler(app)
 
+    # CLI command registration for external cron triggers
+    @app.cli.command("anonymise-expired-accounts")
+    def anonymise_expired_accounts_command():
+        """CLI command to trigger GDPR nightly deactivation anonymisation."""
+        from app.scheduler import anonymise_expired_accounts
+        from flask import current_app
+        current_app.logger.info("Starting CLI anonymise-expired-accounts task...")
+        anonymise_expired_accounts(current_app)
+        current_app.logger.info("CLI anonymise-expired-accounts task completed successfully.")
+
     # NOTE: Migrations must be run manually as a separate deploy step:
     # $ flask db upgrade
     # Do NOT run upgrade() here — it is unsafe in production with multiple

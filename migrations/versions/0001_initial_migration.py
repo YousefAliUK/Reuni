@@ -30,7 +30,7 @@ def upgrade():
         sa.Column('phone_number', sa.String(length=20), nullable=False),
         sa.Column('password_hash', sa.String(length=256), nullable=False),
         sa.Column('kg_saved_total', sa.Float(), nullable=True),
-        sa.Column('failed_login_attempts', sa.Integer(), server_default=sa.text('false'), nullable=False),
+        sa.Column('failed_login_attempts', sa.Integer(), server_default=sa.text('0'), nullable=False),
         sa.Column('locked_until', sa.DateTime(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id'),

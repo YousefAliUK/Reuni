@@ -47,13 +47,13 @@ class User(UserMixin, db.Model):
     phone_number = db.Column(db.String(20), unique=True, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     kg_saved_total = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
-    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default=sa.text('false'))
+    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default=sa.text('0'))
     locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
-    role = db.Column(db.String(20), nullable=False, default='student', server_default=sa.text('student'))
+    role = db.Column(db.String(20), nullable=False, default='student', server_default='student')
     partner_university = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, server_default=sa.text('true'))
     deletion_pending_until = db.Column(db.DateTime, nullable=True)

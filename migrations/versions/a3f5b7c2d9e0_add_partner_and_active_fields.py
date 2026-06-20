@@ -18,7 +18,7 @@ depends_on = None
 def upgrade():
     # User model alterations
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('role', sa.String(length=20), nullable=False, server_default=sa.text('student')))
+        batch_op.add_column(sa.Column('role', sa.String(length=20), nullable=False, server_default='student'))
         batch_op.add_column(sa.Column('partner_university', sa.String(length=100), nullable=True))
         batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('true')))
         batch_op.alter_column('phone_number',

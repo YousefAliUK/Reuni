@@ -70,6 +70,19 @@ def test_partner_registration_validation(client, app):
     )
     assert b"Passwords do not match." in resp.data
 
+    # Name too long (over 80 characters)
+    resp_name_too_long = client.post(
+        f"/auth/invite/{token}",
+        data={
+            "name": "a" * 81,
+            "email": "staff.member@brookes.ac.uk",
+            "password": "password123",
+            "confirm_password": "password123",
+        },
+        follow_redirects=True
+    )
+    assert b"Name must be 80 characters or fewer" in resp_name_too_long.data
+
 def test_partner_dashboard_scoping(client, app, db_session):
     """Test that the partner dashboard displays correct, scoped statistics."""
     with app.app_context():

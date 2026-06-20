@@ -79,6 +79,10 @@ def register():
             flash("All fields are required.", "danger")
             return redirect(url_for("auth.register"))
 
+        if len(name) > 80:
+            flash("Name must be 80 characters or fewer.", "danger")
+            return redirect(url_for("auth.register"))
+
         # Domain format validation
         domain = extract_university_domain(email)
         if domain is None:
@@ -419,6 +423,10 @@ def invite_register(token):
 
         if not name or not email or not password or not confirm_password:
             flash("All fields are required.", "danger")
+            return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
+
+        if len(name) > 80:
+            flash("Name must be 80 characters or fewer.", "danger")
             return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
 
         if password != confirm_password:

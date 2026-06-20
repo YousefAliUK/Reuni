@@ -62,21 +62,34 @@ def upgrade():
             'cancellation_records', ['other_party_id'], unique=False
         )
 
+    # Find actual foreign key constraint names dynamically to avoid crash on PostgreSQL
+    fkeys = inspector.get_foreign_keys('cancellation_records')
+    fk_names = {
+        'item_id': None,
+        'cancelled_by_id': None,
+        'other_party_id': None
+    }
+    for fk in fkeys:
+        cols = fk['constrained_columns']
+        name = fk['name']
+        if cols == ['item_id']:
+            fk_names['item_id'] = name
+        elif cols == ['cancelled_by_id']:
+            fk_names['cancelled_by_id'] = name
+        elif cols == ['other_party_id']:
+            fk_names['other_party_id'] = name
+
     # ── Re-declare FK constraints with explicit ON DELETE RESTRICT ────────
     with op.batch_alter_table('cancellation_records', schema=None, naming_convention=naming_convention) as batch_op:
-        # Drop existing anonymous FK constraints using names derived from naming_convention.
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_item_id_items'),
-            type_='foreignkey'
-        )
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_cancelled_by_id_users'),
-            type_='foreignkey'
-        )
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_other_party_id_users'),
-            type_='foreignkey'
-        )
+        # Drop existing FK constraints using actual inspected names, falling back to naming convention names if needed.
+        item_fk = fk_names['item_id'] or batch_op.f('fk_cancellation_records_item_id_items')
+        cancelled_by_fk = fk_names['cancelled_by_id'] or batch_op.f('fk_cancellation_records_cancelled_by_id_users')
+        other_party_fk = fk_names['other_party_id'] or batch_op.f('fk_cancellation_records_other_party_id_users')
+
+        batch_op.drop_constraint(item_fk, type_='foreignkey')
+        batch_op.drop_constraint(cancelled_by_fk, type_='foreignkey')
+        batch_op.drop_constraint(other_party_fk, type_='foreignkey')
+
         # Re-create with explicit RESTRICT.
         batch_op.create_foreign_key(
             batch_op.f('fk_cancellation_records_item_id_items'),
@@ -96,20 +109,34 @@ def upgrade():
 
 
 def downgrade():
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    fkeys = inspector.get_foreign_keys('cancellation_records')
+    fk_names = {
+        'item_id': None,
+        'cancelled_by_id': None,
+        'other_party_id': None
+    }
+    for fk in fkeys:
+        cols = fk['constrained_columns']
+        name = fk['name']
+        if cols == ['item_id']:
+            fk_names['item_id'] = name
+        elif cols == ['cancelled_by_id']:
+            fk_names['cancelled_by_id'] = name
+        elif cols == ['other_party_id']:
+            fk_names['other_party_id'] = name
+
     # Restore FK constraints without ON DELETE clause and drop indexes.
     with op.batch_alter_table('cancellation_records', schema=None, naming_convention=naming_convention) as batch_op:
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_other_party_id_users'),
-            type_='foreignkey'
-        )
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_cancelled_by_id_users'),
-            type_='foreignkey'
-        )
-        batch_op.drop_constraint(
-            batch_op.f('fk_cancellation_records_item_id_items'),
-            type_='foreignkey'
-        )
+        item_fk = fk_names['item_id'] or batch_op.f('fk_cancellation_records_item_id_items')
+        cancelled_by_fk = fk_names['cancelled_by_id'] or batch_op.f('fk_cancellation_records_cancelled_by_id_users')
+        other_party_fk = fk_names['other_party_id'] or batch_op.f('fk_cancellation_records_other_party_id_users')
+
+        batch_op.drop_constraint(other_party_fk, type_='foreignkey')
+        batch_op.drop_constraint(cancelled_by_fk, type_='foreignkey')
+        batch_op.drop_constraint(item_fk, type_='foreignkey')
+
         batch_op.create_foreign_key(
             batch_op.f('fk_cancellation_records_item_id_items'),
             'items', ['item_id'], ['id']
