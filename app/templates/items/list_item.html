@@ -15,7 +15,7 @@
     <!-- FORM CARD -->
     <div class="listing-form-card">
         
-        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form">
+        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Photo Upload zone (First on mobile via CSS order) -->
@@ -421,6 +421,62 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = 'Listing<span class="warning-pulse">...</span>';
             });
+        });
+
+        // Reset form and styling state on pageshow to clear browser-restored/cached inputs on back-navigation or reloads
+        window.addEventListener('pageshow', function(event) {
+            setTimeout(function() {
+                form.reset();
+                
+                // Re-enable and restore submit button states
+                const submitBtns = form.querySelectorAll('button[type="submit"]');
+                submitBtns.forEach(btn => {
+                    btn.disabled = false;
+                    btn.innerHTML = 'List this item';
+                });
+                
+                // Reset text field character counters
+                const titleCounter = document.getElementById('title-char-counter');
+                if (titleCounter) titleCounter.textContent = '0/80';
+                const descCounter = document.getElementById('desc-char-counter');
+                if (descCounter) descCounter.textContent = '0/2000';
+                
+                // Hide dynamic live eco preview
+                const liveEcoPreview = document.getElementById('live-eco-preview');
+                if (liveEcoPreview) liveEcoPreview.classList.remove('eco-preview-banner--visible');
+                
+                // Reset photo upload area preview state
+                const photoPreview = document.getElementById('photo-preview');
+                if (photoPreview) {
+                    photoPreview.src = '';
+                    photoPreview.style.display = 'none';
+                }
+                const removePhotoBtn = document.getElementById('remove-photo-btn');
+                if (removePhotoBtn) removePhotoBtn.style.display = 'none';
+                const uploadPlaceholder = document.getElementById('upload-placeholder');
+                if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+                
+                // Reset segmented condition buttons
+                const conditionBtns = document.querySelectorAll('.condition-btn');
+                conditionBtns.forEach(b => b.classList.remove('active'));
+                const conditionSelect = document.getElementById('condition');
+                if (conditionSelect) conditionSelect.value = '';
+                
+                // Reset segmented price switcher
+                const isFreeCheckbox = document.getElementById('is_free');
+                if (isFreeCheckbox) isFreeCheckbox.checked = true;
+                const priceToggleFree = document.getElementById('price-toggle-free');
+                const priceTogglePaid = document.getElementById('price-toggle-paid');
+                const priceInputContainer = document.getElementById('price-input-container');
+                const priceInput = document.getElementById('price');
+                if (priceToggleFree && priceTogglePaid && priceInputContainer && priceInput) {
+                    priceToggleFree.classList.add('active-free');
+                    priceTogglePaid.classList.remove('active-paid');
+                    priceInputContainer.style.display = 'none';
+                    priceInput.value = '';
+                    priceInput.required = false;
+                }
+            }, 0);
         });
     });
 </script>

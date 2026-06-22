@@ -351,12 +351,12 @@
                 <div style="display: flex; align-items: center; gap: var(--space-2);">
                     <div style="position: relative; flex: 1;">
                         <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
-                        <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
+                        <input type="number" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ min_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
                     </div>
                     <span style="color: var(--color-ink-tertiary); font-size: var(--type-small);">to</span>
                     <div style="position: relative; flex: 1;">
                         <span style="position: absolute; left: var(--space-2); top: 50%; transform: translateY(-50%); font-size: var(--type-small); color: var(--color-ink-secondary);">£</span>
-                        <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
+                        <input type="number" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ max_price }}" style="width: 100%; height: 40px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); padding-left: 20px; font-size: var(--type-small); box-sizing: border-box;">
                     </div>
                 </div>
             </div>
@@ -614,6 +614,7 @@
         function openFilterDrawer() {
             if (filterDrawer && filterBackdrop) {
                 filterBackdrop.classList.add('mobile-drawer-backdrop--open');
+                filterDrawer.classList.add('mobile-drawer--open');
                 filterDrawer.style.transform = 'translateY(0)';
             }
         }
@@ -621,6 +622,7 @@
         function closeFilterDrawer() {
             if (filterDrawer && filterBackdrop) {
                 filterBackdrop.classList.remove('mobile-drawer-backdrop--open');
+                filterDrawer.classList.remove('mobile-drawer--open');
                 filterDrawer.style.transform = 'translateY(100%)';
             }
         }
@@ -639,7 +641,10 @@
                     if (this.value === 'paid') {
                         if (mobilePriceRange) mobilePriceRange.style.display = 'block';
                     } else {
-                        if (mobilePriceRange) mobilePriceRange.style.display = 'none';
+                        if (mobilePriceRange) {
+                            mobilePriceRange.style.display = 'none';
+                            mobilePriceRange.querySelectorAll('input').forEach(input => input.value = '');
+                        }
                     }
                 });
             });

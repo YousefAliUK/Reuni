@@ -5,6 +5,7 @@
 
 /* ─── Custom Properties ─── */
 :root {
+    color-scheme: light;
     /* --- Color Palette (Light Mode) --- */
     /* Backgrounds */
     --color-bg:              #FAF7F2;  /* Warm Canvas — paper-like background */
@@ -183,6 +184,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* --- Dark Mode Overrides --- */
 [data-theme="dark"] {
+    color-scheme: dark;
     --color-bg:              #161514;   /* Tailored Organic Warm Charcoal (No gamer vibes) */
     --color-hero-overlay-desktop: linear-gradient(90deg, rgba(22, 21, 20, 0.98) 0%, rgba(22, 21, 20, 0.85) 50%, rgba(22, 21, 20, 0.35) 100%);
     --color-hero-overlay-mobile: linear-gradient(180deg, rgba(22, 21, 20, 0.98) 0%, rgba(22, 21, 20, 0.85) 70%, rgba(22, 21, 20, 0.6) 100%);
@@ -333,6 +335,18 @@ img {
     color: #fff;
 }
 
+/* --- Global Inputs & Placeholders theme override --- */
+input, select, textarea {
+    color: var(--color-ink-primary);
+}
+input::placeholder, textarea::placeholder {
+    color: var(--color-ink-tertiary);
+    opacity: 1;
+}
+/* Ensure number inputs (like min/max price range fields) explicitly inherit theme colors in dark mode */
+input[type="number"] {
+    color: var(--color-ink-primary) !important;
+}
 
 /* ─── Focus Indicators (Accessibility) ─── */
 :focus-visible {
@@ -5908,6 +5922,12 @@ body {
     text-decoration: none;
     transition: background var(--duration-fast), color var(--duration-fast);
     box-sizing: border-box;
+    /* Reset button defaults in case this class is used on a button element */
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
 }
 .mobile-drawer__link:hover,
 .mobile-drawer__link--active {
@@ -6487,6 +6507,9 @@ body {
 /* Executive dashboard spacing refinements */
 .dashboard-tab-content {
     margin-bottom: var(--space-10) !important;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
 }
 
 .dashboard-tab-content:not(:last-of-type) {
@@ -8783,14 +8806,112 @@ body {
     padding-left: 32px !important;
 }
 
+/* ─── Mobile Viewport Layout Fixes & Enhancements ─── */
 
+@media (max-width: 480px) {
+    /* OTP inputs responsive sizes */
+    .otp-digit-box {
+        width: 40px !important;
+        height: 52px !important;
+        font-size: 20px !important;
+    }
+    .otp-inputs-grid {
+        gap: var(--space-1) !important;
+    }
+    .auth-card {
+        padding: var(--space-4) !important;
+    }
+}
 
+@media (max-width: 768px) {
+    /* Center cards & prevent text container overflow on mobile/iPhone SE */
+    .personal-impact-banner,
+    .campus-momentum-card {
+        padding: var(--space-4) !important;
+        gap: var(--space-3) !important;
+    }
+    .personal-impact-banner .banner-text,
+    .campus-momentum-card .banner-text {
+        min-width: 0 !important;
+    }
 
+    /* Dashboard Tabs horizontal scroll - Block layout overrides flex to allow width: max-content expansion */
+    .dashboard-tabs-container {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        margin-left: calc(-1 * var(--container-pad-x)) !important;
+        margin-right: calc(-1 * var(--container-pad-x)) !important;
+        padding-left: var(--container-pad-x) !important;
+        padding-right: var(--container-pad-x) !important;
+        scrollbar-width: none; /* Hide scrollbar Firefox */
+    }
+    .dashboard-tabs-container::-webkit-scrollbar {
+        display: none; /* Hide scrollbar Chrome/Safari */
+    }
+    .dashboard-tabs {
+        width: max-content !important;
+        min-width: 100% !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+    }
+    .dashboard-tab {
+        flex: 0 0 auto !important;
+    }
 
-
-
-
-
-
+    /* Dashboard Overview Tab Horizontal swipe carousels */
+    .dashboard-wrapper--overview .claims-grid,
+    .dashboard-wrapper--overview .listings-grid-blueprint,
+    .dashboard-wrapper--overview .purchases-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: var(--space-4) !important;
+        padding-bottom: var(--space-2) !important;
+        margin-left: calc(-1 * var(--container-pad-x)) !important;
+        margin-right: calc(-1 * var(--container-pad-x)) !important;
+        padding-left: var(--container-pad-x) !important;
+        padding-right: var(--container-pad-x) !important;
+        scrollbar-width: none;
+    }
+    .dashboard-wrapper--overview .claims-grid::-webkit-scrollbar,
+    .dashboard-wrapper--overview .listings-grid-blueprint::-webkit-scrollbar,
+    .dashboard-wrapper--overview .purchases-list::-webkit-scrollbar {
+        display: none;
+    }
+    .dashboard-wrapper--overview .claim-card,
+    .dashboard-wrapper--overview .dashboard-listing-card,
+    .dashboard-wrapper--overview .purchase-row {
+        flex: 0 0 280px !important;
+        scroll-snap-align: start;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Purchase-row responsive transformation inside the horizontal scroll overview */
+    .dashboard-wrapper--overview .purchase-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--space-3) !important;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4) !important;
+    }
+    .dashboard-wrapper--overview .purchase-row__main {
+        width: 100%;
+    }
+    .dashboard-wrapper--overview .purchase-row__metrics {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        border-top: 1px solid var(--color-border) !important;
+        padding-top: var(--space-2) !important;
+        margin-top: var(--space-2) !important;
+    }
+}
 
 
