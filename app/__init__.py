@@ -202,24 +202,25 @@ def create_app(config_class=None):
             query = query.filter(Item.is_free == False)
 
         # Apply Price Range Filters (Min & Max)
-        if min_price:
-            try:
-                val = float(min_price)
-                import math
-                if math.isnan(val) or math.isinf(val):
-                    raise ValueError
-                query = query.filter(Item.price >= val)
-            except ValueError:
-                pass
-        if max_price:
-            try:
-                val = float(max_price)
-                import math
-                if math.isnan(val) or math.isinf(val):
-                    raise ValueError
-                query = query.filter(Item.price <= val)
-            except ValueError:
-                pass
+        if price_type != "free":
+            if min_price:
+                try:
+                    val = float(min_price)
+                    import math
+                    if math.isnan(val) or math.isinf(val):
+                        raise ValueError
+                    query = query.filter(Item.price >= val)
+                except ValueError:
+                    pass
+            if max_price:
+                try:
+                    val = float(max_price)
+                    import math
+                    if math.isnan(val) or math.isinf(val):
+                        raise ValueError
+                    query = query.filter(Item.price <= val)
+                except ValueError:
+                    pass
 
         # Apply Condition Filter
         if active_condition:
@@ -612,6 +613,14 @@ def create_app(config_class=None):
         )
         if not app.debug and not app.testing:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+        # Disable Back-Forward Cache (bfcache) globally for dynamic HTML pages to prevent
+        # stale theme rendering (flashes) and cached inputs on back/forward navigation.
+        if response.mimetype == "text/html":
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
         return response
 
     # Create tables directly for testing (in-memory DB); otherwise use migrations

@@ -39,7 +39,7 @@
                     Saved by Brookes campus
                 </h2>
                 <p class="banner-sub" style="margin-top: 2px; margin-bottom: 0;">Total circular economy impact</p>
-                <div class="campus-sub-row" style="margin-top: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-2); font-size: 12px; color: var(--color-ink-secondary); display: flex; align-items: center; gap: 4px;">
+                <div class="campus-sub-row" style="margin-top: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-2); font-size: 12px; color: var(--color-ink-secondary); display: block;">
                     Powering sustainability with <strong class="font-mono" style="color: var(--color-success);">{{ campus_total_users or 0 }}</strong> active students.
                 </div>
             </div>
@@ -253,6 +253,8 @@
 {% block scripts %}
 <script>
     function switchTab(tab) {
+        const wrapper = document.querySelector('.dashboard-wrapper');
+        
         // Reset all tabs
         document.querySelectorAll('.dashboard-tab').forEach(btn => {
             btn.classList.remove('active-tab');
@@ -268,6 +270,7 @@
         
         // Activate current tab
         if (tab === 'overview') {
+            if (wrapper) wrapper.classList.add('dashboard-wrapper--overview');
             document.getElementById('tab-btn-overview').classList.add('active-tab');
             document.getElementById('tab-content-claims').style.display = 'flex';
             document.getElementById('tab-content-listings').style.display = 'flex';
@@ -276,15 +279,18 @@
             document.querySelectorAll('.dashboard-section-header').forEach(header => {
                 header.style.display = 'block';
             });
-        } else if (tab === 'claims') {
-            document.getElementById('tab-btn-claims').classList.add('active-tab');
-            document.getElementById('tab-content-claims').style.display = 'flex';
-        } else if (tab === 'listings') {
-            document.getElementById('tab-btn-listings').classList.add('active-tab');
-            document.getElementById('tab-content-listings').style.display = 'flex';
-        } else if (tab === 'purchases') {
-            document.getElementById('tab-btn-purchases').classList.add('active-tab');
-            document.getElementById('tab-content-purchases').style.display = 'flex';
+        } else {
+            if (wrapper) wrapper.classList.remove('dashboard-wrapper--overview');
+            if (tab === 'claims') {
+                document.getElementById('tab-btn-claims').classList.add('active-tab');
+                document.getElementById('tab-content-claims').style.display = 'flex';
+            } else if (tab === 'listings') {
+                document.getElementById('tab-btn-listings').classList.add('active-tab');
+                document.getElementById('tab-content-listings').style.display = 'flex';
+            } else if (tab === 'purchases') {
+                document.getElementById('tab-btn-purchases').classList.add('active-tab');
+                document.getElementById('tab-content-purchases').style.display = 'flex';
+            }
         }
     }
 

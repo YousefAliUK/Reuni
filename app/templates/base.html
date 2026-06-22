@@ -406,6 +406,12 @@
 
             const currentTheme = lsGet('theme') || 'light';
             updateThemeUI(currentTheme);
+
+            // Re-apply theme state on pageshow (ensures bfcache/back-button recoveries sync correctly)
+            window.addEventListener('pageshow', () => {
+                const current = lsGet('theme') || 'light';
+                updateThemeUI(current);
+            });
             
             if (themeToggle) {
                 themeToggle.addEventListener('click', () => {
