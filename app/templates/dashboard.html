@@ -100,7 +100,7 @@
                     <article class="claim-card">
                         <div class="claim-card__main">
                             {% if item.image_filename %}
-                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="claim-card__thumb">
+                                <img src="{{ item.image_url }}" alt="" class="claim-card__thumb">
                             {% else %}
                                 <div class="claim-card__thumb-fallback">
                                     <span class="material-symbols-outlined" aria-hidden="true">image</span>
@@ -150,7 +150,7 @@
                     <article class="listing-card dashboard-listing-card {% if item.is_sold %}listing-card--sold{% endif %}">
                         <div class="listing-card__img-wrap">
                             {% if item.image_filename %}
-                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="listing-card__img">
+                                <img src="{{ item.image_url }}" alt="" class="listing-card__img">
                             {% else %}
                                 <div class="listing-card__img-fallback">
                                     <span class="material-symbols-outlined" aria-hidden="true">image</span>
@@ -215,7 +215,7 @@
                     <div class="purchase-row">
                         <div class="purchase-row__main">
                             {% if item.image_filename %}
-                                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="purchase-row__thumb">
+                                <img src="{{ item.image_url }}" alt="" class="purchase-row__thumb">
                             {% else %}
                                 <div class="purchase-row__thumb-fallback">
                                     <span class="material-symbols-outlined" aria-hidden="true">image</span>

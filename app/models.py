@@ -157,6 +157,22 @@ class Item(db.Model):
         "User", foreign_keys=[buyer_id], backref="purchases", lazy=True
     )
 
+    @property
+    def image_url(self):
+        """Return the URL to access the item's image."""
+        if not self.image_filename:
+            return None
+        
+        from flask import current_app, url_for
+        
+        storage_provider = current_app.config.get("STORAGE_PROVIDER", "local")
+        
+        if storage_provider == "r2":
+            r2_public_url = current_app.config.get("CF_R2_PUBLIC_URL", "").rstrip("/")
+            return f"{r2_public_url}/{self.image_filename}"
+                
+        return url_for("static", filename=f"uploads/{self.image_filename}")
+
     def __repr__(self):
         return f"<Item {self.title}>"
 

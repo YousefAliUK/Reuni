@@ -52,6 +52,14 @@ class Config:
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL")
     MAIL_DEFAULT_SENDER = os.environ.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
 
+    # Cloudflare R2 Configuration
+    STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "local")
+    CF_R2_ACCESS_KEY_ID = os.environ.get("CF_R2_ACCESS_KEY_ID")
+    CF_R2_SECRET_ACCESS_KEY = os.environ.get("CF_R2_SECRET_ACCESS_KEY")
+    CF_R2_ENDPOINT_URL = os.environ.get("CF_R2_ENDPOINT_URL")
+    CF_R2_BUCKET_NAME = os.environ.get("CF_R2_BUCKET_NAME")
+    CF_R2_PUBLIC_URL = os.environ.get("CF_R2_PUBLIC_URL")
+
 
 class DevelopmentConfig(Config):
     """Development-specific settings."""
@@ -68,6 +76,7 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SESSION_COOKIE_SECURE = False
     RATELIMIT_ENABLED = False
+    STORAGE_PROVIDER = "local"
 
     
     # For testing, we also allow university.ac.uk so existing tests pass
@@ -98,3 +107,14 @@ class ProductionConfig(Config):
                 "will be broken without it. Set BASE_URL=https://your-domain.com in your "
                 "Railway environment variables."
             )
+        if cls.STORAGE_PROVIDER == "r2":
+            missing_r2_vars = [
+                var for var in ["CF_R2_ACCESS_KEY_ID", "CF_R2_SECRET_ACCESS_KEY", 
+                                "CF_R2_ENDPOINT_URL", "CF_R2_BUCKET_NAME", "CF_R2_PUBLIC_URL"]
+                if not getattr(cls, var)
+            ]
+            if missing_r2_vars:
+                raise RuntimeError(
+                    f"R2 storage is enabled but the following environment variables are missing: "
+                    f"{', '.join(missing_r2_vars)}."
+                )

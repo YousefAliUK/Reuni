@@ -186,7 +186,7 @@
                     <!-- Image wrapper -->
                     <div class="listing-card__img-wrap">
                         {% if item.image_filename %}
-                            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="listing-card__img" loading="lazy">
+                            <img src="{{ item.image_url }}" alt="{{ item.title }}" class="listing-card__img" loading="lazy">
                         {% else %}
                             <div class="listing-card__img-fallback">
                                 <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
