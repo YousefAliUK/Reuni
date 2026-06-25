@@ -20,7 +20,7 @@
         <div class="detail-photo-pane">
             <div class="detail-photo">
                 {% if item.image_filename %}
-                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Photo of {{ item.title }}" class="detail-photo__img">
+                    <img src="{{ item.image_url }}" alt="Photo of {{ item.title }}" class="detail-photo__img">
                 {% else %}
                     <div class="detail-photo__fallback">
                         <span class="material-symbols-outlined" aria-hidden="true">image</span>

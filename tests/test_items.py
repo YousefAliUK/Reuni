@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.models import Item, User, CATEGORIES, CATEGORY_WEIGHTS
 from tests.conftest import make_test_image
+from unittest.mock import patch, MagicMock
 
 
 class TestItemDetail:
@@ -302,3 +303,89 @@ class TestNaNPriceSubmissions:
         """Search filters with NaN or Inf prices should ignore the filter cleanly."""
         resp_nan = client.get("/?min_price=nan&max_price=inf")
         assert resp_nan.status_code == 200
+
+
+class TestCloudflareR2Integration:
+
+    @patch("boto3.client")
+    def test_save_image_to_r2(self, mock_boto_client, app):
+        """When STORAGE_PROVIDER is r2, _save_image should upload the file to Cloudflare R2."""
+        from app.routes.items import _save_image
+        from tests.conftest import make_test_image
+        from werkzeug.datastructures import FileStorage
+        import io
+        from botocore.config import Config
+        
+        # Configure app for R2
+        app.config["STORAGE_PROVIDER"] = "r2"
+        app.config["CF_R2_ACCESS_KEY_ID"] = "test-key"
+        app.config["CF_R2_SECRET_ACCESS_KEY"] = "test-secret"
+        app.config["CF_R2_ENDPOINT_URL"] = "https://test-endpoint.com"
+        app.config["CF_R2_BUCKET_NAME"] = "test-bucket"
+        app.config["CF_R2_PUBLIC_URL"] = "https://cdn.test.com"
+
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+
+        # Prepare dummy file storage upload
+        file_io = make_test_image()
+        file_storage = FileStorage(stream=file_io, filename="my_test_image.jpg", content_type="image/jpeg")
+
+        with app.app_context():
+            filename = _save_image(file_storage)
+            
+            assert filename is not None
+            assert filename.endswith(".webp")
+            
+            # Verify boto3.client('s3', ...) was initialized correctly
+            # We fetch call arguments to check custom configuration
+            mock_boto_client.assert_called_once()
+            called_kwargs = mock_boto_client.call_args[1]
+            assert called_kwargs["endpoint_url"] == "https://test-endpoint.com"
+            assert called_kwargs["aws_access_key_id"] == "test-key"
+            assert called_kwargs["aws_secret_access_key"] == "test-secret"
+            assert called_kwargs["config"].signature_version == "s3v4"
+            
+            # Verify upload_fileobj was called on the mock client
+            mock_s3.upload_fileobj.assert_called_once()
+            call_args = mock_s3.upload_fileobj.call_args[0]
+            # First arg: buffer
+            assert isinstance(call_args[0], io.BytesIO)
+            # Second arg: bucket name
+            assert call_args[1] == "test-bucket"
+            # Third arg: filename
+            assert call_args[2] == filename
+            
+            # Verify content-type was passed correctly in ExtraArgs
+            kwargs = mock_s3.upload_fileobj.call_args[1]
+            assert kwargs["ExtraArgs"]["ContentType"] == "image/webp"
+
+    @patch("boto3.client")
+    def test_delete_image_from_r2(self, mock_boto_client, app):
+        """When STORAGE_PROVIDER is r2, _delete_image should delete user uploads from R2."""
+        from app.routes.items import _delete_image
+        
+        app.config["STORAGE_PROVIDER"] = "r2"
+        app.config["CF_R2_ACCESS_KEY_ID"] = "test-key"
+        app.config["CF_R2_SECRET_ACCESS_KEY"] = "test-secret"
+        app.config["CF_R2_ENDPOINT_URL"] = "https://test-endpoint.com"
+        app.config["CF_R2_BUCKET_NAME"] = "test-bucket"
+
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+
+        with app.app_context():
+            # 1. Deleting a user-uploaded image should trigger R2 API call
+            _delete_image("uuid_filename.webp")
+            mock_s3.delete_object.assert_called_once_with(
+                Bucket="test-bucket",
+                Key="uuid_filename.webp"
+            )
+            
+            # 2. Deleting a seed image should also trigger R2 API call in R2 mode
+            mock_s3.reset_mock()
+            _delete_image("seed_image.webp")
+            mock_s3.delete_object.assert_called_once_with(
+                Bucket="test-bucket",
+                Key="seed_image.webp"
+            )

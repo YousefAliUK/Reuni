@@ -47,6 +47,96 @@ CATEGORY_COLOURS = {
 }
 
 
+def cleanup_r2_uploads():
+    """Delete all listing images from the Cloudflare R2 bucket."""
+    import boto3
+    from botocore.config import Config
+    try:
+        s3 = boto3.client(
+            "s3",
+            endpoint_url=app.config["CF_R2_ENDPOINT_URL"],
+            aws_access_key_id=app.config["CF_R2_ACCESS_KEY_ID"],
+            aws_secret_access_key=app.config["CF_R2_SECRET_ACCESS_KEY"],
+            config=Config(signature_version="s3v4")
+        )
+        bucket_name = app.config["CF_R2_BUCKET_NAME"]
+        
+        # Paginate through all objects in the bucket
+        paginator = s3.get_paginator('list_objects_v2')
+        pages = paginator.paginate(Bucket=bucket_name)
+        
+        delete_keys = []
+        for page in pages:
+            if 'Contents' in page:
+                for obj in page['Contents']:
+                    key = obj['Key']
+                    # Delete files matching our listing filename conventions:
+                    # 1. seed_*.webp
+                    # 2. uuid.webp (32 hex characters + .webp)
+                    is_seed = key.startswith("seed_") and key.endswith(".webp")
+                    is_uuid = False
+                    if key.endswith(".webp"):
+                        base = key[:-5]
+                        if len(base) == 32:
+                            try:
+                                int(base, 16)
+                                is_uuid = True
+                            except ValueError:
+                                pass
+                    
+                    if is_seed or is_uuid:
+                        delete_keys.append({'Key': key})
+        
+        if delete_keys:
+            print(f"  Deleting {len(delete_keys)} objects from Cloudflare R2...")
+            # boto3 delete_objects can delete up to 1000 keys at once
+            for i in range(0, len(delete_keys), 1000):
+                chunk = delete_keys[i:i+1000]
+                s3.delete_objects(
+                    Bucket=bucket_name,
+                    Delete={'Objects': chunk}
+                )
+            print("  Cloudflare R2 cleanup complete.")
+        else:
+            print("  No listing images found in Cloudflare R2 to clean up.")
+            
+    except Exception as e:
+        print(f"  [WARN] Failed to clean up Cloudflare R2 bucket: {e}")
+
+
+def _save_seed_image(img, filename):
+    """Save a seed image locally or upload to Cloudflare R2 if configured."""
+    storage_provider = app.config.get("STORAGE_PROVIDER", "local")
+    if storage_provider == "r2":
+        import io
+        import boto3
+        from botocore.config import Config
+        try:
+            buffer = io.BytesIO()
+            img.save(buffer, "WEBP", quality=80)
+            buffer.seek(0)
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=app.config["CF_R2_ENDPOINT_URL"],
+                aws_access_key_id=app.config["CF_R2_ACCESS_KEY_ID"],
+                aws_secret_access_key=app.config["CF_R2_SECRET_ACCESS_KEY"],
+                config=Config(signature_version="s3v4")
+            )
+            s3.upload_fileobj(
+                buffer,
+                app.config["CF_R2_BUCKET_NAME"],
+                filename,
+                ExtraArgs={"ContentType": "image/webp"}
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to upload seed image {filename} to Cloudflare R2"
+            ) from e
+    else:
+        dest_path = os.path.join(UPLOAD_DIR, filename)
+        img.save(dest_path, "WEBP", quality=80)
+
+
 def make_placeholder(category, title):
     """Generate a simple coloured placeholder image for a given category."""
     bg, fg = CATEGORY_COLOURS.get(category, ("#64748b", "#ffffff"))
@@ -64,8 +154,8 @@ def make_placeholder(category, title):
     short_title = title if len(title) <= 30 else title[:27] + "…"
     draw.text((400, 320), short_title, fill=fg, font=font_small, anchor="mm")
 
-    filename = f"{uuid.uuid4().hex}.webp"
-    img.save(os.path.join(UPLOAD_DIR, filename), "WEBP", quality=80)
+    filename = f"seed_{uuid.uuid4().hex}.webp"
+    _save_seed_image(img, filename)
     return filename
 
 
@@ -100,9 +190,8 @@ def copy_seed_image(source_filename, category, title):
         clean_img = PILImage.new(img.mode, img.size)
         clean_img.putdata(list(img.getdata()))
 
-        new_filename = f"{uuid.uuid4().hex}.webp"
-        dest_path = os.path.join(UPLOAD_DIR, new_filename)
-        clean_img.save(dest_path, "WEBP", quality=80)
+        new_filename = f"seed_{uuid.uuid4().hex}.webp"
+        _save_seed_image(clean_img, new_filename)
         return new_filename
     except Exception as e:
         print(f"  [ERROR] Failed to process seed image {source_filename}: {e} — using placeholder.")
@@ -885,9 +974,11 @@ def seed():
         print("Creating all tables...")
         db.create_all()
 
-        # Clean up existing files in the uploads folder
+        # Clean up existing files in the uploads folder or R2 bucket
         print("Cleaning up uploads directory...")
-        if os.path.exists(UPLOAD_DIR):
+        if app.config.get("STORAGE_PROVIDER", "local") == "r2":
+            cleanup_r2_uploads()
+        elif os.path.exists(UPLOAD_DIR):
             for filename in os.listdir(UPLOAD_DIR):
                 file_path = os.path.join(UPLOAD_DIR, filename)
                 try:

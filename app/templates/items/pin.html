@@ -41,7 +41,7 @@
         <!-- Context thumb -->
         <div style="display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-6);">
             {% if item.image_filename %}
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-md);">
+                <img src="{{ item.image_url }}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-md);">
             {% else %}
                 <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary);">image</span>
             {% endif %}

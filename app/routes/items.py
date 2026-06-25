@@ -72,17 +72,70 @@ def _save_image(file_storage):
     clean_img.putdata(list(img.getdata()))
 
     filename = f"{uuid.uuid4().hex}.webp"
-    upload_dir = os.path.join(current_app.static_folder, "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    clean_img.save(os.path.join(upload_dir, filename), "WEBP", quality=80)
+    
+    storage_provider = current_app.config.get("STORAGE_PROVIDER", "local")
+    if storage_provider == "r2":
+        import io
+        import boto3
+        from botocore.config import Config
+        try:
+            buffer = io.BytesIO()
+            clean_img.save(buffer, "WEBP", quality=80)
+            buffer.seek(0)
 
-    return filename
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=current_app.config["CF_R2_ENDPOINT_URL"],
+                aws_access_key_id=current_app.config["CF_R2_ACCESS_KEY_ID"],
+                aws_secret_access_key=current_app.config["CF_R2_SECRET_ACCESS_KEY"],
+                config=Config(signature_version="s3v4")
+            )
+            s3.upload_fileobj(
+                buffer,
+                current_app.config["CF_R2_BUCKET_NAME"],
+                filename,
+                ExtraArgs={"ContentType": "image/webp"}
+            )
+            return filename
+        except Exception as e:
+            current_app.logger.error(f"Failed to upload image to Cloudflare R2: {e}")
+            return None
+    else:
+        upload_dir = os.path.join(current_app.static_folder, "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        try:
+            clean_img.save(os.path.join(upload_dir, filename), "WEBP", quality=80)
+            return filename
+        except Exception as e:
+            current_app.logger.error(f"Failed to save image locally: {e}")
+            return None
 
 
 def _delete_image(filename):
-    """Remove an uploaded image from disk."""
+    """Remove an uploaded image from storage (local or R2)."""
     if not filename:
         return
+    
+    storage_provider = current_app.config.get("STORAGE_PROVIDER", "local")
+    if storage_provider == "r2":
+        import boto3
+        from botocore.config import Config
+        try:
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=current_app.config["CF_R2_ENDPOINT_URL"],
+                aws_access_key_id=current_app.config["CF_R2_ACCESS_KEY_ID"],
+                aws_secret_access_key=current_app.config["CF_R2_SECRET_ACCESS_KEY"],
+                config=Config(signature_version="s3v4")
+            )
+            s3.delete_object(
+                Bucket=current_app.config["CF_R2_BUCKET_NAME"],
+                Key=filename
+            )
+        except Exception as e:
+            current_app.logger.error(f"Failed to delete image from Cloudflare R2: {e}")
+        return
+
     path = os.path.join(current_app.static_folder, "uploads", filename)
     if os.path.isfile(path):
         os.remove(path)
@@ -192,6 +245,12 @@ def list_item():
             db.session.commit()
         except Exception as e:
             db.session.rollback()
+            try:
+                _delete_image(image_filename)
+            except Exception as cleanup_err:
+                current_app.logger.warning(
+                    f"Failed to clean up image after list_item rollback: {cleanup_err}"
+                )
             current_app.logger.error(f"Database error during list_item: {e}")
             flash("A database error occurred. Your item could not be listed. Please try again.", "danger")
             return redirect(url_for("items.list_item"))
@@ -291,15 +350,24 @@ def edit_item(item_id):
 
         try:
             db.session.commit()
-            if old_image_filename:
-                _delete_image(old_image_filename)
         except Exception as e:
-            if new_image_filename:
-                _delete_image(new_image_filename)
             db.session.rollback()
+            if new_image_filename:
+                try:
+                    _delete_image(new_image_filename)
+                except Exception as cleanup_err:
+                    current_app.logger.warning(
+                        f"Failed to clean up replacement image after edit rollback: {cleanup_err}"
+                    )
             current_app.logger.error(f"Database error during edit_item: {e}")
             flash("A database error occurred. Your changes could not be saved. Please try again.", "danger")
             return redirect(url_for("items.edit_item", item_id=item.id))
+
+        if old_image_filename:
+            try:
+                _delete_image(old_image_filename)
+            except Exception as cleanup_err:
+                current_app.logger.warning(f"Failed to delete old item image: {cleanup_err}")
         flash("Item updated successfully.", "success")
         return redirect(url_for("items.detail", item_id=item.id))
 
@@ -338,12 +406,18 @@ def delete_item(item_id):
     db.session.delete(item)
     try:
         db.session.commit()
-        _delete_image(image_filename)
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Database error during delete_item: {e}")
         flash("A database error occurred. The item could not be deleted. Please try again.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
+
+    try:
+        _delete_image(image_filename)
+    except Exception as cleanup_err:
+        current_app.logger.warning(
+            f"Failed to delete image for deleted item {item_id}: {cleanup_err}"
+        )
 
     flash("Item deleted.", "success")
     return redirect(url_for("index"))

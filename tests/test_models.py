@@ -56,6 +56,32 @@ class TestItemModel:
         """Item should have a created_at timestamp."""
         assert sample_item.created_at is not None
 
+    def test_image_url_resolution(self, sample_item, app):
+        """image_url should dynamically resolve based on STORAGE_PROVIDER and prefix."""
+        with app.test_request_context():
+            # 1. Test None value
+            sample_item.image_filename = None
+            assert sample_item.image_url is None
+
+            # 2. Test Local Storage Provider (default behavior)
+            app.config["STORAGE_PROVIDER"] = "local"
+            sample_item.image_filename = "uuid_filename.webp"
+            assert sample_item.image_url == "/static/uploads/uuid_filename.webp"
+            
+            sample_item.image_filename = "seed_image.webp"
+            assert sample_item.image_url == "/static/uploads/seed_image.webp"
+
+            # 3. Test R2 Storage Provider
+            app.config["STORAGE_PROVIDER"] = "r2"
+            app.config["CF_R2_PUBLIC_URL"] = "https://cdn.reuni.app"
+            
+            # Both user and seed images should resolve uniformly to R2
+            sample_item.image_filename = "uuid_filename.webp"
+            assert sample_item.image_url == "https://cdn.reuni.app/uuid_filename.webp"
+
+            sample_item.image_filename = "seed_image.webp"
+            assert sample_item.image_url == "https://cdn.reuni.app/seed_image.webp"
+
 
 class TestConstants:
 

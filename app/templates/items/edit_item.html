@@ -22,10 +22,12 @@
             <div class="list-photo-field form-group">
                 <label class="form-label">Photo</label>
                 
+                {% if item.image_filename %}
                 <div class="settings-input-display" style="gap: var(--space-4); justify-content: flex-start; margin-bottom: var(--space-4);">
-                    <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="Current photo" style="width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0;">
+                    <img src="{{ item.image_url }}" alt="Current photo" style="width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0;">
                     <span style="font-weight: 600;">Current Photo</span>
                 </div>
+                {% endif %}
 
                 <div id="photo-upload-zone" style="height: 140px;">
                     <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" class="image-upload__input">

@@ -603,12 +603,17 @@ def create_app(config_class=None):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        r2_url = app.config.get("CF_R2_PUBLIC_URL")
+        img_src_directive = "img-src 'self' data:"
+        if r2_url:
+            img_src_directive += f" {r2_url}"
+
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data:; "
+            f"{img_src_directive}; "
             "connect-src 'self'"
         )
         if not app.debug and not app.testing:
