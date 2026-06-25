@@ -71,10 +71,10 @@ def _save_image(file_storage):
     clean_img = PILImage.new(img.mode, img.size)
     clean_img.putdata(list(img.getdata()))
 
-    filename = f"{uuid.uuid4().hex}.jpg"
+    filename = f"{uuid.uuid4().hex}.webp"
     upload_dir = os.path.join(current_app.static_folder, "uploads")
     os.makedirs(upload_dir, exist_ok=True)
-    clean_img.save(os.path.join(upload_dir, filename), "JPEG", quality=85)
+    clean_img.save(os.path.join(upload_dir, filename), "WEBP", quality=80)
 
     return filename
 
