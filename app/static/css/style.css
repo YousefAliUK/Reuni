@@ -248,6 +248,118 @@ input[type="search"]::-webkit-search-cancel-button {
     color: var(--color-bg) !important;
 }
 
+.dashboard-stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.dashboard-stat-number--primary {
+    color: var(--color-primary);
+}
+.dashboard-stat-number--success {
+    color: var(--color-success);
+}
+
+/* Tabular numbers for clean numeric layout */
+.font-mono, .eco-val, .kg-counter, .esg-card-num, .purchase-row__eco .font-mono, .circulation-log-stats__weight, .circulation-log-stats__time {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Tactile press active states (Design Engineering) */
+.btn, .category-chip, .condition-btn, .price-toggle-btn, .recent-search-chip, .mobile-tabs__item {
+    transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+.btn:active, .category-chip:active, .condition-btn:active, .price-toggle-btn:active, .recent-search-chip:active, .mobile-tabs__item:active {
+    transform: scale(0.97);
+}
+
+/* Staggered card grids animations */
+@keyframes float-up-fade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.listing-card, .claim-card, .purchase-row {
+    animation: float-up-fade 250ms var(--ease-out) forwards;
+    animation-delay: calc(var(--card-index, 0) * 35ms);
+    opacity: 0;
+}
+
+/* Migrated classes for settings and forms */
+.settings-card-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+.settings-notice-text {
+    margin-top: var(--space-6);
+    font-size: var(--type-micro);
+    color: var(--color-ink-tertiary);
+    line-height: var(--lead-body);
+}
+.password-strength-grid {
+    display: flex;
+    gap: 4px;
+    height: 4px;
+    background: var(--color-surface-raised);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.password-strength-bar {
+    flex: 1;
+    height: 100%;
+    transition: background var(--duration-fast);
+}
+
+/* Migrated classes for PIN handshake */
+.pin-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding-top: var(--space-10);
+    padding-bottom: var(--space-20);
+}
+.pin-card {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    margin-bottom: var(--space-6);
+}
+.pin-qrcode-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+}
+.pin-qrcode-mock {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pin-impact-banner {
+    background: var(--color-primary-muted);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
 
 /* ─── Reset & Base ─── */
 *,
@@ -5601,7 +5713,6 @@ body {
     font-size: 14px;
 }
 .user-dropdown__menu {
-    display: none;
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
@@ -5612,20 +5723,16 @@ body {
     border: 1px solid var(--color-border);
     z-index: var(--z-dropdown);
     overflow: hidden;
+    transform-origin: top right;
+    transform: scale(0.96) translateY(-4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 160ms var(--ease-out), opacity 160ms var(--ease-out), visibility 160ms;
 }
 .user-dropdown__menu--open {
-    display: block;
-    animation: dropdownReveal var(--duration-mid) var(--ease-out) both;
-}
-@keyframes dropdownReveal {
-    from {
-        opacity: 0;
-        transform: translateY(-4px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    visibility: visible;
 }
 .user-dropdown__header {
     padding: var(--space-4) var(--space-5);
@@ -7265,6 +7372,26 @@ body {
     padding-right: 40px;
 }
 
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-ink-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 140ms var(--ease-out);
+}
+.password-toggle:hover {
+    color: var(--color-primary);
+}
+
+
 /* Modal Overlay for GDPR delete account */
 .modal-overlay {
     position: fixed;
@@ -7928,6 +8055,17 @@ body {
     object-fit: cover;
 }
 
+.esg-initials-avatar {
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--color-primary);
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+
 .esg-title {
     font-size: 20px;
     font-weight: 700;
@@ -8076,7 +8214,7 @@ body {
 
 .category-distribution-row {
     display: grid;
-    grid-template-columns: 120px 1fr 140px;
+    grid-template-columns: 120px 1fr auto;
     align-items: center;
     gap: var(--space-4);
 }
@@ -8131,6 +8269,7 @@ body {
     gap: var(--space-2);
     font-size: 13px;
     color: var(--color-ink-secondary);
+    white-space: nowrap;
 }
 
 @media (max-width: 767px) {
@@ -8207,6 +8346,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .circulation-log-stats__weight {
@@ -8474,6 +8615,44 @@ body {
 .admin-deactivate-btn:hover {
     text-decoration: underline;
 }
+
+.admin-table-logo {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.admin-table-initials {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--color-primary-muted);
+    color: var(--color-primary);
+    font-size: 9px;
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+}
+.admin-status-badge--active {
+    background: var(--color-success-muted);
+    color: var(--color-success);
+}
+.admin-status-badge--inactive {
+    background: var(--color-surface-raised);
+    color: var(--color-ink-tertiary);
+}
+
+
 
 .admin-confirm-cell {
     background: var(--color-danger-muted) !important;

@@ -17,7 +17,7 @@
         <section class="personal-impact-banner" aria-label="Personal Impact">
             <span class="material-symbols-outlined banner-icon" aria-hidden="true">eco</span>
             <div class="banner-text">
-                <div style="font-size: 36px; font-weight: 800; color: var(--color-primary); font-family: var(--font-mono); line-height: 1.1;">
+                <div class="dashboard-stat-number dashboard-stat-number--primary">
                     {{ "%.1f"|format(current_user.kg_saved_total or 0.0) }} kg
                 </div>
                 <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
@@ -32,7 +32,7 @@
         <section class="campus-momentum-card" aria-label="Campus Sustainability Momentum">
             <span class="material-symbols-outlined banner-icon" aria-hidden="true" style="color: var(--color-success);">monitoring</span>
             <div class="banner-text">
-                <div style="font-size: 36px; font-weight: 800; color: var(--color-success); font-family: var(--font-mono); line-height: 1.1;">
+                <div class="dashboard-stat-number dashboard-stat-number--success">
                     {{ "%.1f"|format(campus_total_kg or 0.0) }} kg
                 </div>
                 <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
@@ -103,7 +103,7 @@
                                 <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="claim-card__thumb">
                             {% else %}
                                 <div class="claim-card__thumb-fallback">
-                                    <span class="material-symbols-outlined">image</span>
+                                    <span class="material-symbols-outlined" aria-hidden="true">image</span>
                                 </div>
                             {% endif %}
                             
@@ -134,9 +134,9 @@
             </div>
         {% else %}
             <div class="empty-state-dashboard">
-                <span class="material-symbols-outlined">handshake</span>
+                <span class="material-symbols-outlined" aria-hidden="true">handshake</span>
                 <p>No active claims in progress.</p>
-                <a href="{{ url_for('index') }}" class="btn btn--outline" style="text-decoration: none;">Browse Marketplace</a>
+                <a href="{{ url_for('index') }}" class="btn btn--primary" style="text-decoration: none;">Browse Marketplace</a>
             </div>
         {% endif %}
     </div>
@@ -153,7 +153,7 @@
                                 <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="listing-card__img">
                             {% else %}
                                 <div class="listing-card__img-fallback">
-                                    <span class="material-symbols-outlined">image</span>
+                                    <span class="material-symbols-outlined" aria-hidden="true">image</span>
                                 </div>
                             {% endif %}
                             
@@ -184,7 +184,7 @@
                             <h3 class="listing-card__title">{{ item.title }}</h3>
                             <div class="listing-card__meta">
                                 <span class="listing-card__eco">
-                                    <span class="material-symbols-outlined">eco</span>
+                                    <span class="material-symbols-outlined" aria-hidden="true">eco</span>
                                     <span class="eco-val">{{ "%.1f"|format(item.kg_saved) }}</span> kg
                                 </span>
                                 <span class="listing-card__price">
@@ -199,7 +199,7 @@
             </div>
         {% else %}
             <div class="empty-state-dashboard">
-                <span class="material-symbols-outlined">sell</span>
+                <span class="material-symbols-outlined" aria-hidden="true">sell</span>
                 <p>You haven't listed anything yet.</p>
                 <a href="{{ url_for('items.list_item') }}" class="btn btn--primary" style="text-decoration: none;">List Your First Item</a>
             </div>
@@ -218,7 +218,7 @@
                                 <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="" class="purchase-row__thumb">
                             {% else %}
                                 <div class="purchase-row__thumb-fallback">
-                                    <span class="material-symbols-outlined">image</span>
+                                    <span class="material-symbols-outlined" aria-hidden="true">image</span>
                                 </div>
                             {% endif %}
                             
@@ -230,7 +230,7 @@
                         
                         <div class="purchase-row__metrics">
                             <span class="purchase-row__eco">
-                                <span class="material-symbols-outlined">eco</span>
+                                <span class="material-symbols-outlined" aria-hidden="true">eco</span>
                                 <span class="font-mono">{{ "%.1f"|format(item.kg_saved) }}</span> kg saved
                             </span>
                             <span class="purchase-status-badge">Exchanged &nbsp;&check;</span>
@@ -240,9 +240,9 @@
             </div>
         {% else %}
             <div class="empty-state-dashboard">
-                <span class="material-symbols-outlined">shopping_bag</span>
+                <span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
                 <p>You haven't bought any items yet.</p>
-                <a href="{{ url_for('index') }}" class="btn btn--outline" style="text-decoration: none;">Browse Marketplace</a>
+                <a href="{{ url_for('index') }}" class="btn btn--primary" style="text-decoration: none;">Browse Marketplace</a>
             </div>
         {% endif %}
     </div>

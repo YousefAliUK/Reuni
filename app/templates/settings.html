@@ -4,15 +4,15 @@
 {% block content %}
 <div class="settings-container">
     <!-- Back link -->
-    <a href="{{ url_for('profile') }}" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: var(--space-6); text-decoration: none; color: var(--color-ink-secondary); font-weight: 500; transition: color var(--duration-fast);">
-        <span class="material-symbols-outlined" style="font-size: 20px;">arrow_back</span>
+    <a href="{{ url_for('profile') }}" class="back-link">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
         Back to Profile
     </a>
 
     <h1 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1);">Account Settings</h1>
     <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin-top: 0; margin-bottom: var(--space-8);">Manage your account information, phone number, and password.</p>
 
-    <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+    <div class="settings-card-group">
         
         <!-- SECTION 1 — Account Info (read-only display) -->
         <div class="settings-card">
@@ -69,7 +69,8 @@
                                placeholder='e.g. "+447912345678" or "07912345678"'
                                required
                                class="settings-input"
-                               style="flex: 1;">
+                               style="flex: 1;"
+                               autocomplete="tel">
                         <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md);">Update</button>
                     </div>
                     <small style="color: var(--color-ink-tertiary); font-size: var(--type-micro); display: block; margin-top: var(--space-2);">
@@ -89,9 +90,9 @@
                 <div class="settings-form-group">
                     <label for="current_password" class="settings-label">Current Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="current_password" name="current_password" required class="settings-input">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('current_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        <input type="password" id="current_password" name="current_password" required class="settings-input" autocomplete="current-password" spellcheck="false">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('current_password')">
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                         </button>
                     </div>
                 </div>
@@ -99,17 +100,17 @@
                 <div class="settings-form-group">
                     <label for="new_password" class="settings-label">New Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="new_password" name="new_password" required class="settings-input">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        <input type="password" id="new_password" name="new_password" required class="settings-input" autocomplete="new-password" spellcheck="false">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password')">
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                         </button>
                     </div>
                     <!-- Strength bar -->
                     <div style="margin-top: 8px;">
-                        <div style="display: flex; gap: 4px; height: 4px; background: var(--color-surface-raised); border-radius: 2px; overflow: hidden;">
-                            <div id="strength-bar-1" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
-                            <div id="strength-bar-2" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
-                            <div id="strength-bar-3" style="flex: 1; height: 100%; transition: background var(--duration-fast);"></div>
+                        <div class="password-strength-grid">
+                            <div id="strength-bar-1" class="password-strength-bar"></div>
+                            <div id="strength-bar-2" class="password-strength-bar"></div>
+                            <div id="strength-bar-3" class="password-strength-bar"></div>
                         </div>
                         <span id="strength-label" style="font-size: 11px; color: var(--color-ink-tertiary); display: block; margin-top: 4px;">Strength: too short</span>
                     </div>
@@ -121,9 +122,9 @@
                 <div class="settings-form-group">
                     <label for="confirm_password" class="settings-label">Confirm New Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="confirm_password" name="confirm_password" required class="settings-input">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary); display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">visibility</span>
+                        <input type="password" id="confirm_password" name="confirm_password" required class="settings-input" autocomplete="new-password" spellcheck="false">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password')">
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                         </button>
                     </div>
                 </div>
@@ -156,12 +157,12 @@
 
             <!-- Trigger Button -->
             <button type="button" id="btn-show-delete-confirm" class="btn" style="background: var(--color-danger); color: #ffffff; height: 44px; border-radius: var(--radius-md); border: none;">
-                <span class="material-symbols-outlined" style="margin-right: var(--space-2);">delete_forever</span>
+                <span class="material-symbols-outlined" style="margin-right: var(--space-2);" aria-hidden="true">delete_forever</span>
                 Delete My Account
             </button>
             
             <!-- Right of Access (SAR) Info Note -->
-            <p style="margin-top: var(--space-6); font-size: var(--type-micro); color: var(--color-ink-tertiary); line-height: var(--lead-body);">
+            <p class="settings-notice-text">
                 To request a copy of your personal data under the UK GDPR (Article 15 Subject Access Request), please contact our support team at <a href="mailto:support@reuni.org" style="color: var(--color-primary); text-decoration: underline;">support@reuni.org</a>. We will respond to your request within 30 days.
             </p>
         </div>

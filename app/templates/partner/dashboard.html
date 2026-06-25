@@ -11,7 +11,7 @@
                 {% if logo_url %}
                     <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="esg-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 {% endif %}
-                <div style="font-weight: 700; font-size: 20px; color: var(--color-primary); width: 100%; height: 100%; display: {% if logo_url %}none{% else %}flex{% endif %}; align-items: center; justify-content: center;">
+                <div class="esg-initials-avatar" style="display: {% if logo_url %}none{% else %}flex{% endif %};">
                     {{ uni_initials }}
                 </div>
             </div>
@@ -27,7 +27,7 @@
             <!-- Admin-only domain scope dropdown selector (Visual Mockup for B2B) -->
             {% if is_global %}
                 <div class="scope-selector-mock" style="position: relative; display: inline-flex; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-ink-tertiary);">filter_list</span>
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-ink-tertiary);" aria-hidden="true">filter_list</span>
                     <select disabled style="height: 40px; padding: 0 var(--space-4) 0 var(--space-2); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-raised); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: not-allowed; opacity: 0.85;">
                         <option selected>Scope: All Universities</option>
                         <option>Oxford Brookes University</option>
@@ -41,7 +41,7 @@
             </div>
             
             <button onclick="window.print();" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">download</span>
                 <span>Download report</span>
             </button>
         </div>
@@ -53,7 +53,7 @@
         <!-- CARD A — Total kg Saved (DOMINANT, teal background, eco icon) -->
         <div class="esg-card esg-card--dominant">
             <div class="esg-card-icon-back">
-                <span class="material-symbols-outlined" style="font-size: 80px; color: #ffffff;">eco</span>
+                <span class="material-symbols-outlined" style="font-size: 80px; color: #ffffff;" aria-hidden="true">eco</span>
             </div>
             <div style="position: relative; z-index: 1;">
                 <span class="esg-card-num esg-card-num--large font-mono">
@@ -67,7 +67,7 @@
         <!-- CARD B — Items Exchanged -->
         <div class="esg-card">
             <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
-                <span class="material-symbols-outlined" style="font-size: 80px;">recycling</span>
+                <span class="material-symbols-outlined" style="font-size: 80px;" aria-hidden="true">recycling</span>
             </div>
             <div style="position: relative; z-index: 1;">
                 <span class="esg-card-num font-mono">
@@ -81,7 +81,7 @@
         <!-- CARD C — Verified Students -->
         <div class="esg-card">
             <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
-                <span class="material-symbols-outlined" style="font-size: 80px;">school</span>
+                <span class="material-symbols-outlined" style="font-size: 80px;" aria-hidden="true">school</span>
             </div>
             <div style="position: relative; z-index: 1;">
                 <span class="esg-card-num font-mono">
@@ -95,7 +95,7 @@
         <!-- CARD D — CO₂ Prevented -->
         <div class="esg-card">
             <div class="esg-card-icon-back" style="color: var(--color-border); opacity: 0.15;">
-                <span class="material-symbols-outlined" style="font-size: 80px;">co2</span>
+                <span class="material-symbols-outlined" style="font-size: 80px;" aria-hidden="true">co2</span>
             </div>
             <div style="position: relative; z-index: 1;">
                 <span class="esg-card-num font-mono">
@@ -119,7 +119,7 @@
                     {% for cat in categories_list %}
                         <div class="category-distribution-row">
                             <div class="category-distribution-row__info">
-                                <span class="material-symbols-outlined category-distribution-row__icon">{{ cat.icon }}</span>
+                                <span class="material-symbols-outlined" class="category-distribution-row__icon" aria-hidden="true">{{ cat.icon }}</span>
                                 <span class="category-distribution-row__name">{{ cat.category }}</span>
                             </div>
                             <div class="category-distribution-row__bar-container">
@@ -153,7 +153,7 @@
                         <div class="circulation-log-row">
                             <div class="circulation-log-item">
                                 <div class="circulation-log-item__icon">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">{{ log.icon }}</span>
+                                    <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">{{ log.icon }}</span>
                                 </div>
                                 <div class="circulation-log-item__details">
                                     <span class="circulation-log-item__title">{{ log.title | truncate(24, True) }}</span>
@@ -180,7 +180,7 @@
         <div class="esg-report-header">
             <h2 class="esg-report-eyebrow">For Your ESG Report</h2>
             <button id="copy-esg-btn" onclick="copyESGText()" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary); cursor: pointer;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">content_copy</span>
                 <span>Copy text</span>
             </button>
         </div>
@@ -192,7 +192,7 @@
 
     <!-- ─── GDPR Footnote ─── -->
     <div style="display: flex; align-items: center; gap: var(--space-2); color: var(--color-ink-tertiary); font-size: 12px; padding-top: var(--space-2);">
-        <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">verified</span>
+        <span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);" aria-hidden="true">verified</span>
         <span>UK/EU GDPR Compliant Log. Student identities are protected. Data updates in real time.</span>
     </div>
 

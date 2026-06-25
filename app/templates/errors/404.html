@@ -30,6 +30,7 @@
             color: var(--color-primary);
             margin: 0;
             margin-bottom: var(--space-2);
+            font-variant-numeric: tabular-nums;
         }
         .error-title {
             font-size: 24px;
@@ -57,15 +58,15 @@
         
         <form method="GET" action="{{ url_for('index') }}" style="width: 100%; display: flex; gap: var(--space-2); margin-top: var(--space-6);">
             <div style="position: relative; flex: 1;">
-                <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">search</span>
-                <input type="text" name="q" placeholder="Search marketplace..." class="auth-input" style="padding-left: 44px; height: 44px; box-sizing: border-box;" required>
+                <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;" aria-hidden="true">search</span>
+                <input type="text" name="q" placeholder="Search marketplace…" class="auth-input" style="padding-left: 44px; height: 44px; box-sizing: border-box;" required>
             </div>
             <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600; padding: 0 var(--space-4);">Search</button>
         </form>
         
         <div style="margin-top: var(--space-4); width: 100%;">
             <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); font-weight: 600;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">home</span>
                 Back to Home
             </a>
         </div>

@@ -30,6 +30,7 @@
             color: var(--color-danger);
             margin: 0;
             margin-bottom: var(--space-2);
+            font-variant-numeric: tabular-nums;
         }
         .error-title {
             font-size: 24px;
@@ -57,11 +58,11 @@
         
         <div style="margin-top: var(--space-6); display: flex; gap: var(--space-3); width: 100%;">
             <button onclick="window.location.reload();" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer; color: white;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">refresh</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">refresh</span>
                 Try Refreshing
             </button>
             <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); font-weight: 600;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">home</span>
                 Back to Home
             </a>
         </div>

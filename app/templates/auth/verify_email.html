@@ -5,7 +5,7 @@
 <div class="auth-container">
     <!-- Icon -->
     <div class="auth-header__icon">
-        <span class="material-symbols-outlined">mail</span>
+        <span class="material-symbols-outlined" aria-hidden="true">mail</span>
     </div>
 
     <div class="auth-header">
@@ -27,12 +27,12 @@
 
             <!-- OTP blocks -->
             <div class="otp-inputs-grid">
-                <input type="text" class="otp-digit otp-digit-box" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus>
-                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1">
-                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2">
-                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3">
-                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4">
-                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5">
+                <input type="text" class="otp-digit otp-digit-box" id="otp-input-0" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autocomplete="one-time-code" autofocus>
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1" autocomplete="one-time-code">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2" autocomplete="one-time-code">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3" autocomplete="one-time-code">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="4" autocomplete="one-time-code">
+                <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5" autocomplete="one-time-code">
             </div>
 
             <button type="submit" class="btn btn--primary" id="confirm-btn" style="height: 48px; border-radius: var(--radius-md); font-weight: 600;" disabled>

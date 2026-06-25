@@ -12,7 +12,7 @@
             <span class="admin-badge">Admin Panel</span>
         </div>
         <button type="button" id="btn-toggle-invite" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;" onclick="toggleInviteForm()">
-            <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+            <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">add</span>
             <span>Invite partner university</span>
         </button>
     </div>
@@ -20,7 +20,7 @@
     <!-- ─── INVITE FORM (Expandable Panel, Hidden by Default) ─── -->
     <div id="invite-form-panel" class="admin-card" style="{% if not invite_url %}display: none;{% endif %}">
         <h2 class="admin-card-title">
-            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;">mail</span>
+            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">mail</span>
             <span>Generate Partner Invitation Link</span>
         </h2>
         
@@ -46,7 +46,7 @@
                 <div class="admin-invite-link-wrapper">
                     <code id="invite-link-code" class="admin-invite-link-code">{{ invite_url }}</code>
                     <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" onclick="navigator.clipboard.writeText('{{ invite_url }}'); const icon = this.querySelector('.material-symbols-outlined'); icon.textContent = 'done'; setTimeout(() => { icon.textContent = 'content_copy' }, 1000);" title="Copy link">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">content_copy</span>
+                        <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">content_copy</span>
                     </button>
                 </div>
                 <span style="font-size: 11px; color: var(--color-ink-tertiary);">Expires in 48 hours</span>
@@ -75,8 +75,8 @@
                                 <td class="normal-cell-{{ partner.id }}">
                                     <div style="display: flex; align-items: center; gap: var(--space-2);">
                                         {% set logo_path = 'img/logos/' + partner.partner_university + '.png' %}
-                                        <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ partner.partner_university }}" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
-                                        <span style="display:none; width:20px; height:20px; border-radius:4px; background:var(--color-primary-muted); color:var(--color-primary); font-size:9px; font-weight:700; align-items:center; justify-content:center;">{{ partner.partner_university[:2].upper() }}</span>
+                                        <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ partner.partner_university }}" class="admin-table-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                        <span class="admin-table-initials">{{ partner.partner_university[:2].upper() }}</span>
                                         <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ partner.partner_university }}</span>
                                     </div>
                                 </td>
@@ -85,9 +85,9 @@
                                 </td>
                                 <td class="normal-cell-{{ partner.id }}">
                                     {% if partner.is_active %}
-                                        <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; background: var(--color-success-muted); color: var(--color-success);">Active</span>
+                                        <span class="admin-status-badge admin-status-badge--active">Active</span>
                                     {% else %}
-                                        <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; background: var(--color-surface-raised); color: var(--color-ink-tertiary);">Deactivated</span>
+                                        <span class="admin-status-badge admin-status-badge--inactive">Deactivated</span>
                                     {% endif %}
                                 </td>
                                 <td class="normal-cell-{{ partner.id }}" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-tertiary);">
@@ -119,7 +119,7 @@
                     {% else %}
                         <tr style="height: 120px;">
                             <td colspan="5" style="text-align: center; vertical-align: middle; color: var(--color-ink-tertiary); font-size: var(--type-body);">
-                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);">group</span>
+                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);" aria-hidden="true">group</span>
                                 <span>No partners yet. Invite your first university.</span>
                             </td>
                         </tr>

@@ -45,7 +45,7 @@
         <!-- Verified badge -->
         {% if current_user.is_verified %}
         <span class="profile-hero__badge">
-            <span class="material-symbols-outlined" style="font-size: 12px; font-weight: 800;">check</span> Verified Student
+            <span class="material-symbols-outlined" style="font-size: 12px; font-weight: 800;" aria-hidden="true">check</span> Verified Student
         </span>
         {% endif %}
     </div>
@@ -81,7 +81,7 @@
     <!-- ── Settings Link ── -->
     <div style="text-align: center; margin-bottom: var(--space-10);">
         <a href="{{ url_for('settings') }}" class="btn btn--outline" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
-            <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+            <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">settings</span>
             Edit profile / settings
         </a>
     </div>
@@ -102,7 +102,7 @@
                         <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="listing-card__img" loading="lazy">
                     {% else %}
                         <div class="listing-card__img-fallback">
-                            <span class="material-symbols-outlined" style="font-size: 48px;">image</span>
+                            <span class="material-symbols-outlined" style="font-size: 48px;" aria-hidden="true">image</span>
                         </div>
                     {% endif %}
                     
@@ -131,7 +131,7 @@
                     <!-- Price + Eco-Impact Info -->
                     <div class="listing-card__meta">
                         <span class="listing-card__eco">
-                            <span class="material-symbols-outlined">eco</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">eco</span>
                             <span class="eco-val">{{ "%.1f"|format(item.kg_saved) }}</span> kg
                         </span>
                         

@@ -15,7 +15,7 @@
     <!-- FORM CARD -->
     <div class="listing-form-card">
         
-        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form" autocomplete="off">
+        <form method="POST" action="{{ url_for('items.list_item') }}" enctype="multipart/form-data" class="listing-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Photo Upload zone (First on mobile via CSS order) -->
@@ -63,7 +63,7 @@
                 <div id="live-eco-preview" class="eco-preview-banner">
                     <span class="eco-preview-content">
                         <span class="material-symbols-outlined">eco</span>
-                        <span id="live-eco-text">Selecting category...</span>
+                        <span id="live-eco-text">Selecting category…</span>
                     </span>
                 </div>
             </div>
@@ -419,7 +419,7 @@
             const submitBtns = form.querySelectorAll('button[type="submit"]');
             submitBtns.forEach(submitBtn => {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = 'Listing<span class="warning-pulse">...</span>';
+                submitBtn.innerHTML = 'Listing<span class="warning-pulse">…</span>';
             });
         });
 
