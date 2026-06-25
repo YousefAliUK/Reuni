@@ -51,7 +51,7 @@
                 <form method="GET" action="{{ url_for('index') }}" class="navbar__search-form" id="desktop-search-form">
                     <div class="navbar__search-input-wrapper">
                         <span class="material-symbols-outlined navbar__search-icon" aria-hidden="true">search</span>
-                        <input type="search" name="q" value="{{ search_query or '' }}" placeholder="Search items..." class="navbar__search-input" autocomplete="off" id="desktop-search-input" aria-label="Search items">
+                        <input type="search" name="q" value="{{ search_query or '' }}" placeholder="Search items…" class="navbar__search-input" autocomplete="off" id="desktop-search-input" aria-label="Search items">
                         {% if search_query %}
                             <a href="{{ url_for('index', category=active_category) }}" class="navbar__search-clear" aria-label="Clear search">
                                 <span class="material-symbols-outlined">close</span>
@@ -74,7 +74,7 @@
             <!-- Zone 3: Controls -->
             <div class="navbar__actions">
                 <button type="button" class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode">
-                    <span class="material-symbols-outlined" id="theme-toggle-icon">light_mode</span>
+                    <span class="material-symbols-outlined" id="theme-toggle-icon" aria-hidden="true">light_mode</span>
                 </button>
 
                 {% if current_user.is_authenticated %}
@@ -151,11 +151,11 @@
         <div class="mobile-top-bar__left">
             {% if request.endpoint == 'index' or request.endpoint == 'dashboard' or request.endpoint == 'profile' or request.endpoint == 'settings' %}
                 <button type="button" class="mobile-top-bar__icon-btn" id="mobile-hamburger-btn" aria-label="Open menu">
-                    <span class="material-symbols-outlined">menu</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
                 </button>
             {% else %}
                 <button type="button" class="mobile-top-bar__icon-btn" onclick="if(document.referrer.includes(window.location.host)){history.back()}else{window.location.href='{{ url_for('index') }}'}" aria-label="Back">
-                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
                 </button>
             {% endif %}
         </div>
@@ -164,7 +164,7 @@
         </div>
         <div class="mobile-top-bar__right">
             <button type="button" class="mobile-top-bar__icon-btn" id="mobile-theme-toggle" aria-label="Toggle theme">
-                <span class="material-symbols-outlined" id="mobile-theme-toggle-icon">light_mode</span>
+                <span class="material-symbols-outlined" id="mobile-theme-toggle-icon" aria-hidden="true">light_mode</span>
             </button>
         </div>
     </div>
@@ -184,7 +184,7 @@
                     <span class="mobile-drawer__email">{{ current_user.email }}</span>
                 </div>
             {% else %}
-                <div class="mobile-drawer__avatar-circle"><span class="material-symbols-outlined">person</span></div>
+                <div class="mobile-drawer__avatar-circle"><span class="material-symbols-outlined" aria-hidden="true">person</span></div>
                 <div class="mobile-drawer__user-details">
                     <span class="mobile-drawer__username">Guest User</span>
                     <span class="mobile-drawer__email">Sign in to list items</span>
@@ -293,7 +293,7 @@
                     name="q"
                     id="search-overlay-input"
                     class="search-overlay__input"
-                    placeholder="Search items..."
+                    placeholder="Search items…"
                     value="{{ request.args.get('q', '') }}"
                     aria-label="Search items"
                     autocomplete="off"

@@ -3,17 +3,17 @@
 {% block mobile_title %}PIN Handshake{% endblock %}
 
 {% block content %}
-<div style="max-width: 480px; margin: 0 auto; padding-top: var(--space-10); padding-bottom: var(--space-20);" id="pin-interaction-container">
+<div class="pin-container" id="pin-interaction-container">
     <!-- Back to detail (hidden on mobile top bar root pages, but here for backup) -->
     <a href="{{ url_for('items.detail', item_id=item.id) }}" class="sidebar-nav__link hide-on-mobile" style="display: inline-flex; align-items: center; width: auto; margin-bottom: var(--space-6); text-decoration: none; padding-left: 0;">
-        <span class="material-symbols-outlined" style="margin-right: 8px;">arrow_back</span>
+        <span class="material-symbols-outlined" style="margin-right: 8px;" aria-hidden="true">arrow_back</span>
         Back to Item
     </a>
 
     <!-- Header block -->
     <div style="text-align: center; margin-bottom: var(--space-6);">
         {% if is_holder %}
-            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-primary); margin-bottom: var(--space-2);">verified_user</span>
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 48px; color: var(--color-primary); margin-bottom: var(--space-2);">verified_user</span>
             <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">Your pickup PIN</h1>
             <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin-top: var(--space-2); margin-bottom: 0;">
                 {% if item.is_free %}
@@ -23,7 +23,7 @@
                 {% endif %}
             </p>
         {% else %}
-            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--color-accent); margin-bottom: var(--space-2);">arrow_circle_right</span>
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 48px; color: var(--color-accent); margin-bottom: var(--space-2);">arrow_circle_right</span>
             <h1 style="font-size: 24px; font-weight: 700; color: var(--color-ink-primary); margin: 0;">Enter the PIN</h1>
             <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin-top: var(--space-2); margin-bottom: 0;">
                 {% if item.is_free %}
@@ -36,7 +36,7 @@
     </div>
 
     <!-- MAIN INTERACTION CARD -->
-    <div id="pin-interaction-card" style="background: var(--color-surface); box-shadow: var(--shadow-raised); border-radius: var(--radius-xl); padding: var(--space-8); margin-bottom: var(--space-6);">
+    <div id="pin-interaction-card" class="pin-card">
         
         <!-- Context thumb -->
         <div style="display: flex; align-items: center; gap: var(--space-3); padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); margin-bottom: var(--space-6);">
@@ -70,8 +70,8 @@
 
                 <!-- QR Panel (hidden by default) -->
                 <div id="qr-panel" style="display: none; text-align: center; margin-bottom: var(--space-6);">
-                    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); display: inline-block; width: 100%; box-sizing: border-box;">
-                        <div style="width: 200px; height: 200px; margin: 0 auto var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #ffffff; display: flex; align-items: center; justify-content: center;">
+                    <div class="pin-qrcode-panel">
+                        <div class="pin-qrcode-mock">
                             <!-- Mock QR code representation -->
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 120px; height: 120px;">
                                 <div style="background: #000; border-radius: 2px;"></div>
@@ -117,7 +117,7 @@
                 </form>
             {% else %}
                 <div style="background: var(--color-danger-muted); border-radius: var(--radius-md); padding: var(--space-4); display: flex; gap: var(--space-3); color: var(--color-ink-primary);">
-                    <span class="material-symbols-outlined" style="color: var(--color-danger);">warning</span>
+                    <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-danger);">warning</span>
                     <p style="font-size: var(--type-small); margin: 0;">For security, the PIN is only shown once immediately after claiming. It has been sent to your registered university email.</p>
                 </div>
             {% endif %}
@@ -129,21 +129,21 @@
 
                 <!-- OTP blocks -->
                 <div class="otp-grid">
-                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autofocus>
-                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1">
-                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2">
-                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="0" autocomplete="one-time-code" autofocus>
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="1" autocomplete="one-time-code">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="2" autocomplete="one-time-code">
+                    <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="3" autocomplete="one-time-code">
                 </div>
 
                 {% if item.pin_attempts > 0 %}
                     <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-4); color: {% if item.pin_attempts >= 2 %}var(--color-danger){% else %}var(--color-warning){% endif %}; font-size: var(--type-small); font-weight: 600;">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">warning</span>
-                        <span id="attempts-remaining-text">{{ 3 - item.pin_attempts }} attempt{{ 's' if (3 - item.pin_attempts) != 1 else '' }} remaining</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">warning</span>
+                        <span id="attempts-remaining-text" class="font-mono">{{ 3 - item.pin_attempts }} attempt{{ 's' if (3 - item.pin_attempts) != 1 else '' }} remaining</span>
                     </div>
                 {% else %}
                     <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-4); color: var(--color-ink-tertiary); font-size: var(--type-small); font-weight: 500;">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">timer</span>
-                        <span id="attempts-remaining-text">3 attempts remaining</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">timer</span>
+                        <span id="attempts-remaining-text" class="font-mono">3 attempts remaining</span>
                     </div>
                 {% endif %}
 
@@ -155,7 +155,7 @@
 
         <!-- Secure badge -->
         <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-top: var(--space-6); color: var(--color-ink-tertiary); font-size: 12px;">
-            <span class="material-symbols-outlined" style="font-size: 14px;">lock</span>
+            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">lock</span>
             <span>End-to-End Encrypted Exchange</span>
         </div>
     </div>
@@ -169,19 +169,19 @@
     {% if partner_user and partner_user.phone_number %}
         <a href="https://wa.me/{{ partner_user.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F" target="_blank" rel="noopener" style="display: flex; justify-content: space-between; align-items: center; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-decoration: none; margin-bottom: var(--space-6);">
             <div style="display: flex; align-items: center; gap: var(--space-3);">
-                <span class="material-symbols-outlined" style="color: #25D366; font-size: 24px;">chat</span>
+                <span class="material-symbols-outlined" aria-hidden="true" style="color: #25D366; font-size: 24px;">chat</span>
                 <div>
                     <div style="font-weight: 600; color: var(--color-ink-primary); font-size: var(--type-small);">WhatsApp coordination</div>
                     <div style="font-size: 12px; color: var(--color-ink-secondary);">Chat securely with {{ partner_user.name }} ({{ partner_user.phone_number | mask_phone }})</div>
                 </div>
             </div>
-            <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary); font-size: 18px;">arrow_forward</span>
+            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-tertiary); font-size: 18px;">arrow_forward</span>
         </a>
     {% endif %}
 
     <!-- Environmental preview -->
-    <div style="background: var(--color-primary-muted); border-radius: var(--radius-lg); padding: var(--space-4); display: flex; gap: var(--space-3); margin-bottom: var(--space-6);">
-        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 24px;">eco</span>
+    <div class="pin-impact-banner">
+        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 24px;">eco</span>
         <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin: 0; line-height: var(--lead-body);">
             By completing this handshake, you save approximately <strong style="color: var(--color-primary); font-family: var(--font-mono);">{{ item.kg_saved }} kg</strong> of carbon diverted from landfill.
         </p>
@@ -191,10 +191,10 @@
     <details id="safe-exchange-details" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); margin-bottom: var(--space-8);">
         <summary style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none;">
             <div style="display: flex; align-items: center; gap: var(--space-2);">
-                <span class="material-symbols-outlined" style="color: var(--color-ink-secondary); font-size: 18px;">handshake</span>
+                <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-secondary); font-size: 18px;">handshake</span>
                 <strong style="font-size: var(--type-small); color: var(--color-ink-primary);">Safe Exchange Guide</strong>
             </div>
-            <span class="material-symbols-outlined" style="color: var(--color-ink-tertiary); font-size: 18px;">expand_more</span>
+            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-tertiary); font-size: 18px;">expand_more</span>
         </summary>
         <div style="margin-top: var(--space-4); border-top: 1px solid var(--color-border); padding-top: var(--space-4); font-size: var(--type-small); color: var(--color-ink-secondary); line-height: var(--lead-body);">
             <ol style="margin: 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);">
@@ -209,7 +209,7 @@
 
     {% if item.price and item.price >= 100 %}
     <div style="background: var(--color-warning-muted); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: var(--space-8); display: flex; align-items: flex-start; gap: var(--space-2);">
-        <span class="material-symbols-outlined" style="color: var(--color-warning); font-size: 20px; flex-shrink: 0; margin-top: 2px;">warning</span>
+        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-warning); font-size: 20px; flex-shrink: 0; margin-top: 2px;">warning</span>
         <p style="font-size: 13px; color: var(--color-ink-primary); margin: 0; line-height: 1.4;">
             For items over £100, we recommend meeting at the SU reception desk and completing the exchange with both phones visible.
         </p>
@@ -398,7 +398,7 @@
                     e.preventDefault();
                     if (confirmBtn) {
                         confirmBtn.disabled = true;
-                        confirmBtn.innerHTML = '<span>Confirming</span><span class="warning-pulse">...</span>';
+                        confirmBtn.innerHTML = '<span>Confirming</span><span class="warning-pulse">…</span>';
                     }
 
                     const formData = new FormData(otpForm);
