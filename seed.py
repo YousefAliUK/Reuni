@@ -64,15 +64,16 @@ def make_placeholder(category, title):
     short_title = title if len(title) <= 30 else title[:27] + "…"
     draw.text((400, 320), short_title, fill=fg, font=font_small, anchor="mm")
 
-    filename = f"{uuid.uuid4().hex}.jpg"
-    img.save(os.path.join(UPLOAD_DIR, filename), "JPEG", quality=85)
+    filename = f"{uuid.uuid4().hex}.webp"
+    img.save(os.path.join(UPLOAD_DIR, filename), "WEBP", quality=80)
     return filename
 
 
 def copy_seed_image(source_filename, category, title):
     """
-    Copy a seed image from 'app/static/images/seed/' into static/uploads/
-    with a fresh UUID filename. Falls back to make_placeholder() if missing.
+    Load, resize to max 800px on either side, strip metadata, and save a seed image
+    from 'app/static/images/seed/' into static/uploads/ as WebP.
+    Falls back to make_placeholder() if missing or on failure.
 
     Args:
         source_filename (str): The exact filename in 'app/static/images/seed/',
@@ -89,11 +90,23 @@ def copy_seed_image(source_filename, category, title):
         print(f"  [WARN] Image not found: {source_filename} — using placeholder.")
         return make_placeholder(category, title)
 
-    ext = os.path.splitext(source_filename)[1].lower()  # e.g. ".jpg"
-    new_filename = f"{uuid.uuid4().hex}{ext}"
-    dest_path = os.path.join(UPLOAD_DIR, new_filename)
-    shutil.copy2(source_path, dest_path)
-    return new_filename
+    try:
+        img = PILImage.open(source_path)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        
+        img.thumbnail((800, 800), PILImage.LANCZOS)
+
+        clean_img = PILImage.new(img.mode, img.size)
+        clean_img.putdata(list(img.getdata()))
+
+        new_filename = f"{uuid.uuid4().hex}.webp"
+        dest_path = os.path.join(UPLOAD_DIR, new_filename)
+        clean_img.save(dest_path, "WEBP", quality=80)
+        return new_filename
+    except Exception as e:
+        print(f"  [ERROR] Failed to process seed image {source_filename}: {e} — using placeholder.")
+        return make_placeholder(category, title)
 
 
 SAMPLE_USERS = [
