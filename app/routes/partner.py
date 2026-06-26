@@ -108,7 +108,12 @@ def ensure_uni_logo(domain):
     
     logo_filename = f"{safe_domain}.png"
     logo_path = os.path.join(logo_dir, logo_filename)
+    failed_filename = f"{safe_domain}.failed"
+    failed_path = os.path.join(logo_dir, failed_filename)
     
+    if os.path.exists(failed_path):
+        return None
+        
     if os.path.exists(logo_path):
         return f"img/logos/{logo_filename}"
         
@@ -124,7 +129,12 @@ def ensure_uni_logo(domain):
                 f.write(response.read())
         return f"img/logos/{logo_filename}"
     except Exception as e:
-        # Silently fall back to initials avatar if download fails
+        # Silently fall back to initials avatar if download fails, and cache the failure
+        try:
+            with open(failed_path, "w") as f:
+                f.write("")
+        except Exception:
+            pass
         return None
 
 

@@ -26,3 +26,4 @@ class TestErrorPages:
         # Ensure no exception details leaked
         assert b"Traceback" not in resp.data
         assert b"RuntimeError" not in resp.data
+        assert b"Test error for 500 page verification" not in resp.data

@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 5. Drag and drop events + click triggers
-    if (imageUploadArea) {
+    if (imageUploadArea && fileInput) {
         // Trigger file input click on upload area click
         imageUploadArea.addEventListener("click", function (e) {
             // Only click if we didn't click the input directly to avoid infinite loop

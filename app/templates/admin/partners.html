@@ -45,7 +45,7 @@
                 
                 <div class="admin-invite-link-wrapper">
                     <code id="invite-link-code" class="admin-invite-link-code">{{ invite_url }}</code>
-                    <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" onclick="navigator.clipboard.writeText('{{ invite_url }}'); const icon = this.querySelector('.material-symbols-outlined'); icon.textContent = 'done'; setTimeout(() => { icon.textContent = 'content_copy' }, 1000);" title="Copy link">
+                    <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" onclick="navigator.clipboard.writeText({{ invite_url|tojson }}); const icon = this.querySelector('.material-symbols-outlined'); icon.textContent = 'done'; setTimeout(() => { icon.textContent = 'content_copy' }, 1000);" title="Copy link">
                         <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">content_copy</span>
                     </button>
                 </div>
