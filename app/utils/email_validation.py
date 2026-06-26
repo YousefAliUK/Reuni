@@ -32,6 +32,7 @@ def is_domain_allowed(domain: str, allowed_domains: set) -> bool:
     cleaned_domain = domain.strip().lower()
     
     if not allowed_domains:
-        return True
+        return cleaned_domain.endswith(".ac.uk")
         
-    return cleaned_domain in allowed_domains
+    normalized_allowed = {d.strip().lower() for d in allowed_domains}
+    return cleaned_domain in normalized_allowed

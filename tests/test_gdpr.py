@@ -355,6 +355,9 @@ class TestGDPRDeletion:
         from app.models import User
         from app.config import TestingConfig
 
+        orig_enabled = limiter.enabled
+        orig_app = limiter.app
+
         class RateLimitConfig(TestingConfig):
             RATELIMIT_ENABLED = True
 
@@ -407,5 +410,6 @@ class TestGDPRDeletion:
             )
             assert resp.status_code == 429
         finally:
-            limiter.enabled = False
+            limiter.enabled = orig_enabled
+            limiter.app = orig_app
 

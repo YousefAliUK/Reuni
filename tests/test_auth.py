@@ -647,6 +647,10 @@ class TestForgotPassword:
         """Rate limit should reject the 4th request in an hour."""
         from app import create_app, limiter
         from app.config import TestingConfig
+
+        orig_enabled = limiter.enabled
+        orig_app = limiter.app
+
         class RateLimitConfig(TestingConfig):
             RATELIMIT_ENABLED = True
         
@@ -654,6 +658,7 @@ class TestForgotPassword:
         limit_app.config['WTF_CSRF_ENABLED'] = False
         client = limit_app.test_client()
         
+        limiter.enabled = True
         try:
             for _ in range(3):
                 resp = client.post("/auth/forgot-password", data={"email": "ratelimit@university.ac.uk"})
@@ -661,7 +666,8 @@ class TestForgotPassword:
             resp = client.post("/auth/forgot-password", data={"email": "ratelimit@university.ac.uk"})
             assert resp.status_code == 429
         finally:
-            limiter.enabled = False
+            limiter.enabled = orig_enabled
+            limiter.app = orig_app
 
     def test_authenticated_user_forgot_password_redirect(self, auth_client):
         """Logged-in user should be redirected to index."""

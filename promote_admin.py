@@ -30,6 +30,8 @@ from app.utils.email_validation import extract_university_domain
 
 def generate_secure_password(length: int = 16) -> str:
     """Generate a cryptographically secure random password."""
+    if length < 3:
+        raise ValueError("length must be at least 3")
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     # Guarantee at least one of each required character class
     while True:

@@ -312,24 +312,25 @@ strong: font-weight: 700, --color-ink-primary
 
 ```javascript
 // PIN page only — executes after DOM ready
-function centerPinInputsAboveKeyboard() {
+const handleViewportResize = () => {
   const inputContainer = document.querySelector('.pin-entry-inputs');
   if (!inputContainer) return;
 
-  function handleViewportResize() {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-    
-    const visibleTop = viewport.offsetTop;
-    const containerTop = inputContainer.getBoundingClientRect().top + window.scrollY;
-    const targetScrollY = containerTop - visibleTop - 100; // 100px below visible top
-    
-    window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-  }
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+  
+  const visibleTop = viewport.offsetTop;
+  const containerTop = inputContainer.getBoundingClientRect().top + window.scrollY;
+  const targetScrollY = containerTop - visibleTop - 100; // 100px below visible top
+  
+  window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+};
 
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', handleViewportResize);
-  }
+function centerPinInputsAboveKeyboard() {
+  const inputContainer = document.querySelector('.pin-entry-inputs');
+  if (!inputContainer || !window.visualViewport) return;
+
+  window.visualViewport.addEventListener('resize', handleViewportResize);
 }
 
 // Cleanup on page unload
