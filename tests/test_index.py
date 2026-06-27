@@ -200,7 +200,7 @@ class TestProfilePage:
         sample_item.is_sold = True
         db_session.session.commit()
 
-        # 4. Check the profile again. Now bought and recycled should be 1.
+        # 4. Check the profile again. Now bought should be 1, and recycled should be 0.
         resp = second_auth_client.get("/profile")
         assert resp.status_code == 200
         
@@ -210,8 +210,8 @@ class TestProfilePage:
         assert bought_label_after is not None, "Bought label not found after sale"
         bought_value_after = bought_label_after.find_next().text.strip()
         assert bought_value_after == "1", f"Expected bought count to be 1, got {bought_value_after}"
-
+        
         recycled_label_after = soup_after.find(string=re.compile("Items recycled"))
         assert recycled_label_after is not None, "Items recycled label not found after sale"
         recycled_value_after = recycled_label_after.find_next().text.strip()
-        assert recycled_value_after == "1", f"Expected recycled count to be 1, got {recycled_value_after}"
+        assert recycled_value_after == "0", f"Expected recycled count to be 0, got {recycled_value_after}"

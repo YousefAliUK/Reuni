@@ -319,3 +319,83 @@ def test_scheduler_purge_notifications_and_messages(client, second_user, active_
         assert db.session.query(Notification).filter_by(id=notif_all_old_id).first() is None
         assert db.session.query(Message).filter_by(id=msg_active_old_id).first() is not None
         assert db.session.query(Message).filter_by(id=msg_inactive_old_id).first() is None
+
+
+def test_messaging_payload_validation_hardening(client, sample_user, active_claim_item):
+    """Test that malformed JSON payloads or non-string content values are rejected with 400."""
+    # Log in as seller (sample_user)
+    client.post("/auth/login", data={"email": "test@university.ac.uk", "password": "StrongPass123"}, follow_redirects=True)
+
+    # 1. Non-dict/array payload
+    resp = client.post(f"/api/messages/{active_claim_item.id}/send", json=["content", "hello"])
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "Invalid message payload."
+
+    # 2. Non-string content field
+    resp = client.post(f"/api/messages/{active_claim_item.id}/send", json={"content": 12345})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "Message content must be a string."
+
+
+def test_notification_id_enumeration_mitigation(client, sample_user, second_user, db_session):
+    """Test that unauthorized notifications return 404 instead of 403 to prevent ID enumeration."""
+    # Create notification for second_user (buyer)
+    notif = Notification(user_id=second_user.id, title="Secret", content="Private", link="/", is_read=False)
+    db_session.session.add(notif)
+    db_session.session.commit()
+
+    # Log in as S (sample_user)
+    client.post("/auth/login", data={"email": "test@university.ac.uk", "password": "StrongPass123"}, follow_redirects=True)
+
+    # Attempt to read someone else's notification
+    resp = client.post(f"/api/notifications/{notif.id}/read")
+    assert resp.status_code == 404
+    assert resp.get_json()["error"] == "Notification not found."
+
+
+def test_active_buyer_query_isolation(client, sample_user, second_user, active_claim_item, db_session):
+    """Test that cancelling a claim and claiming with a new buyer isolates chat polls/unread updates."""
+    # Log in as seller (sample_user)
+    client.post("/auth/login", data={"email": "test@university.ac.uk", "password": "StrongPass123"}, follow_redirects=True)
+
+    # Send message S -> B1 (second_user)
+    resp = client.post(f"/api/messages/{active_claim_item.id}/send", json={"content": "Hello B1!"})
+    assert resp.status_code == 201
+    msg = db_session.session.query(Message).first()
+    assert msg.is_read is False
+
+    # Cancel the claim
+    client.post(f"/items/{active_claim_item.id}/cancel-claim", follow_redirects=True)
+    db_session.session.refresh(active_claim_item)
+    assert active_claim_item.buyer_id is None
+
+    # Create third user (B2)
+    from app.models import User
+    third_user = User(
+        name="Third User",
+        email="third@university.ac.uk",
+        university_domain="university.ac.uk",
+        is_verified=True,
+        is_active=True
+    )
+    third_user.set_password("StrongPass123")
+    db_session.session.add(third_user)
+    db_session.session.commit()
+
+    # Third user claims the item
+    client.post("/auth/logout", follow_redirects=True)
+    client.post("/auth/login", data={"email": "third@university.ac.uk", "password": "StrongPass123"}, follow_redirects=True)
+    client.post(f"/items/{active_claim_item.id}/buy", follow_redirects=True)
+
+    db_session.session.refresh(active_claim_item)
+    assert active_claim_item.buyer_id == third_user.id
+
+    # Verify B2 cannot see S's message to B1 in chat poll
+    resp_poll = client.get(f"/api/messages/{active_claim_item.id}")
+    assert resp_poll.status_code == 200
+    data_poll = resp_poll.get_json()
+    assert len(data_poll["messages"]) == 0  # Message S -> B1 is isolated!
+
+    # Verify polling by B2 doesn't mark S -> B1 message as read
+    db_session.session.refresh(msg)
+    assert msg.is_read is False

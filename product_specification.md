@@ -347,15 +347,13 @@ or
 
 ---
 
-### 2.6 External Communication (WhatsApp Bypass)
+### 2.6 Secure In-App Communication (PIN Handshake Chat)
 
-To avoid building in-app chat for the MVP:
+Rather than relying on external channels like WhatsApp that compromise personal privacy (e.g. sharing phone numbers), Reuni implements a secure in-app messaging log directly on the PIN Handshake page:
 
-- Registration requires a **phone number** (WhatsApp) — normalised to `+44` format, validated as unique across all accounts
-- Duplicate phone numbers are rejected: _"An account with this phone number already exists."_ — doubles as **alt-account detection**
-- When an item is claimed, the system reveals the seller's number to the buyer
-- A "Copy Message" button pre-fills: _"Hey, I just claimed your [Item Name] on Reuni. When can we meet for the PIN handshake?"_
-- Contact info is hidden until after the buyer clicks "Claim"/"Buy" — protects seller privacy
+- Communication is fully contained inside the platform's app shell to protect identity and contact information.
+- A secure chat thread opens automatically once a claim is active, and transitions to read-only once a PIN handshake completes or a claim cancels.
+- An anti-griefing filter scans outgoing payloads and blocks users from prematurely sharing the transaction PIN in the chat window.
 
 ---
 
@@ -624,7 +622,7 @@ When an item receives enough reports, it's shown to **3 random users with 120+ t
 
 ---
 
-### 6.7 In-App Notifications (Planned)
+### 6.7 In-App Notifications (Implemented)
 
 Since this is a web app (no native push notifications):
 
@@ -820,5 +818,5 @@ New tables:
 | Multi-university data isolation?                               | **Schema-ready** (`university_domain` column on both users and items). No cross-university data leakage by default.        |
 | Payment integration?                                           | **Not needed for MVP.** All transactions are in-person cash/bank transfer. Platform shows price, doesn't process payments. |
 | Email notifications?                                           | **Implemented** via Brevo API SDK (all transactional and verification emails including OTP, password resets, PIN handshakes, cancellation alerts, GDPR deletion notifications, and partner welcome/deactivation emails; no Flask-Mail dependency). |
-| Real-time chat?                                                | **Permanently deferred.** WhatsApp bypass handles all communication needs. Building chat is technical debt with no ROI.    |
+| Real-time chat?                                                | **Implemented.** Secure in-app messaging thread on the PIN handshake page.                                                 |
 | QR Code Handshake?                                             | **Deferred to Phase 2.** An alternative option where the PIN holder displays a QR code encoding the PIN, which the other party scans to confirm physical exchange. |

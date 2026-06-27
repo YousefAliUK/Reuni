@@ -288,7 +288,7 @@
             <span class="material-symbols-outlined" aria-hidden="true">add</span>
         </a>
         {% if current_user.is_authenticated %}
-            <button type="button" class="mobile-tabs__item" id="mobile-notification-bell-trigger" style="position: relative; background: transparent; border: none; padding: 0;">
+            <button type="button" class="mobile-tabs__item" id="mobile-notification-bell-trigger" aria-haspopup="true" aria-expanded="false" style="position: relative; background: transparent; border: none; padding: 0;">
                 <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
                 <span class="notification-bell__badge" id="mobile-notification-badge" style="display: none; top: -2px; right: 12px; border: 1.5px solid var(--color-bg);">0</span>
                 <span class="mobile-tabs__label">Alerts</span>
@@ -690,10 +690,12 @@
                 const targetDropdown = isMobileTrigger ? mobileNotifDropdown : notifDropdown;
                 const siblingDropdown = isMobileTrigger ? notifDropdown : mobileNotifDropdown;
                 const targetBell = isMobileTrigger ? mobileNotifBell : notifBell;
+                const siblingBell = isMobileTrigger ? notifBell : mobileNotifBell;
 
                 // Close sibling dropdown
                 if (siblingDropdown) {
                     siblingDropdown.classList.remove('notification-dropdown--open');
+                    if (siblingBell) siblingBell.setAttribute('aria-expanded', 'false');
                 }
 
                 if (targetDropdown) {
@@ -892,7 +894,8 @@
                                     headers: {
                                         'X-CSRFToken': csrfToken,
                                         'X-Requested-With': 'XMLHttpRequest'
-                                    }
+                                    },
+                                    keepalive: true
                                 });
                             }
                         });

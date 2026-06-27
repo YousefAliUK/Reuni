@@ -95,6 +95,9 @@ class User(UserMixin, db.Model):
         import secrets
         self.password_hash = generate_password_hash(secrets.token_hex(32))
         self.is_verified = False
+        self.email_verification_code = None
+        self.email_verification_expires_at = None
+        self.email_verification_attempts = 0
         self.is_active = False
         self.university_domain = None
         self.partner_university = None

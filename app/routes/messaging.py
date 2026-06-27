@@ -34,7 +34,12 @@ def send_message(item_id):
         return jsonify({"error": "This transaction has been completed. Chat is read-only."}), 400
 
     # 3. Message Content Validation
-    raw_content = request.json.get("content", "") if request.is_json else request.form.get("content", "")
+    payload = request.json if request.is_json else request.form
+    if not hasattr(payload, "get"):
+        return jsonify({"error": "Invalid message payload."}), 400
+    raw_content = payload.get("content", "")
+    if not isinstance(raw_content, str):
+        return jsonify({"error": "Message content must be a string."}), 400
     import re
     content = re.sub(r'[\u200b-\u200d\u2060-\u206f\ufeff\u200e\u200f\u180e]', '', raw_content).strip()
     if not content:
@@ -126,21 +131,24 @@ def poll_messages(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     current_user.last_seen_at = now
 
+    active_buyer_filter = ((Message.sender_id == item.buyer_id) | (Message.recipient_id == item.buyer_id))
+
     # Retrieve messages with since_id filtering and strict buyer privacy constraints
     since_id = request.args.get("since_id", type=int)
     query = Message.query.filter(
         Message.item_id == item.id,
-        ((Message.sender_id == item.buyer_id) | (Message.recipient_id == item.buyer_id))
+        active_buyer_filter
     )
     if since_id:
         query = query.filter(Message.id > since_id)
     messages = query.order_by(Message.created_at.asc()).all()
 
-    # Mark all incoming messages as read in the database for this thread
-    unread_messages = Message.query.filter_by(
-        item_id=item.id,
-        recipient_id=current_user.id,
-        is_read=False
+    # Mark only incoming active-buyer messages as read in the database for this thread
+    unread_messages = Message.query.filter(
+        Message.item_id == item.id,
+        Message.recipient_id == current_user.id,
+        Message.is_read == False,
+        active_buyer_filter
     ).all()
 
     # Mark all notifications linked to this thread as read
@@ -151,18 +159,16 @@ def poll_messages(item_id):
         is_read=False
     ).all()
 
-    if unread_messages or unread_notifications:
-        if unread_messages:
-            for msg in unread_messages:
-                msg.is_read = True
-        if unread_notifications:
-            for notif in unread_notifications:
-                notif.is_read = True
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Database error marking messages/notifications as read: {e}")
+    for msg in unread_messages:
+        msg.is_read = True
+    for notif in unread_notifications:
+        notif.is_read = True
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Database error committing poll updates: {e}")
 
     # Determine thread status
     if item.is_sold:
@@ -187,10 +193,11 @@ def poll_messages(item_id):
         })
 
     # Retrieve all read messages sent by current user in this thread to update read receipts
-    seen_messages = Message.query.filter_by(
-        item_id=item.id,
-        sender_id=current_user.id,
-        is_read=True
+    seen_messages = Message.query.filter(
+        Message.item_id == item.id,
+        Message.sender_id == current_user.id,
+        Message.is_read == True,
+        active_buyer_filter
     ).all()
     seen_ids = [msg.id for msg in seen_messages]
 
@@ -244,9 +251,12 @@ def list_notifications():
 @verified_required
 def mark_notification_read(notification_id):
     """Mark a specific notification as read."""
-    notification = db.get_or_404(Notification, notification_id)
-    if notification.user_id != current_user.id:
-        return jsonify({"error": "Unauthorised."}), 403
+    notification = Notification.query.filter_by(
+        id=notification_id,
+        user_id=current_user.id
+    ).first()
+    if notification is None:
+        return jsonify({"error": "Notification not found."}), 404
 
     notification.is_read = True
 

@@ -31,7 +31,7 @@ def generate_invite():
         if extracted:
             university_domain = extracted
     
-    if not re.match(r"^[a-zA-Z0-9.-]+\.ac\.uk$", university_domain):
+    if not re.fullmatch(r"(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+ac\.uk", university_domain):
         flash("Please enter a valid .ac.uk university domain.", "danger")
         return redirect(url_for("admin.admin_partners"))
         
