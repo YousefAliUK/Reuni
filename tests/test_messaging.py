@@ -4,14 +4,12 @@ from app.models import User, Item, Message, Notification
 from app import db
 from app.routes.messaging import send_message_notification_email
 from app.scheduler import purge_old_notifications, purge_old_messages
-from werkzeug.security import generate_password_hash
 
 @pytest.fixture()
 def active_claim_item(db_session, sample_item, second_user):
     """Set sample_item to claimed state by second_user (buyer)."""
     sample_item.buyer_id = second_user.id
-    sample_item.pin_code = generate_password_hash("1234")
-    sample_item.pin_plaintext = "1234"
+    sample_item.pin_code = "1234"
     sample_item.claimed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     sample_item.pin_expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=72)
     db_session.session.commit()
