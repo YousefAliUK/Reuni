@@ -49,8 +49,9 @@ def send_message(item_id):
         return jsonify({"error": "Message content exceeds the 1,000-character limit."}), 400
 
     # 4. PIN Substring Filter
-    if item.pin_plaintext:
-        if item.pin_plaintext in content:
+    if item.pin_code:
+        pattern = r'(?<!\d)' + re.escape(item.pin_code) + r'(?!\d)'
+        if re.search(pattern, content):
             return jsonify({
                 "error": "For security, you cannot share the transaction PIN in chat. If this is a flat or room number, please meet nearby or re-phrase your message."
             }), 400

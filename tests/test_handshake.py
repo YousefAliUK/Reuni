@@ -1,5 +1,4 @@
 from datetime import datetime, timezone, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.models import Item, User
 
@@ -17,7 +16,7 @@ class TestBuyItem:
         assert item.buyer_id is not None
         assert item.is_sold is False
         assert item.pin_code is not None
-        assert len(item.pin_code) > 4
+        assert len(item.pin_code) == 4
         assert item.claimed_at is not None
 
     def test_buy_own_item(self, auth_client, sample_item):
@@ -39,7 +38,7 @@ class TestBuyItem:
     def test_cannot_edit_while_pending(self, auth_client, sample_item, second_user, db_session):
         """Editing an item with a pending claim should be blocked."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         db_session.session.commit()
 
         resp = auth_client.get(f"/items/{sample_item.id}/edit", follow_redirects=True)
@@ -48,7 +47,7 @@ class TestBuyItem:
     def test_cannot_delete_while_pending(self, auth_client, sample_item, second_user, db_session):
         """Deleting an item with a pending claim should be blocked."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         db_session.session.commit()
 
         resp = auth_client.post(f"/items/{sample_item.id}/delete", follow_redirects=True)
@@ -57,7 +56,7 @@ class TestBuyItem:
     def test_pin_page_access_guard(self, client, sample_item, second_user, db_session):
         """Users other than buyer or seller cannot access the PIN page."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         db_session.session.commit()
 
         # Try to access pin page anonymously or as a third user
@@ -68,7 +67,7 @@ class TestBuyItem:
     def test_confirm_pin_success(self, second_auth_client, sample_item, sample_user, second_user, db_session):
         """Confirming the correct PIN should mark item sold and credit seller's total kg saved."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("4321")
+        sample_item.pin_code = "4321"
         sample_item.is_free = True  # free item, buyer enters pin (second_auth_client is buyer)
         db_session.session.commit()
 
@@ -85,7 +84,7 @@ class TestBuyItem:
     def test_3_wrong_pins_auto_cancels(self, second_auth_client, sample_item, second_user, db_session):
         """Entering incorrect PIN 3 times should cancel the claim and release the item."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("9999")
+        sample_item.pin_code = "9999"
         sample_item.is_free = True  # buyer enters
         sample_item.pin_attempts = 0
         db_session.session.commit()
@@ -112,7 +111,7 @@ class TestBuyItem:
         """For free items, seller should see the PIN code on the PIN page."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("5678")
+        sample_item.pin_code = "5678"
         sample_item.is_free = True
         sample_item.claimed_at = now
         sample_item.pin_expires_at = now + timedelta(hours=72)
@@ -131,7 +130,7 @@ class TestBuyItem:
         """For paid items, buyer should see the PIN code on the PIN page."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("4321")
+        sample_item.pin_code = "4321"
         sample_item.is_free = False
         sample_item.claimed_at = now
         sample_item.pin_expires_at = now + timedelta(hours=72)
@@ -150,7 +149,7 @@ class TestBuyItem:
         """Buyer should see the chat thread on the PIN page."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         sample_item.claimed_at = now
         sample_item.pin_expires_at = now + timedelta(hours=72)
         db_session.session.commit()
@@ -164,7 +163,7 @@ class TestBuyItem:
         """Visiting PIN page after 72h should auto-cancel the claim."""
         past = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=73)
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         sample_item.claimed_at = past
         sample_item.pin_expires_at = past + timedelta(hours=72)
         db_session.session.commit()
@@ -179,7 +178,7 @@ class TestBuyItem:
     def test_dashboard_pending_section(self, auth_client, sample_item, second_user, db_session):
         """Dashboard should show 'Pending Handshakes' when a claim is active."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         db_session.session.commit()
 
         resp = auth_client.get("/dashboard")
@@ -202,7 +201,7 @@ class TestBuyItem:
     def test_cannot_claim_while_pending(self, app, sample_item, second_user, db_session):
         """A second buyer cannot claim an item that already has a pending claim."""
         sample_item.buyer_id = second_user.id
-        sample_item.pin_code = generate_password_hash("1234")
+        sample_item.pin_code = "1234"
         db_session.session.commit()
 
         # Create a third user and try to claim
@@ -332,4 +331,4 @@ class TestBuyItem:
 
         # Check verify successful with new PIN
         item = db_session.session.get(Item, sample_item.id)
-        assert check_password_hash(item.pin_code, new_pin)
+        assert item.pin_code == new_pin

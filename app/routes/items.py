@@ -11,8 +11,6 @@ import math
 from datetime import datetime, timezone, timedelta
 from html import escape as html_escape
 
-from werkzeug.security import generate_password_hash, check_password_hash
-
 from flask import (
     Blueprint, render_template, redirect, url_for, flash,
     request, jsonify, current_app, abort, session
@@ -145,7 +143,6 @@ def cancel_claim(item):
     """Reset all claim-related fields on an item."""
     item.buyer_id = None
     item.pin_code = None
-    item.pin_plaintext = None
     item.pin_expires_at = None
     item.claimed_at = None
     item.pin_attempts = 0
@@ -449,14 +446,12 @@ def buy_item(item_id):
     # The WHERE clause ensures only one concurrent request can succeed.
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     pin = f"{secrets.randbelow(10000):04d}"
-    hashed_pin = generate_password_hash(pin)
     try:
         rows = Item.query.filter_by(
             id=item_id, buyer_id=None, is_sold=False
         ).update({
             "buyer_id": current_user.id,
-            "pin_code": hashed_pin,
-            "pin_plaintext": pin,
+            "pin_code": pin,
             "claimed_at": now,
             "pin_expires_at": now + timedelta(hours=72),
             "pin_attempts": 0,
@@ -607,7 +602,7 @@ def confirm_pin(item_id):
 
     entered_pin = request.form.get("pin", "").strip()
 
-    if not check_password_hash(item.pin_code, entered_pin):
+    if item.pin_code != entered_pin:
         try:
             item.pin_attempts += 1
             if item.pin_attempts >= 3:
@@ -640,7 +635,6 @@ def confirm_pin(item_id):
 
         # Clear PIN fields
         item.pin_code = None
-        item.pin_plaintext = None
         item.pin_expires_at = None
         item.claimed_at = None
         item.pin_attempts = 0
@@ -834,7 +828,7 @@ def resend_pin(item_id):
         abort(403)
 
     pin = f"{secrets.randbelow(10000):04d}"
-    item.pin_code = generate_password_hash(pin)
+    item.pin_code = pin
     item.pin_attempts = 0
     try:
         db.session.commit()
