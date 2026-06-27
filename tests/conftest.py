@@ -52,7 +52,6 @@ def sample_user(db_session):
     user = User(
         email="test@university.ac.uk",
         name="Test User",
-        phone_number="+447700100005",
         is_verified=True,
         university_domain="university.ac.uk",
     )
@@ -68,7 +67,6 @@ def second_user(db_session):
     user = User(
         email="other@university.ac.uk",
         name="Other User",
-        phone_number="+447700100006",
         is_verified=True,
         university_domain="university.ac.uk",
     )

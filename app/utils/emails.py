@@ -205,3 +205,53 @@ def send_email(to_email: str, to_name: str, subject: str, html_content: str) -> 
     except Exception as e:
         current_app.logger.error(f"Unexpected error sending email: {e}")
         return False
+
+
+def send_message_notification_email(recipient, sender, item, message_content):
+    """
+    Sends an email notification via Brevo if recipient is not online and
+    no other message notification email was sent for this thread in the last 5 minutes.
+    """
+    from datetime import datetime, timezone, timedelta
+    from app.models import Notification
+    from flask import request, has_request_context
+
+    # 1. Skip if recipient was online in the last 30 seconds
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if recipient.last_seen_at and (now - recipient.last_seen_at).total_seconds() < 30:
+        return False
+
+    # 2. Skip if email sent in the last 5 minutes (cooldown)
+    five_minutes_ago = now - timedelta(minutes=5)
+    recent_notif = Notification.query.filter(
+        Notification.user_id == recipient.id,
+        Notification.link == f"/items/{item.id}/pin",
+        Notification.title.like("New message from%"),
+        Notification.created_at >= five_minutes_ago
+    ).first()
+    if recent_notif:
+        return False
+
+    # 3. Send the email
+    safe_sender_name = escape(sender.name)
+    safe_item_title = escape(item.title)
+    safe_preview = escape(message_content[:100] + ("..." if len(message_content) > 100 else ""))
+    
+    host = request.host if has_request_context() else current_app.config.get("SERVER_NAME") or "localhost:5000"
+    email_html = f"""<p>Hi {escape(recipient.name)},</p>
+<p>You have a new message from <strong>{safe_sender_name}</strong> regarding the item "<strong>{safe_item_title}</strong>" on Reuni:</p>
+<blockquote style="border-left: 4px solid #0F766E; padding-left: 16px; margin: 16px 0; color: #44403C; font-style: italic;">
+    {safe_preview}
+</blockquote>
+    <a href="{current_app.config.get('PREFERRED_URL_SCHEME', 'http')}://{host}/items/{item.id}/pin" class="btn-primary">
+        Reply in Chat
+    </a>
+</p>
+<p>— The Reuni team</p>"""
+    
+    return send_email(
+        to_email=recipient.email,
+        to_name=recipient.name,
+        subject=f"New message from {sender.name} - Reuni",
+        html_content=email_html
+    )

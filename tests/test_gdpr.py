@@ -27,7 +27,6 @@ class TestGDPRDeletion:
         admin = User(
             email="admin@university.ac.uk",
             name="Admin User",
-            phone_number="+447700100010",
             is_verified=True,
             role="admin",
             university_domain="university.ac.uk"
@@ -55,7 +54,6 @@ class TestGDPRDeletion:
         partner = User(
             email="partner@university.ac.uk",
             name="Partner User",
-            phone_number="+447700100011",
             is_verified=True,
             role="partner",
             university_domain="university.ac.uk"
@@ -92,7 +90,6 @@ class TestGDPRDeletion:
         assert user.is_active is False
         assert user.deletion_pending_until is not None
         assert user.email == "test@university.ac.uk"
-        assert user.phone_number == "+447700100005"
         
         # Confirm lockout
         resp_login = auth_client.post(
@@ -224,7 +221,6 @@ class TestGDPRDeletion:
             # Verify anonymisation results
             assert u.name == "Deleted User"
             assert u.email == f"deleted_{sample_user.id}@deleted.reuni"
-            assert u.phone_number is None
             assert u.university_domain is None
             assert u.kg_saved_total == 0.0
             assert u.failed_login_attempts == 0
@@ -260,7 +256,6 @@ class TestGDPRDeletion:
             data={
                 "name": "New Person",
                 "email": "test@university.ac.uk",
-                "phone_number": "07912345679",
                 "password": "NewStrongPass1",
                 "confirm_password": "NewStrongPass1",
             },
@@ -273,7 +268,6 @@ class TestGDPRDeletion:
         assert old_user is not None
         assert old_user.id == sample_user.id
         assert old_user.email == f"deleted_{sample_user.id}@deleted.reuni"
-        assert old_user.phone_number is None
 
         # 4. Verify that the new user is created and pending verification
         new_user = User.query.filter_by(email="test@university.ac.uk").first()
@@ -297,7 +291,6 @@ class TestGDPRDeletion:
             data={
                 "name": "New Person",
                 "email": "test@university.ac.uk",
-                "phone_number": "07912345679",
                 "password": "NewStrongPass1",
                 "confirm_password": "NewStrongPass1",
             },
@@ -336,7 +329,6 @@ class TestGDPRDeletion:
         # Assert User 1 (expired) is fully anonymised
         assert user1.name == "Deleted User"
         assert user1.email == f"deleted_{sample_user.id}@deleted.reuni"
-        assert user1.phone_number is None
         assert user1.university_domain is None
         assert user1.is_active is False
         assert user1.deletion_pending_until is None
@@ -344,7 +336,6 @@ class TestGDPRDeletion:
         # Assert User 2 (unexpired) is intact
         assert user2.name == "Other User"
         assert user2.email == "other@university.ac.uk"
-        assert user2.phone_number == "+447700100006"
         assert user2.university_domain == "university.ac.uk"
         assert user2.is_active is False
         assert user2.deletion_pending_until is not None
@@ -369,7 +360,6 @@ class TestGDPRDeletion:
             user = User(
                 email="ratelimit@university.ac.uk",
                 name="Rate Limit User",
-                phone_number="+447700100015",
                 is_verified=True,
                 university_domain="university.ac.uk",
             )

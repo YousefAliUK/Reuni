@@ -18,25 +18,6 @@ from flask_limiter.util import get_remote_address
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-def _normalise_phone(raw: str) -> str:
-    """
-    Strips spaces, dashes, and parentheses from the input.
-    If it starts with '0' (UK format like 07912345678), replace leading 0 with '+44'.
-    If it starts with '+', keep it as-is (international number).
-    If it starts with '44' (without +), prepend '+'.
-    """
-    cleaned = raw.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-    if cleaned.startswith("0"):
-        return "+44" + cleaned[1:]
-    elif cleaned.startswith("+"):
-        return cleaned
-    elif cleaned.startswith("44"):
-        return "+" + cleaned
-    else:
-        # Fallback/assume it's UK or local without lead zero if short, but E.164-ish
-        return cleaned
-
-
 def send_otp_email(name: str, email: str, code: str):
     safe_name = html_escape(name)
     safe_code = html_escape(code)
@@ -44,16 +25,11 @@ def send_otp_email(name: str, email: str, code: str):
         f"<p>Hi {safe_name},</p>\n"
         f"<p>Your 6-digit verification code to activate your Reuni account is:</p>\n"
         f"<div class=\"code-block\">{safe_code}</div>\n"
-        f"<p>This code expires in 15 minutes.</p>\n"
+        f"<p>This code is valid for 15 minutes. Please complete your registration on the website.</p>\n"
         f"<p>If you didn't create an account, you can safely ignore this email.</p>\n"
-        f"<p>— The Reuni team</p>"
+        f"<p>Best regards,<br>The Reuni Team</p>"
     )
-    send_email(
-        to_email=email,
-        to_name=safe_name,
-        subject="Your OTP Code",
-        html_content=email_html
-    )
+    send_email(email, name, "Activate your Reuni Account", email_html)
 
 
 def resend_key_func():
@@ -70,12 +46,11 @@ def register():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         name = request.form.get("name", "").strip()
-        phone_raw = request.form.get("phone_number", "").strip()
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
 
         # --- Basic validation ---
-        if not email or not name or not password or not phone_raw:
+        if not email or not name or not password:
             flash("All fields are required.", "danger")
             return redirect(url_for("auth.register"))
 
@@ -110,12 +85,6 @@ def register():
             flash("Passwords do not match.", "danger")
             return redirect(url_for("auth.register"))
 
-        # Normalise phone number
-        phone_number = _normalise_phone(phone_raw)
-        if not re.match(r'^\+\d{10,15}$', phone_number):
-            flash("Please enter a valid phone number.", "danger")
-            return redirect(url_for("auth.register"))
-
         now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         # Check for existing email
@@ -146,37 +115,10 @@ def register():
                 db.session.delete(existing_email)
                 db.session.commit()
 
-        # Check for existing phone
-        user_with_phone = User.query.filter_by(phone_number=phone_number).first()
-        if user_with_phone:
-            if user_with_phone.deletion_pending_until:
-                # Account is pending deletion
-                if user_with_phone.deletion_pending_until <= now:
-                    try:
-                        user_with_phone.anonymise()
-                        db.session.commit()
-                    except Exception as clean_err:
-                        db.session.rollback()
-                        current_app.logger.error(f"Error during JIT registration phone cleanup: {clean_err}")
-                        flash("An error occurred during registration. Please try again.", "danger")
-                        return redirect(url_for("auth.register"))
-                else:
-                    remaining = user_with_phone.deletion_pending_until - now
-                    days = max(1, remaining.days)
-                    flash(f"This phone number is associated with an account pending deletion. You can register a new account in {days} days.", "danger")
-                    return redirect(url_for("auth.register"))
-            elif user_with_phone.is_verified:
-                flash("An account with this phone number already exists.", "danger")
-                return redirect(url_for("auth.register"))
-            else:
-                db.session.delete(user_with_phone)
-                db.session.commit()
-
         # --- Create user ---
         user = User(
             email=email,
             name=name,
-            phone_number=phone_number,
             university_domain=domain,
             is_verified=False
         )
@@ -195,11 +137,10 @@ def register():
         except IntegrityError as e:
             db.session.rollback()
             existing_email = User.query.filter_by(email=email).first()
-            existing_phone = User.query.filter_by(phone_number=phone_number).first()
-            if (existing_email and existing_email.is_verified) or (existing_phone and existing_phone.is_verified):
-                flash("An account with this email or phone number already exists.", "danger")
+            if existing_email and existing_email.is_verified:
+                flash("An account with this email already exists.", "danger")
             else:
-                flash("An account with this email or phone number is currently pending registration. Please try again shortly.", "danger")
+                flash("An account with this email is currently pending registration. Please try again shortly.", "danger")
             return redirect(url_for("auth.register"))
         except Exception as e:
             db.session.rollback()

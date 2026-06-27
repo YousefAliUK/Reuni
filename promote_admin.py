@@ -108,7 +108,6 @@ def main():
                 is_active=True,
                 role="admin",
                 university_domain=domain,
-                phone_number=None,
             )
             new_user.set_password(password)
             db.session.add(new_user)

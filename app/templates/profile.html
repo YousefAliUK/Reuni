@@ -11,7 +11,7 @@
     <span>Bought</span>
     <span>{{ total_bought }}</span>
     <span>Items recycled</span>
-    <span>{{ total_bought }}</span>
+    <span>{{ total_sold }}</span>
 </div>
 
 <div class="profile-page-v3">
@@ -33,7 +33,7 @@
             {% if current_user.university_domain == 'brookes.ac.uk' %}
                 Oxford Brookes University
             {% else %}
-                {{ current_user.university_domain|default('University Partner') }}
+                {{ current_user.university_domain|default('University Partner', true) }}
             {% endif %}
         </div>
         

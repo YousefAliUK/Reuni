@@ -10,14 +10,14 @@ class TestUserModel:
 
     def test_set_and_check_password(self, db_session):
         """Password hashing should verify correct passwords and reject wrong ones."""
-        user = User(email="pw@test.ac.uk", name="PW Test", phone_number="+447700100007")
+        user = User(email="pw@test.ac.uk", name="PW Test",)
         user.set_password("correct-horse")
         assert user.check_password("correct-horse") is True
         assert user.check_password("wrong-password") is False
 
     def test_default_kg_saved_total(self, db_session):
         """A new user should start with 0.0 kg saved."""
-        user = User(email="eco@test.ac.uk", name="Eco Test", phone_number="+447700100008")
+        user = User(email="eco@test.ac.uk", name="Eco Test",)
         user.set_password("pass")
         db_session.session.add(user)
         db_session.session.commit()

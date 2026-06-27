@@ -37,7 +37,6 @@ def test_partner_registration_via_invite(client, app):
         assert user.role == "partner"
         assert user.partner_university == "brookes.ac.uk"
         assert user.is_verified is True
-        assert user.phone_number is None  # Check that nullable phone_number worked
 
 def test_partner_registration_validation(client, app):
     """Test domain and password validation during registration."""
@@ -86,9 +85,9 @@ def test_partner_registration_validation(client, app):
 def test_partner_dashboard_scoping(client, app, db_session):
     """Test that the partner dashboard displays correct, scoped statistics."""
     with app.app_context():
-        student_brookes = User(name="Brookes Student", email="stud@brookes.ac.uk", phone_number="+447700100011", is_verified=True, university_domain="brookes.ac.uk")
+        student_brookes = User(name="Brookes Student", email="stud@brookes.ac.uk", is_verified=True, university_domain="brookes.ac.uk")
         student_brookes.set_password("password123")
-        student_oxford = User(name="Oxford Student", email="stud@oxford.ac.uk", phone_number="+447700100012", is_verified=True, university_domain="oxford.ac.uk")
+        student_oxford = User(name="Oxford Student", email="stud@oxford.ac.uk", is_verified=True, university_domain="oxford.ac.uk")
         student_oxford.set_password("password123")
         
         partner_brookes = User(name="Brookes Partner", email="partner@brookes.ac.uk", role="partner", partner_university="brookes.ac.uk", is_verified=True, is_active=True)
@@ -121,7 +120,7 @@ def test_partner_dashboard_scoping(client, app, db_session):
 def test_student_and_partner_routing_protection(client, app, db_session):
     """Test that students cannot access partner routes, and partners cannot access student marketplace features."""
     with app.app_context():
-        student = User(name="Student", email="stud@brookes.ac.uk", phone_number="+447700100013", is_verified=True, university_domain="brookes.ac.uk")
+        student = User(name="Student", email="stud@brookes.ac.uk", is_verified=True, university_domain="brookes.ac.uk")
         student.set_password("password123")
         
         partner = User(name="Partner", email="partner@brookes.ac.uk", role="partner", partner_university="brookes.ac.uk", is_verified=True, is_active=True)
@@ -135,11 +134,12 @@ def test_student_and_partner_routing_protection(client, app, db_session):
     resp = client.get("/partner/dashboard", follow_redirects=True)
     assert b"You do not have permission to access the partner dashboard." in resp.data
 
-    # 2. Partner trying to list an item (should fail phone guard check)
+    # 2. Partner trying to list an item (should succeed)
     client.post("/auth/logout", follow_redirects=True)
     client.post("/auth/login", data={"email": "partner@brookes.ac.uk", "password": "password123"}, follow_redirects=True)
     resp = client.get("/items/new", follow_redirects=True)
-    assert b"Please add a phone number in Settings" in resp.data
+    assert resp.status_code == 200
+    assert b"List an Item" in resp.data
 
 def test_session_expiry_and_deactivation(client, app, db_session):
     """Test partner 7-day session expiry rules and immediate deactivation behavior."""

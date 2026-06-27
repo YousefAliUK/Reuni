@@ -44,7 +44,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     name = db.Column(db.String(80), nullable=False)
-    phone_number = db.Column(db.String(20), unique=True, nullable=True)
+    last_seen_at = db.Column(db.DateTime, nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     kg_saved_total = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=False, server_default=sa.text('0'))
@@ -88,12 +88,16 @@ class User(UserMixin, db.Model):
         """Wipes personal data from the user record according to UK GDPR."""
         self.name = "Deleted User"
         self.email = f"deleted_{self.id}@deleted.reuni"
-        # Must be explicitly None (SQL NULL), not an empty string "", so that multiple
-        # deleted records do not violate the phone_number unique constraint (NULL != NULL).
-        self.phone_number = None
+        # GDPR message content anonymisation: replace message content with a placeholder
+        Message.query.filter_by(sender_id=self.id).update({Message.content: "[Message removed — account deleted]"})
+        # Delete notifications for this user
+        Notification.query.filter_by(user_id=self.id).delete()
         import secrets
         self.password_hash = generate_password_hash(secrets.token_hex(32))
         self.is_verified = False
+        self.email_verification_code = None
+        self.email_verification_expires_at = None
+        self.email_verification_attempts = 0
         self.is_active = False
         self.university_domain = None
         self.partner_university = None
@@ -134,6 +138,7 @@ class Item(db.Model):
     image_filename = db.Column(db.String(255), nullable=True, default=None)
     kg_saved = db.Column(db.Numeric(10, 2, asdecimal=False), default=0.0)
     pin_code = db.Column(db.String(256), nullable=True, default=None)
+    pin_plaintext = db.Column(db.String(4), nullable=True, default=None)
     pin_expires_at = db.Column(db.DateTime, nullable=True, default=None)
     claimed_at = db.Column(db.DateTime, nullable=True, default=None)
     pin_attempts = db.Column(db.Integer, default=0)
@@ -200,3 +205,52 @@ class CancellationRecord(db.Model):
 
     def __repr__(self):
         return f"<CancellationRecord item_id={self.item_id} tier={self.tier}>"
+
+
+# ──────────────────────────────────────────────
+# Message Model
+# ──────────────────────────────────────────────
+class Message(db.Model):
+    __tablename__ = "messages"
+    __table_args__ = (
+        db.CheckConstraint('length(content) <= 1000', name='ck_messages_content_length'),
+        db.Index('ix_messages_item_recipient', 'item_id', 'recipient_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey("items.id"), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    item = db.relationship("Item", backref=db.backref("messages", lazy=True))
+    sender = db.relationship("User", foreign_keys=[sender_id], backref="sent_messages", lazy=True)
+    recipient = db.relationship("User", foreign_keys=[recipient_id], backref="received_messages", lazy=True)
+
+    def __repr__(self):
+        return f"<Message {self.id} sender={self.sender_id} recipient={self.recipient_id}>"
+
+
+# ──────────────────────────────────────────────
+# Notification Model
+# ──────────────────────────────────────────────
+class Notification(db.Model):
+    __tablename__ = "notifications"
+    __table_args__ = (
+        db.Index('ix_notifications_user_unread', 'user_id', 'is_read'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=True)
+    link = db.Column(db.String(500), nullable=True)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship("User", backref=db.backref("notifications", lazy=True))
+
+    def __repr__(self):
+        return f"<Notification {self.id} user={self.user_id} title={self.title}>"

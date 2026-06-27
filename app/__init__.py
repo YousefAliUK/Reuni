@@ -139,37 +139,16 @@ def create_app(config_class=None):
     from app.routes.items import items_bp
     from app.routes.partner import partner_bp
     from app.routes.admin import admin_bp
+    from app.routes.messaging import messaging_bp
     from app.utils.decorators import verified_required
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(items_bp)
     app.register_blueprint(partner_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(messaging_bp)
 
-    # ── Jinja2 custom filters ──
-    @app.template_filter('mask_phone')
-    def mask_phone_filter(phone: str) -> str:
-        """
-        Masks a phone number for display, showing the country code prefix and
-        the last 4 digits only. Used on the PIN page to protect PII from
-        shoulder-surfing and accidental screenshots.
 
-        Examples:
-            '+447912345678' → '+44 •• •• 5678'
-            '+14155552671'  → '+1 •• •• 2671'
-        """
-        if not phone or len(phone) < 5:
-            return '•••• ••••'
-        suffix = phone[-4:]
-        # Keep the country code: '+' plus digits up to first space or up to 3 chars
-        if phone.startswith('+44'):
-            prefix = '+44'
-        elif phone.startswith('+1'):
-            prefix = '+1'
-        else:
-            # Generic: take everything up to but not including the last 7 digits
-            prefix = phone[:max(2, len(phone) - 7)]
-        return f"{prefix} \u2022\u2022 \u2022\u2022 {suffix}"
 
     # ── Marketplace home page (merged browse + landing) ──
     @app.route("/")
@@ -329,54 +308,7 @@ def create_app(config_class=None):
     def settings():
         return render_template("settings.html")
 
-    @app.route("/settings/phone", methods=["GET", "POST"])
-    @login_required
-    @verified_required
-    def settings_phone():
-        if request.method == "GET":
-            return redirect(url_for("settings"))
 
-        from app.routes.auth import _normalise_phone
-        from app.models import User
-        import re
-
-        phone_raw = request.form.get("phone_number", "").strip()
-
-        # No user of any role may set their phone number to None/empty once it has been set.
-        if not phone_raw:
-            flash("Phone number is required.", "danger")
-            return redirect(url_for("settings"))
-
-        # Normalise phone
-        phone_number = _normalise_phone(phone_raw)
-
-        # Validate format
-        if not re.match(r'^\+\d{10,15}$', phone_number):
-            flash("Please enter a valid phone number (e.g. +447912345678 or UK mobile).", "danger")
-            return redirect(url_for("settings"))
-
-        # If same as current:
-        if phone_number == current_user.phone_number:
-            flash("That's already your phone number.", "info")
-            return redirect(url_for("settings"))
-
-        # Check uniqueness against other users (both verified and unverified)
-        duplicate_user = User.query.filter(User.phone_number == phone_number, User.id != current_user.id).first()
-        if duplicate_user:
-            flash("This number is already registered to another account.", "danger")
-            return redirect(url_for("settings"))
-
-        # Update
-        current_user.phone_number = phone_number
-        try:
-            db.session.commit()
-            flash("Phone number updated successfully.", "success")
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Database error during phone update: {e}")
-            flash("A database error occurred. Please try again.", "danger")
-
-        return redirect(url_for("settings"))
 
     @app.route("/settings/password", methods=["GET", "POST"])
     @login_required
