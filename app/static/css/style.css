@@ -9482,7 +9482,7 @@ body {
         left: var(--space-4);
         right: var(--space-4);
         width: auto;
-        z-index: 999;
+        z-index: calc(var(--z-drawer) + 1);
         display: none;
     }
     .mobile-notification-dropdown.notification-dropdown--open {

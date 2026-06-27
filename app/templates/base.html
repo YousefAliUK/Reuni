@@ -941,7 +941,7 @@
             function startGlobalNotifPolling() {
                 if (notifPollInterval) clearInterval(notifPollInterval);
                 fetchUnreadCount();
-                notifPollInterval = setInterval(fetchUnreadCount, 30000);
+                notifPollInterval = setInterval(fetchUnreadCount, 10000);
             }
 
             function stopGlobalNotifPolling() {
