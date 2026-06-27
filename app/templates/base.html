@@ -78,6 +78,23 @@
                 </button>
 
                 {% if current_user.is_authenticated %}
+                    <!-- Desktop Notification Bell -->
+                    <div style="position: relative;">
+                        <button type="button" class="notification-bell" id="notification-bell-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                            <span class="notification-bell__badge" id="notification-badge" style="display: none;">0</span>
+                        </button>
+                        <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="notification-dropdown__header">
+                                <span class="notification-dropdown__title">Notifications</span>
+                                <button type="button" class="notification-dropdown__clear" id="notification-clear-all">Mark all as read</button>
+                            </div>
+                            <div class="notification-dropdown__list" id="notification-list">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+                    </div>
+
                     <a href="{{ url_for('items.list_item') }}" class="btn btn--primary navbar__sell-btn">
                         <span class="material-symbols-outlined" aria-hidden="true">add</span>
                         <span>List an Item</span>
@@ -271,6 +288,11 @@
             <span class="material-symbols-outlined" aria-hidden="true">add</span>
         </a>
         {% if current_user.is_authenticated %}
+            <button type="button" class="mobile-tabs__item" id="mobile-notification-bell-trigger" style="position: relative; background: transparent; border: none; padding: 0;">
+                <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                <span class="notification-bell__badge" id="mobile-notification-badge" style="display: none; top: -2px; right: 12px; border: 1.5px solid var(--color-bg);">0</span>
+                <span class="mobile-tabs__label">Alerts</span>
+            </button>
             <a href="{{ url_for('profile') }}" class="mobile-tabs__item {% if request.endpoint == 'profile' %}mobile-tabs__item--active{% endif %}">
                 <span class="mobile-tabs__avatar" aria-hidden="true">{{ current_user.name[0]|upper }}</span>
                 <span class="mobile-tabs__label">Profile</span>
@@ -282,6 +304,19 @@
             </a>
         {% endif %}
     </nav>
+
+    {% if current_user.is_authenticated %}
+        <!-- Mobile Notification Dropdown Panel -->
+        <div class="notification-dropdown mobile-notification-dropdown" id="mobile-notification-dropdown">
+            <div class="notification-dropdown__header">
+                <span class="notification-dropdown__title">Notifications</span>
+                <button type="button" class="notification-dropdown__clear" id="mobile-notification-clear-all">Mark all as read</button>
+            </div>
+            <div class="notification-dropdown__list" id="mobile-notification-list">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </div>
+    {% endif %}
 
     <!-- ─── Full-Screen Search Overlay ─── -->
     <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Search overlay">
@@ -620,6 +655,314 @@
                     renderRecentSearches();
                 });
             }
+
+            // Global Notifications System
+            {% if current_user.is_authenticated %}
+            const notifBell = document.getElementById('notification-bell-trigger');
+            const mobileNotifBell = document.getElementById('mobile-notification-bell-trigger');
+            const notifDropdown = document.getElementById('notification-dropdown');
+            const mobileNotifDropdown = document.getElementById('mobile-notification-dropdown');
+            const notifList = document.getElementById('notification-list');
+            const mobileNotifList = document.getElementById('mobile-notification-list');
+            const notifBadge = document.getElementById('notification-badge');
+            const mobileNotifBadge = document.getElementById('mobile-notification-badge');
+            const clearAllBtn = document.getElementById('notification-clear-all');
+            const mobileClearAllBtn = document.getElementById('mobile-notification-clear-all');
+
+            let notifPollInterval = null;
+            let lastNotifActivity = Date.now();
+            let isNotifIdle = false;
+
+            // Toggle dropdown
+            function toggleNotifDropdown(e) {
+                if (e) e.stopPropagation();
+                
+                // Close other dropdowns if open
+                const profileDropdown = document.getElementById('profile-dropdown-menu');
+                if (profileDropdown && profileDropdown.classList.contains('user-dropdown__menu--open')) {
+                    profileDropdown.classList.remove('user-dropdown__menu--open');
+                    const trigger = document.getElementById('profile-dropdown-trigger');
+                    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                }
+
+                // Determine whether we are toggling mobile or desktop dropdown
+                const isMobileTrigger = e && (mobileNotifBell.contains(e.target) || mobileNotifBell === e.target);
+                const targetDropdown = isMobileTrigger ? mobileNotifDropdown : notifDropdown;
+                const siblingDropdown = isMobileTrigger ? notifDropdown : mobileNotifDropdown;
+                const targetBell = isMobileTrigger ? mobileNotifBell : notifBell;
+
+                // Close sibling dropdown
+                if (siblingDropdown) {
+                    siblingDropdown.classList.remove('notification-dropdown--open');
+                }
+
+                if (targetDropdown) {
+                    const isOpen = targetDropdown.classList.contains('notification-dropdown--open');
+                    if (isOpen) {
+                        targetDropdown.classList.remove('notification-dropdown--open');
+                        if (targetBell) targetBell.setAttribute('aria-expanded', 'false');
+                    } else {
+                        targetDropdown.classList.add('notification-dropdown--open');
+                        if (targetBell) targetBell.setAttribute('aria-expanded', 'true');
+                        fetchNotifications();
+                    }
+                }
+            }
+
+            if (notifBell) notifBell.addEventListener('click', toggleNotifDropdown);
+            if (mobileNotifBell) mobileNotifBell.addEventListener('click', toggleNotifDropdown);
+
+            // Close on click outside
+            document.addEventListener('click', function(e) {
+                if (notifDropdown && notifDropdown.classList.contains('notification-dropdown--open')) {
+                    if (!notifDropdown.contains(e.target) && (!notifBell || !notifBell.contains(e.target))) {
+                        notifDropdown.classList.remove('notification-dropdown--open');
+                        if (notifBell) notifBell.setAttribute('aria-expanded', 'false');
+                    }
+                }
+                if (mobileNotifDropdown && mobileNotifDropdown.classList.contains('notification-dropdown--open')) {
+                    if (!mobileNotifDropdown.contains(e.target) && (!mobileNotifBell || !mobileNotifBell.contains(e.target))) {
+                        mobileNotifDropdown.classList.remove('notification-dropdown--open');
+                        if (mobileNotifBell) mobileNotifBell.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            });
+
+            // Format relative time (e.g. "2m ago")
+            function formatRelativeTime(isoString) {
+                try {
+                    const diffMs = Date.now() - new Date(isoString).getTime();
+                    const diffSec = Math.floor(diffMs / 1000);
+                    const diffMin = Math.floor(diffSec / 60);
+                    const diffHour = Math.floor(diffMin / 60);
+                    const diffDay = Math.floor(diffHour / 24);
+
+                    if (diffSec < 60) return 'Just now';
+                    if (diffMin < 60) return `${diffMin}m ago`;
+                    if (diffHour < 24) return `${diffHour}h ago`;
+                    return `${diffDay}d ago`;
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            // Fetch and update unread count
+            async function fetchUnreadCount() {
+                try {
+                    const response = await fetch('/api/notifications/unread-count', {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateBadge(data.count);
+                    }
+                } catch (e) {
+                    console.error('Error fetching unread count:', e);
+                }
+            }
+
+            function updateBadge(count) {
+                if (count > 0) {
+                    if (notifBadge) {
+                        notifBadge.textContent = count;
+                        notifBadge.style.display = 'flex';
+                    }
+                    if (mobileNotifBadge) {
+                        mobileNotifBadge.textContent = count;
+                        mobileNotifBadge.style.display = 'flex';
+                    }
+                } else {
+                    if (notifBadge) notifBadge.style.display = 'none';
+                    if (mobileNotifBadge) mobileNotifBadge.style.display = 'none';
+                }
+            }
+
+            // Fetch notification items
+            async function fetchNotifications() {
+                const lists = [notifList, mobileNotifList].filter(Boolean);
+                if (lists.length === 0) return;
+                
+                lists.forEach(l => {
+                    l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-ink-tertiary);">Loading...</div>';
+                });
+
+                try {
+                    const response = await fetch('/api/notifications', {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (response.ok) {
+                        const notifications = await response.json();
+                        renderNotifications(notifications);
+                    } else {
+                        lists.forEach(l => {
+                            l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-danger);">Failed to load notifications.</div>';
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error fetching notifications:', e);
+                    lists.forEach(l => {
+                        l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-danger);">A network error occurred.</div>';
+                    });
+                }
+            }
+
+            // Render notification rows
+            function renderNotifications(notifications) {
+                const lists = [
+                    { el: notifList, badge: notifBadge },
+                    { el: mobileNotifList, badge: mobileNotifBadge }
+                ];
+
+                lists.forEach(target => {
+                    const listEl = target.el;
+                    if (!listEl) return;
+                    listEl.innerHTML = '';
+
+                    if (notifications.length === 0) {
+                        listEl.innerHTML = `
+                            <div class="notification-dropdown__empty">
+                                <span class="material-symbols-outlined notification-dropdown__empty-icon" aria-hidden="true">notifications_off</span>
+                                <span>No notifications yet.</span>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    notifications.forEach(notif => {
+                        const row = document.createElement('a');
+                        row.href = notif.link || '#';
+                        row.className = `notification-row ${!notif.is_read ? 'notification-row--unread' : ''}`;
+                        row.dataset.id = notif.id;
+
+                        const avatar = document.createElement('span');
+                        avatar.className = 'chat-avatar chat-avatar--small';
+                        avatar.setAttribute('aria-hidden', 'true');
+                        const namePart = notif.title.replace('New message from ', '');
+                        avatar.textContent = namePart[0].toUpperCase();
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'notification-row__content';
+
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = 'notification-row__title';
+                        titleSpan.textContent = notif.title;
+
+                        const textSpan = document.createElement('span');
+                        textSpan.className = 'notification-row__text';
+                        textSpan.textContent = notif.content || '';
+
+                        const timeSpan = document.createElement('span');
+                        timeSpan.className = 'notification-row__time';
+                        timeSpan.textContent = formatRelativeTime(notif.created_at);
+
+                        contentDiv.appendChild(titleSpan);
+                        if (notif.content) contentDiv.appendChild(textSpan);
+                        contentDiv.appendChild(timeSpan);
+
+                        row.appendChild(avatar);
+                        row.appendChild(contentDiv);
+
+                        if (!notif.is_read) {
+                            const dot = document.createElement('span');
+                            dot.className = 'notification-row__dot';
+                            row.appendChild(dot);
+                        }
+
+                        row.addEventListener('click', async (e) => {
+                            if (!notif.is_read) {
+                                const csrfToken = "{{ csrf_token() }}";
+                                
+                                // Mark all notifications for the same link as read in DOM instantly
+                                lists.forEach(otherList => {
+                                    if (otherList.el) {
+                                        const siblings = otherList.el.querySelectorAll(`.notification-row[href="${notif.link}"]`);
+                                        siblings.forEach(sib => {
+                                            if (sib.classList.contains('notification-row--unread')) {
+                                                sib.classList.remove('notification-row--unread');
+                                                const dot = sib.querySelector('.notification-row__dot');
+                                                if (dot) dot.remove();
+                                            }
+                                        });
+                                    }
+                                });
+
+                                // Send background DB update
+                                fetch(`/api/notifications/${notif.id}/read`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRFToken': csrfToken,
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    }
+                                });
+                            }
+                        });
+
+                        listEl.appendChild(row);
+                    });
+                });
+            }
+
+            // Mark all as read
+            const clearButtons = [clearAllBtn, mobileClearAllBtn].filter(Boolean);
+            clearButtons.forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const csrfToken = "{{ csrf_token() }}";
+                    try {
+                        const response = await fetch('/api/notifications/read-all', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        if (response.ok) {
+                            updateBadge(0);
+                            fetchNotifications();
+                        }
+                    } catch (err) {
+                        console.error('Error marking all as read:', err);
+                    }
+                });
+            });
+
+            // Listen to notifications-updated custom event from chat room
+            window.addEventListener('notifications-updated', () => {
+                fetchUnreadCount();
+                const anyOpen = (notifDropdown && notifDropdown.classList.contains('notification-dropdown--open')) || 
+                               (mobileNotifDropdown && mobileNotifDropdown.classList.contains('notification-dropdown--open'));
+                if (anyOpen) {
+                    fetchNotifications();
+                }
+            });
+
+            // Start global polling
+            function startGlobalNotifPolling() {
+                if (notifPollInterval) clearInterval(notifPollInterval);
+                fetchUnreadCount();
+                notifPollInterval = setInterval(fetchUnreadCount, 30000);
+            }
+
+            function stopGlobalNotifPolling() {
+                if (notifPollInterval) {
+                    clearInterval(notifPollInterval);
+                    notifPollInterval = null;
+                }
+            }
+
+            // Handle visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopGlobalNotifPolling();
+                } else {
+                    startGlobalNotifPolling();
+                }
+            });
+
+            // Initial poll
+            startGlobalNotifPolling();
+            {% endif %}
 
             // Auto-dismiss flash alerts after 5 seconds
             const flashAlerts = document.querySelectorAll('.flash-alert');

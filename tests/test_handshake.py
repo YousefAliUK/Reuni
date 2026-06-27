@@ -146,8 +146,8 @@ class TestBuyItem:
             assert digit.encode() in resp.data
         assert b"Your PIN Code" in resp.data
 
-    def test_pin_page_shows_seller_phone(self, second_auth_client, sample_item, sample_user, second_user, db_session):
-        """Buyer should see the seller's phone number and WhatsApp link on the PIN page."""
+    def test_pin_page_shows_chat_thread(self, second_auth_client, sample_item, sample_user, second_user, db_session):
+        """Buyer should see the chat thread on the PIN page."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         sample_item.buyer_id = second_user.id
         sample_item.pin_code = generate_password_hash("1234")
@@ -157,8 +157,8 @@ class TestBuyItem:
 
         resp = second_auth_client.get(f"/items/{sample_item.id}/pin")
         assert resp.status_code == 200
-        assert f"wa.me/{sample_user.phone_number[1:]}".encode() in resp.data
-        assert "+44 \u2022\u2022 \u2022\u2022 0005".encode("utf-8") in resp.data
+        assert b"chat-thread" in resp.data
+        assert b"Meetup coordination" in resp.data
 
     def test_expired_pin_auto_cancels(self, auth_client, sample_item, second_user, db_session):
         """Visiting PIN page after 72h should auto-cancel the claim."""
@@ -209,7 +209,6 @@ class TestBuyItem:
         third = User(
             email="third@university.ac.uk",
             name="Third User",
-            phone_number="+447700100009",
             is_verified=True,
         )
         third.set_password("StrongPass123")
@@ -235,7 +234,6 @@ class TestBuyItem:
         third = User(
             email="third@university.ac.uk",
             name="Third User",
-            phone_number="+447700100010",
             is_verified=True,
         )
         third.set_password("StrongPass123")

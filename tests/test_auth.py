@@ -21,7 +21,6 @@ class TestRegister:
         resp = client.post("/auth/register", data={
             "email": "new@university.ac.uk",
             "name": "New User",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=False)
@@ -30,14 +29,12 @@ class TestRegister:
         user = User.query.filter_by(email="new@university.ac.uk").first()
         assert user is not None
         assert user.name == "New User"
-        assert user.phone_number == "+447912345678"
 
     def test_register_duplicate_email(self, client, sample_user):
         """Registering with an existing email should flash an error."""
         resp = client.post("/auth/register", data={
             "email": "test@university.ac.uk",
             "name": "Duplicate",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
@@ -48,7 +45,6 @@ class TestRegister:
         resp = client.post("/auth/register", data={
             "email": "mismatch@university.ac.uk",
             "name": "Mismatch",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "DifferentPass123",
         }, follow_redirects=True)
@@ -59,65 +55,20 @@ class TestRegister:
         resp = client.post("/auth/register", data={
             "email": "",
             "name": "",
-            "phone_number": "",
             "password": "",
             "confirm_password": "",
         }, follow_redirects=True)
         assert b"All fields are required" in resp.data
 
-    def test_register_requires_phone(self, client):
-        """Registration should fail when phone number is completely missing from request."""
-        resp = client.post("/auth/register", data={
-            "email": "phone-missing@university.ac.uk",
-            "name": "No Phone",
-            "password": "StrongPass123",
-            "confirm_password": "StrongPass123",
-        }, follow_redirects=True)
-        assert b"All fields are required" in resp.data
 
-    def test_duplicate_phone_rejected(self, client, sample_user):
-        """Registering with an already used phone number should be rejected."""
-        resp = client.post("/auth/register", data={
-            "email": "another-email@university.ac.uk",
-            "name": "Another User",
-            "phone_number": sample_user.phone_number,  # duplicate phone
-            "password": "StrongPass123",
-            "confirm_password": "StrongPass123",
-        }, follow_redirects=True)
-        assert b"already exists" in resp.data
 
-    def test_register_normalises_phone(self, client, db_session):
-        """Phone starting with +44 should be stored unchanged."""
-        resp = client.post("/auth/register", data={
-            "email": "intl@university.ac.uk",
-            "name": "Intl User",
-            "phone_number": "+447912345678",
-            "password": "StrongPass123",
-            "confirm_password": "StrongPass123",
-        }, follow_redirects=False)
-        assert resp.status_code == 302
 
-        user = User.query.filter_by(email="intl@university.ac.uk").first()
-        assert user is not None
-        assert user.phone_number == "+447912345678"
-
-    def test_register_rejects_invalid_phone(self, client):
-        """Garbage phone input should be rejected after normalisation."""
-        resp = client.post("/auth/register", data={
-            "email": "bad-phone@university.ac.uk",
-            "name": "Bad Phone",
-            "phone_number": "abc123",
-            "password": "StrongPass123",
-            "confirm_password": "StrongPass123",
-        }, follow_redirects=True)
-        assert b"valid phone number" in resp.data
 
     def test_register_name_too_long(self, client):
         """Registration with a name longer than 80 characters should fail."""
         resp = client.post("/auth/register", data={
             "email": "newlongname@university.ac.uk",
             "name": "a" * 81,
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
@@ -197,7 +148,6 @@ class TestEmailVerification:
         resp = client.post("/auth/register", data={
             "email": "new@brookes.ac.uk",
             "name": "Brookes User",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=False)
@@ -216,7 +166,6 @@ class TestEmailVerification:
         resp = client.post("/auth/register", data={
             "email": "student@gmail.com",
             "name": "Invalid TLD",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
@@ -227,7 +176,6 @@ class TestEmailVerification:
         resp = client.post("/auth/register", data={
             "email": "student@oxford.ac.uk",
             "name": "Not Allowed University",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
@@ -240,7 +188,6 @@ class TestEmailVerification:
         user1 = User(
             email="unverified@brookes.ac.uk",
             name="Unverified One",
-            phone_number="+447912345678",
             is_verified=False
         )
         user1.set_password("StrongPass123")
@@ -251,7 +198,6 @@ class TestEmailVerification:
         resp = client.post("/auth/register", data={
             "email": "unverified@brookes.ac.uk",
             "name": "Unverified Two",
-            "phone_number": "07912345678",
             "password": "NewPassword123",
             "confirm_password": "NewPassword123",
         }, follow_redirects=False)
@@ -269,7 +215,6 @@ class TestEmailVerification:
         user = User(
             email="verified@brookes.ac.uk",
             name="Verified User",
-            phone_number="+447912345678",
             is_verified=True
         )
         user.set_password("StrongPass123")
@@ -279,7 +224,6 @@ class TestEmailVerification:
         resp = client.post("/auth/register", data={
             "email": "verified@brookes.ac.uk",
             "name": "Verified Re-register",
-            "phone_number": "07912345678",
             "password": "NewPassword123",
             "confirm_password": "NewPassword123",
         }, follow_redirects=True)
@@ -292,7 +236,6 @@ class TestEmailVerification:
         client.post("/auth/register", data={
             "email": "verifytest@brookes.ac.uk",
             "name": "Verify Test",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         })
@@ -322,7 +265,6 @@ class TestEmailVerification:
         client.post("/auth/register", data={
             "email": "verifytest@brookes.ac.uk",
             "name": "Verify Test",
-            "phone_number": "07912345678",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         })
@@ -345,7 +287,6 @@ class TestEmailVerification:
         user = User(
             email="already@brookes.ac.uk",
             name="Already Verified",
-            phone_number="+447912345678",
             is_verified=True
         )
         user.set_password("StrongPass123")
@@ -363,7 +304,6 @@ class TestEmailVerification:
         user = User(
             email="unverified@brookes.ac.uk",
             name="Unverified Login",
-            phone_number="+447912345678",
             is_verified=False
         )
         user.set_password("StrongPass123")
@@ -382,7 +322,6 @@ class TestEmailVerification:
         user = User(
             email="verified@brookes.ac.uk",
             name="Verified Login",
-            phone_number="+447912345678",
             is_verified=True
         )
         user.set_password("StrongPass123")
@@ -402,7 +341,6 @@ class TestEmailVerification:
         user = User(
             email="unverified@brookes.ac.uk",
             name="Unverified Resend",
-            phone_number="+447912345678",
             is_verified=False
         )
         user.set_password("StrongPass123")
@@ -431,7 +369,6 @@ class TestEmailVerification:
         user = User(
             email="unverified@brookes.ac.uk",
             name="Unverified User",
-            phone_number="+447912345678",
             is_verified=False
         )
         user.set_password("StrongPass123")
@@ -484,7 +421,6 @@ class TestLockoutAndComplexity:
         user = User(
             email="lockout@university.ac.uk",
             name="Lockout User",
-            phone_number="+447700100015",
             is_verified=True,
             university_domain="university.ac.uk",
         )
@@ -532,7 +468,6 @@ class TestLockoutAndComplexity:
         resp1 = client.post("/auth/register", data={
             "email": "complex1@brookes.ac.uk",
             "name": "User One",
-            "phone_number": "07900100021",
             "password": "NoDigitsPassword",
             "confirm_password": "NoDigitsPassword"
         }, follow_redirects=True)
@@ -542,7 +477,6 @@ class TestLockoutAndComplexity:
         resp2 = client.post("/auth/register", data={
             "email": "complex2@brookes.ac.uk",
             "name": "User Two",
-            "phone_number": "07900100022",
             "password": "nouppercasepassword1",
             "confirm_password": "nouppercasepassword1"
         }, follow_redirects=True)
@@ -552,7 +486,6 @@ class TestLockoutAndComplexity:
         resp3 = client.post("/auth/register", data={
             "email": "complex3@brookes.ac.uk",
             "name": "User Three",
-            "phone_number": "07900100023",
             "password": "Sh1",
             "confirm_password": "Sh1"
         }, follow_redirects=True)
@@ -629,7 +562,6 @@ class TestForgotPassword:
         unverified_user = User(
             email="unverified@university.ac.uk",
             name="Unverified User",
-            phone_number="+447700100012",
             is_verified=False
         )
         unverified_user.set_password("StrongPass123")
@@ -797,7 +729,6 @@ class TestEmailHtmlEscaping:
         user = User(
             email="xssname@brookes.ac.uk",
             name="<script>alert('xss')</script> Name",
-            phone_number="+447700100088",
             is_verified=True,
             university_domain="brookes.ac.uk"
         )

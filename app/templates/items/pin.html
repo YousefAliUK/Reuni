@@ -159,25 +159,71 @@
             <span>End-to-End Encrypted Exchange</span>
         </div>
     </div>
-
-    <!-- WhatsApp coordination option -->
-    {% if current_user.id == item.buyer_id %}
-        {% set partner_user = item.seller %}
-    {% else %}
-        {% set partner_user = item.buyer %}
-    {% endif %}
-    {% if partner_user and partner_user.phone_number %}
-        <a href="https://wa.me/{{ partner_user.phone_number[1:] }}?text=Hey%2C%20I%20just%20claimed%20your%20{{ item.title | urlencode }}%20on%20Reuni.%20When%20can%20we%20meet%20for%20the%20PIN%20handshake%3F" target="_blank" rel="noopener" style="display: flex; justify-content: space-between; align-items: center; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); text-decoration: none; margin-bottom: var(--space-6);">
-            <div style="display: flex; align-items: center; gap: var(--space-3);">
-                <span class="material-symbols-outlined" aria-hidden="true" style="color: #25D366; font-size: 24px;">chat</span>
-                <div>
-                    <div style="font-weight: 600; color: var(--color-ink-primary); font-size: var(--type-small);">WhatsApp coordination</div>
-                    <div style="font-size: 12px; color: var(--color-ink-secondary);">Chat securely with {{ partner_user.name }} ({{ partner_user.phone_number | mask_phone }})</div>
-                </div>
+    <!-- In-App Messaging Thread -->
+    {% if partner_user %}
+    <div class="chat-thread card" id="chat-thread" style="margin-bottom: var(--space-8);">
+        <div class="chat-header">
+            <span class="chat-avatar" aria-hidden="true">
+                {{ partner_user.name[0]|upper }}
+            </span>
+            <div class="chat-header-info">
+                <span class="chat-partner-name">{{ partner_user.name }}</span>
+                <span class="chat-context">Meetup coordination &middot; {{ item.title }}</span>
             </div>
-            <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-tertiary); font-size: 18px;">arrow_forward</span>
-        </a>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            {% for msg in messages %}
+                <div class="chat-message-row {% if msg.sender_id == current_user.id %}chat-message-row--mine{% else %}chat-message-row--theirs{% endif %}" data-message-id="{{ msg.id }}">
+                    {% if msg.sender_id != current_user.id %}
+                        <span class="chat-avatar chat-avatar--small" aria-hidden="true">
+                            {{ partner_user.name[0]|upper }}
+                        </span>
+                    {% endif %}
+                    <div class="chat-bubble {% if msg.sender_id == current_user.id %}chat-bubble--mine{% else %}chat-bubble--theirs{% endif %}">
+                        <div class="chat-bubble-text">{{ msg.content }}</div>
+                        <div class="chat-bubble-meta">
+                            <span class="chat-timestamp">{{ msg.created_at.strftime('%H:%M') }}</span>
+                            {% if msg.sender_id == current_user.id %}
+                                <span class="chat-seen-status" id="seen-{{ msg.id }}">
+                                    {% if msg.is_read %}Seen{% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input-container" id="chat-input-container">
+            {% if not item.is_sold and item.buyer_id %}
+                <form id="chat-form" style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    <div style="display: flex; gap: var(--space-2); align-items: flex-end;">
+                        <textarea id="chat-input" placeholder="Type a message..." maxlength="1000" required class="chat-input-textarea" rows="1" style="flex: 1; min-height: 48px; height: 48px; overflow-y: hidden;"></textarea>
+                        <button type="submit" class="chat-send-btn btn btn--primary" id="chat-send-btn" style="border-radius: var(--radius-md); background: var(--color-primary); color: #FFFFFF;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">send</span>
+                        </button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; min-height: 16px;">
+                        <span id="chat-error-message" class="chat-error-text" style="display: none; color: var(--color-danger); font-size: 11px; font-weight: 600;"></span>
+                        <span id="chat-char-counter" class="chat-char-counter" style="color: var(--color-ink-tertiary); font-size: 11px; margin-left: auto; font-family: var(--font-mono);">0/1000</span>
+                    </div>
+                </form>
+            {% elif item.is_sold %}
+                <div class="chat-terminal-banner">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">lock</span>
+                    <span>This transaction has been completed. Chat is now read-only.</span>
+                </div>
+            {% else %}
+                <div class="chat-terminal-banner">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">lock</span>
+                    <span>This claim has been cancelled. Chat is read-only.</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
     {% endif %}
+
 
     <!-- Environmental preview -->
     <div class="pin-impact-banner">
@@ -563,7 +609,314 @@
             });
         }
 
-        // 5. QR Code Toggle Logic
+        // 5. In-App Chat Thread Polling & Send Logic
+        const chatThread = document.getElementById('chat-thread');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatCharCounter = document.getElementById('chat-char-counter');
+        const chatErrorMsg = document.getElementById('chat-error-message');
+        const chatInputContainer = document.getElementById('chat-input-container');
+
+        if (chatThread && chatMessages) {
+            const itemId = {{ item.id }};
+            const currentUserId = {{ current_user.id }};
+            let pollInterval = null;
+            let lastMessageId = 0;
+            // Get initial lastMessageId from existing message elements
+            const existingRows = chatMessages.querySelectorAll('.chat-message-row');
+            existingRows.forEach(row => {
+                const id = parseInt(row.dataset.messageId);
+                if (id > lastMessageId) lastMessageId = id;
+            });
+            let isPolling = false;
+            let lastActivityTime = Date.now();
+            let isIdle = false;
+            let chatPausedBanner = null;
+
+            // Auto scroll to bottom
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            scrollToBottom();
+
+            // Format ISO time to HH:MM
+            function formatTime(isoString) {
+                try {
+                    const date = new Date(isoString);
+                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            // Render message row
+            function createMessageElement(msg, partnerName) {
+                const row = document.createElement('div');
+                row.className = `chat-message-row ${msg.is_mine ? 'chat-message-row--mine' : 'chat-message-row--theirs'}`;
+                row.dataset.messageId = msg.id;
+
+                if (!msg.is_mine) {
+                    const avatar = document.createElement('span');
+                    avatar.className = 'chat-avatar chat-avatar--small';
+                    avatar.setAttribute('aria-hidden', 'true');
+                    avatar.textContent = partnerName[0].toUpperCase();
+                    row.appendChild(avatar);
+                }
+
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble ${msg.is_mine ? 'chat-bubble--mine' : 'chat-bubble--theirs'}`;
+
+                const textDiv = document.createElement('div');
+                textDiv.className = 'chat-bubble-text';
+                textDiv.textContent = msg.content; // Strict XSS protection
+                bubble.appendChild(textDiv);
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'chat-bubble-meta';
+
+                const timestamp = document.createElement('span');
+                timestamp.className = 'chat-timestamp';
+                timestamp.textContent = formatTime(msg.created_at);
+                metaDiv.appendChild(timestamp);
+
+                if (msg.is_mine) {
+                    const seenStatus = document.createElement('span');
+                    seenStatus.className = 'chat-seen-status';
+                    seenStatus.id = `seen-${msg.id}`;
+                    if (msg.is_read) {
+                        seenStatus.textContent = 'Seen';
+                    }
+                    metaDiv.appendChild(seenStatus);
+                }
+
+                bubble.appendChild(metaDiv);
+                row.appendChild(bubble);
+                return row;
+            }
+
+            // Fetch and update messages
+            async function fetchMessages() {
+                if (isPolling) return;
+                isPolling = true;
+
+                try {
+                    const response = await fetch(`/api/messages/${itemId}?since_id=${lastMessageId}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const partnerName = "{{ partner_user.name if partner_user else 'Deleted User' }}";
+                        
+                        // Check thread status
+                        if (data.thread_status !== 'active') {
+                            stopPolling();
+                            if (chatInputContainer) {
+                                if (data.thread_status === 'sold') {
+                                    chatInputContainer.innerHTML = `
+                                        <div class="chat-terminal-banner">
+                                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">lock</span>
+                                            <span>This transaction has been completed. Chat is now read-only.</span>
+                                        </div>
+                                    `;
+                                } else {
+                                    chatInputContainer.innerHTML = `
+                                        <div class="chat-terminal-banner">
+                                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">lock</span>
+                                            <span>This claim has been cancelled. Chat is read-only.</span>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }
+
+                        // Determine if scroll is near bottom before update
+                        const isNearBottom = chatMessages.scrollHeight - chatMessages.clientHeight - chatMessages.scrollTop < 60;
+
+                        // Append new messages
+                        if (data.messages && data.messages.length > 0) {
+                            data.messages.forEach(msg => {
+                                // Prevent duplicates if already added optimistically
+                                if (!chatMessages.querySelector(`[data-message-id="${msg.id}"]`)) {
+                                    chatMessages.appendChild(createMessageElement(msg, partnerName));
+                                }
+                                if (msg.id > lastMessageId) lastMessageId = msg.id;
+                            });
+                            if (isNearBottom) {
+                                scrollToBottom();
+                            }
+                        }
+
+                        // Update read receipts (seen statuses) from seen_ids
+                        if (data.seen_ids) {
+                            data.seen_ids.forEach(id => {
+                                const seenEl = document.getElementById(`seen-${id}`);
+                                if (seenEl) {
+                                    seenEl.textContent = 'Seen';
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Chat poll error:', e);
+                } finally {
+                    isPolling = false;
+                }
+            }
+
+            // Start Polling
+            function startPolling() {
+                if (pollInterval) clearInterval(pollInterval);
+                if (chatPausedBanner) {
+                    chatPausedBanner.remove();
+                    chatPausedBanner = null;
+                }
+                isIdle = false;
+                fetchMessages();
+                pollInterval = setInterval(fetchMessages, 4000);
+            }
+
+            // Stop Polling
+            function stopPolling() {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+            }
+
+            // Handle Send Message
+            if (chatForm && chatInput) {
+                // Character counter & height auto-resize
+                chatInput.addEventListener('input', () => {
+                    const len = chatInput.value.length;
+                    chatCharCounter.textContent = `${len}/1000`;
+                    
+                    if (len > 1000) {
+                        chatCharCounter.style.color = 'var(--color-danger)';
+                        chatSendBtn.disabled = true;
+                    } else {
+                        chatCharCounter.style.color = 'var(--color-ink-tertiary)';
+                        chatSendBtn.disabled = (len === 0);
+                    }
+
+                    // Auto resize height & toggle scrollbar visibility
+                    chatInput.style.height = '48px';
+                    const scrollHeight = chatInput.scrollHeight;
+                    chatInput.style.height = scrollHeight + 'px';
+                    if (scrollHeight > 120) {
+                        chatInput.style.overflowY = 'auto';
+                    } else {
+                        chatInput.style.overflowY = 'hidden';
+                    }
+                });
+
+                // Desktop Enter-to-send vs Mobile default behavior
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        if (window.matchMedia('(hover: hover)').matches) {
+                            e.preventDefault();
+                            chatForm.requestSubmit();
+                        }
+                    }
+                });
+
+                chatForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const content = chatInput.value.strip ? chatInput.value.strip() : chatInput.value.trim();
+                    if (!content) return;
+
+                    chatSendBtn.disabled = true;
+                    chatErrorMsg.style.display = 'none';
+
+                    try {
+                        const csrfToken = "{{ csrf_token() }}";
+                        const response = await fetch(`/api/messages/${itemId}/send`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ content: content })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            // Optimistic append
+                            const partnerName = "{{ partner_user.name if partner_user else 'Deleted User' }}";
+                            chatMessages.appendChild(createMessageElement(data.message, partnerName));
+                            if (data.message.id > lastMessageId) lastMessageId = data.message.id;
+                            chatInput.value = '';
+                            chatInput.style.height = '48px';
+                            chatInput.style.overflowY = 'hidden';
+                            chatCharCounter.textContent = '0/1000';
+                            scrollToBottom();
+                            // Reset activity timer on send
+                            lastActivityTime = Date.now();
+                        } else {
+                            chatErrorMsg.textContent = data.error || 'Failed to send message.';
+                            chatErrorMsg.style.display = 'block';
+                            chatSendBtn.disabled = false;
+                        }
+                    } catch (err) {
+                        console.error('Send error:', err);
+                        chatErrorMsg.textContent = 'A network error occurred. Please try again.';
+                        chatErrorMsg.style.display = 'block';
+                        chatSendBtn.disabled = false;
+                    }
+                });
+            }
+
+            // Visibility API: pause/resume polling
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopPolling();
+                } else if (!isIdle) {
+                    startPolling();
+                }
+            });
+
+            // Idle Detection (2 minutes of inactivity)
+            function resetActivity() {
+                lastActivityTime = Date.now();
+                if (isIdle) {
+                    isIdle = false;
+                    if (chatPausedBanner) {
+                        chatPausedBanner.remove();
+                        chatPausedBanner = null;
+                    }
+                    startPolling();
+                }
+            }
+
+            window.addEventListener('mousemove', resetActivity);
+            window.addEventListener('keydown', resetActivity);
+            window.addEventListener('scroll', resetActivity);
+            window.addEventListener('click', resetActivity);
+
+            setInterval(() => {
+                const idleLimit = 2 * 60 * 1000; // 2 minutes
+                if (Date.now() - lastActivityTime > idleLimit && !isIdle && pollInterval) {
+                    isIdle = true;
+                    stopPolling();
+                    
+                    // Show banner
+                    chatPausedBanner = document.createElement('div');
+                    chatPausedBanner.className = 'chat-paused-banner';
+                    chatPausedBanner.innerHTML = `
+                        <span class="material-symbols-outlined" style="font-size: 14px;">pause_circle</span>
+                        <span>Chat paused due to inactivity. Move mouse or press any key to resume.</span>
+                    `;
+                    chatThread.insertBefore(chatPausedBanner, chatMessages);
+                }
+            }, 5000);
+
+            // Initial poll start
+            startPolling();
+        }
+
+        // 6. QR Code Toggle Logic
         const showQrBtn = document.getElementById('show-qr-btn');
         const hideQrBtn = document.getElementById('hide-qr-btn');
         const pinDigitsBlock = document.getElementById('pin-digits-block');

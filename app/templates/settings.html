@@ -54,32 +54,6 @@
             </div>
         </div>
 
-        <!-- SECTION 2 — Phone Number -->
-        <div class="settings-card">
-            <h2 class="settings-card__title">Phone Number Settings</h2>
-            
-            <form method="POST" action="{{ url_for('settings_phone') }}" style="display: flex; flex-direction: column; gap: var(--space-4);">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <div class="settings-form-group">
-                    <label for="phone_number" class="settings-label">Phone Number (required for listing or buying items)</label>
-                    <div style="display: flex; gap: var(--space-2);">
-                        <input type="tel" id="phone_number" name="phone_number" 
-                               value="{{ current_user.phone_number or '' }}" 
-                               placeholder='e.g. "+447912345678" or "07912345678"'
-                               required
-                               class="settings-input"
-                               style="flex: 1;"
-                               autocomplete="tel">
-                        <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md);">Update</button>
-                    </div>
-                    <small style="color: var(--color-ink-tertiary); font-size: var(--type-micro); display: block; margin-top: var(--space-2);">
-                        Used for WhatsApp contact exchange after a claim. Must start with + and country code, or local 07 for UK.
-                    </small>
-                </div>
-            </form>
-        </div>
-
         <!-- SECTION 3 — Change Password -->
         <div class="settings-card">
             <h2 class="settings-card__title">Password</h2>

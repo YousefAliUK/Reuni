@@ -11,7 +11,7 @@ def test_admin_access_control(client, app, db_session):
         partner = User(name="Partner", email="partner@brookes.ac.uk", role="partner", partner_university="brookes.ac.uk", is_verified=True, is_active=True)
         partner.set_password("StrongPass123")
         
-        student = User(name="Student", email="student@brookes.ac.uk", phone_number="+447700100014", is_verified=True, university_domain="brookes.ac.uk")
+        student = User(name="Student", email="student@brookes.ac.uk", is_verified=True, university_domain="brookes.ac.uk")
         student.set_password("StrongPass123")
         
         db.session.add_all([admin, partner, student])
@@ -101,9 +101,9 @@ def test_admin_global_dashboard(client, app, db_session):
         admin = User(name="Admin", email="admin@reuni.app", role="admin", is_verified=True, is_active=True)
         admin.set_password("StrongPass123")
         
-        student_brookes = User(name="Brookes Student", email="stud@brookes.ac.uk", phone_number="+447700100015", is_verified=True, university_domain="brookes.ac.uk")
+        student_brookes = User(name="Brookes Student", email="stud@brookes.ac.uk", is_verified=True, university_domain="brookes.ac.uk")
         student_brookes.set_password("StrongPass123")
-        student_oxford = User(name="Oxford Student", email="stud@oxford.ac.uk", phone_number="+447700100016", is_verified=True, university_domain="oxford.ac.uk")
+        student_oxford = User(name="Oxford Student", email="stud@oxford.ac.uk", is_verified=True, university_domain="oxford.ac.uk")
         student_oxford.set_password("StrongPass123")
         
         db.session.add_all([admin, student_brookes, student_oxford])

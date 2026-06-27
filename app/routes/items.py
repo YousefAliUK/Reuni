@@ -145,6 +145,7 @@ def cancel_claim(item):
     """Reset all claim-related fields on an item."""
     item.buyer_id = None
     item.pin_code = None
+    item.pin_plaintext = None
     item.pin_expires_at = None
     item.claimed_at = None
     item.pin_attempts = 0
@@ -177,13 +178,8 @@ def detail(item_id):
 @verified_required
 def list_item():
     """Display and process the 'List an Item' form."""
-    if not current_user.phone_number:
-        flash(
-            "Please add a phone number in Settings before listing or buying items. "
-            "It is required for the PIN handshake.",
-            "warning"
-        )
-        return redirect(url_for("settings"))
+
+
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
@@ -432,13 +428,6 @@ def delete_item(item_id):
 @verified_required
 def buy_item(item_id):
     """Initiate a claim — generates a PIN for the handshake."""
-    if not current_user.phone_number:
-        flash(
-            "Please add a phone number in Settings before listing or buying items. "
-            "It is required for the PIN handshake.",
-            "warning"
-        )
-        return redirect(url_for("settings"))
     item = db.get_or_404(Item, item_id)
 
     # Check if this user previously cancelled a claim on this item (anti-griefing)
@@ -467,6 +456,7 @@ def buy_item(item_id):
         ).update({
             "buyer_id": current_user.id,
             "pin_code": hashed_pin,
+            "pin_plaintext": pin,
             "claimed_at": now,
             "pin_expires_at": now + timedelta(hours=72),
             "pin_attempts": 0,
@@ -557,11 +547,26 @@ def pin_page(item_id):
     # Get plaintext PIN if cached in session
     pin_code = session.get(f"pin_{item.id}")
 
+    # Determine partner user
+    if current_user.id == item.seller_id:
+        partner_user = db.session.query(User).filter_by(id=item.buyer_id).first()
+    else:
+        partner_user = db.session.query(User).filter_by(id=item.seller_id).first()
+
+    # Retrieve only messaging history matching the active buyer (privacy boundary)
+    from app.models import Message
+    messages = Message.query.filter(
+        Message.item_id == item.id,
+        ((Message.sender_id == item.buyer_id) | (Message.recipient_id == item.buyer_id))
+    ).order_by(Message.created_at.asc()).all()
+
     return render_template(
         "items/pin.html",
         item=item,
         is_holder=is_holder,
         pin_code=pin_code,
+        partner_user=partner_user,
+        messages=messages,
     )
 
 
@@ -635,6 +640,7 @@ def confirm_pin(item_id):
 
         # Clear PIN fields
         item.pin_code = None
+        item.pin_plaintext = None
         item.pin_expires_at = None
         item.claimed_at = None
         item.pin_attempts = 0

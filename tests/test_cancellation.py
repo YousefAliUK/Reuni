@@ -106,7 +106,6 @@ class TestCancellationTiers:
         third_user = User(
             email="third@university.ac.uk",
             name="Third User",
-            phone_number="+447700100009",
             is_verified=True,
             university_domain="university.ac.uk",
         )
