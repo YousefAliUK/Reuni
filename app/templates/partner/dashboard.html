@@ -197,28 +197,8 @@
     </div>
 
 </div>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Last updated timestamp
-        const timeEl = document.getElementById('last-updated-time');
-        if (timeEl) {
-            const now = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        }
-    });
-
-    function copyESGText() {
-        const text = document.getElementById('esg-report-text').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.getElementById('copy-esg-btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">check</span><span style="color: var(--color-success);">Copied!</span>';
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-            }, 2000);
-        });
-    }
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/partner.js') }}"></script>
 {% endblock %}

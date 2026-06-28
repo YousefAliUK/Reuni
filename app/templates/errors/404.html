@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="error-container" style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
-    <style>
+    <style nonce="{{ csp_nonce }}">
         .error-card {
             background: var(--color-surface);
             box-shadow: var(--shadow-card);

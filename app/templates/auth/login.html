@@ -85,26 +85,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    function togglePasswordVisibility(id) {
-        var input = document.getElementById(id);
-        if (!input) return;
-        var triggerBtn = input.nextElementSibling;
-        if (!triggerBtn) return;
-        var icon = triggerBtn.querySelector('.material-symbols-outlined');
-        if (!icon) return;
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.textContent = 'visibility_off';
-            triggerBtn.setAttribute('aria-label', 'Hide password');
-            triggerBtn.setAttribute('aria-pressed', 'true');
-        } else {
-            input.type = 'password';
-            icon.textContent = 'visibility';
-            triggerBtn.setAttribute('aria-label', 'Show password');
-            triggerBtn.setAttribute('aria-pressed', 'false');
-        }
-    }
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}
