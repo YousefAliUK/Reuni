@@ -48,6 +48,7 @@ def create_app(config_class=None):
             config_class = TestingConfig
         else:
             from app.config import DevelopmentConfig
+            config_class = DevelopmentConfig
     app.config.from_object(config_class)
 
     # Disable rate limits during local pentests if env var is True
