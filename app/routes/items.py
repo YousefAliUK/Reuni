@@ -269,6 +269,7 @@ def list_item():
 
 @items_bp.route("/<int:item_id>/edit", methods=["GET", "POST"])
 @login_required
+@verified_required
 def edit_item(item_id):
     """Edit an existing item listing."""
     item = db.get_or_404(Item, item_id)
@@ -379,6 +380,7 @@ def edit_item(item_id):
 
 @items_bp.route("/<int:item_id>/delete", methods=["POST"])
 @login_required
+@verified_required
 def delete_item(item_id):
     """Delete a listing (only by the seller, only if not sold)."""
     item = db.get_or_404(Item, item_id)
@@ -602,7 +604,7 @@ def confirm_pin(item_id):
 
     entered_pin = request.form.get("pin", "").strip()
 
-    if item.pin_code != entered_pin:
+    if not secrets.compare_digest(item.pin_code or "", entered_pin):
         try:
             item.pin_attempts += 1
             if item.pin_attempts >= 3:

@@ -33,7 +33,7 @@ app/static/uploads/
 Thumbs.db
 .aider*
 .rules
-.agent*
+.agents/skills
 
 # 1. Ignore all markdown files in the parent/root directory
 /*.md

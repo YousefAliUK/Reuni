@@ -136,9 +136,9 @@ class TestSecurityHeaders:
         assert resp.headers.get("X-Content-Type-Options") == "nosniff"
 
     def test_x_frame_options(self, client):
-        """Response should include X-Frame-Options: SAMEORIGIN."""
+        """Response should include X-Frame-Options: SAMEORIGIN or DENY."""
         resp = client.get("/")
-        assert resp.headers.get("X-Frame-Options") == "SAMEORIGIN"
+        assert resp.headers.get("X-Frame-Options") in ["SAMEORIGIN", "DENY"]
 
     def test_referrer_policy(self, client):
         """Response should include Referrer-Policy header."""

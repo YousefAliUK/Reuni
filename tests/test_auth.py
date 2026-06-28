@@ -31,14 +31,14 @@ class TestRegister:
         assert user.name == "New User"
 
     def test_register_duplicate_email(self, client, sample_user):
-        """Registering with an existing email should flash an error."""
+        """Registering with an existing email should flash generic info message to prevent email enumeration."""
         resp = client.post("/auth/register", data={
             "email": "test@university.ac.uk",
             "name": "Duplicate",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
-        assert b"already exists" in resp.data
+        assert b"verification code" in resp.data or b"sent" in resp.data
 
     def test_register_password_mismatch(self, client):
         """Mismatched passwords should flash an error."""
@@ -162,17 +162,17 @@ class TestEmailVerification:
         mock_send.assert_called_once()
 
     def test_register_invalid_tld_rejected(self, client):
-        """Registration with non-.ac.uk email is rejected."""
+        """Registration with non-institutional email is rejected."""
         resp = client.post("/auth/register", data={
             "email": "student@gmail.com",
             "name": "Invalid TLD",
             "password": "StrongPass123",
             "confirm_password": "StrongPass123",
         }, follow_redirects=True)
-        assert b"Please use a valid university email address" in resp.data
+        assert b"institutional email address" in resp.data
 
     def test_register_domain_not_allowed_rejected(self, client):
-        """Registration with .ac.uk email not in allowed set is rejected."""
+        """Registration with non-allowed institutional email is rejected."""
         resp = client.post("/auth/register", data={
             "email": "student@oxford.ac.uk",
             "name": "Not Allowed University",
@@ -211,7 +211,7 @@ class TestEmailVerification:
 
     @patch("app.routes.auth.send_otp_email")
     def test_re_registration_verified_fails(self, mock_send, client, db_session):
-        """Re-registration with same verified email is rejected."""
+        """Re-registration with same verified email is rejected silently (returns generic verification message)."""
         user = User(
             email="verified@brookes.ac.uk",
             name="Verified User",
@@ -227,7 +227,7 @@ class TestEmailVerification:
             "password": "NewPassword123",
             "confirm_password": "NewPassword123",
         }, follow_redirects=True)
-        assert b"already exists" in resp.data
+        assert b"verification code" in resp.data or b"sent" in resp.data
 
     @patch("app.routes.auth.send_otp_email")
     def test_verify_valid_code(self, mock_send, client, db_session):
@@ -434,17 +434,14 @@ class TestLockoutAndComplexity:
                 "email": "lockout@university.ac.uk",
                 "password": "WrongPassword123"
             }, follow_redirects=True)
-            if i < 4:
-                assert b"Invalid email or password" in resp.data
-            else:
-                assert b"locked" in resp.data or b"Too many failed login attempts" in resp.data
+            assert b"Invalid email or password" in resp.data
 
-        # 6th attempt should block with lockout warning
+        # 6th attempt should block and return generic warning (preventing enumeration)
         resp_lockout = client.post("/auth/login", data={
             "email": "lockout@university.ac.uk",
             "password": "CorrectPassword123"
         }, follow_redirects=True)
-        assert b"locked due to too many failed login attempts" in resp_lockout.data
+        assert b"Invalid email or password" in resp_lockout.data
 
         # Fast forward locked_until to past to simulate lockout expiration
         user_db = db_session.session.get(User, user.id)
@@ -755,8 +752,8 @@ class TestEmailHtmlEscaping:
             data={
                 "name": "<b>HTML Name</b>",
                 "email": "partner.xss@brookes.ac.uk",
-                "password": "password123",
-                "confirm_password": "password123",
+                "password": "Password123",
+                "confirm_password": "Password123",
             },
             follow_redirects=True
         )

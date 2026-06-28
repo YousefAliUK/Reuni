@@ -22,8 +22,8 @@ def test_partner_registration_via_invite(client, app):
         data={
             "name": "Partner User",
             "email": "staff.member@brookes.ac.uk",
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "Password123",
+            "confirm_password": "Password123",
         },
         follow_redirects=True
     )
@@ -49,8 +49,8 @@ def test_partner_registration_validation(client, app):
         data={
             "name": "Partner User",
             "email": "staff.member@oxford.ac.uk",
-            "password": "password123",
-            "confirm_password": "password123",
+            "password": "Password123",
+            "confirm_password": "Password123",
         },
         follow_redirects=True
     )
@@ -62,7 +62,7 @@ def test_partner_registration_validation(client, app):
         data={
             "name": "Partner User",
             "email": "staff.member@brookes.ac.uk",
-            "password": "password123",
+            "password": "Password123",
             "confirm_password": "differentpassword",
         },
         follow_redirects=True
