@@ -115,7 +115,7 @@ class User(UserMixin, db.Model):
         self.locked_until = None
 
     def __repr__(self):
-        return f"<User {self.email}>"
+        return f"<User id={self.id}>"
 
 # ──────────────────────────────────────────────
 # Item Model
@@ -252,4 +252,4 @@ class Notification(db.Model):
     user = db.relationship("User", backref=db.backref("notifications", lazy=True))
 
     def __repr__(self):
-        return f"<Notification {self.id} user={self.user_id} title={self.title}>"
+        return f"<Notification id={self.id} user={self.user_id}>"

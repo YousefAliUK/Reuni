@@ -1,5 +1,6 @@
 import re
 import secrets
+import hashlib
 from datetime import datetime, timezone, timedelta
 from html import escape as html_escape
 
@@ -39,6 +40,7 @@ def resend_key_func():
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("5 per hour", key_func=get_remote_address)
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
@@ -58,21 +60,25 @@ def register():
             flash("Name must be 80 characters or fewer.", "danger")
             return redirect(url_for("auth.register"))
 
-        # Domain format validation
+        # Validate university domain
         domain = extract_university_domain(email)
-        if domain is None:
-            flash("Please use a valid university email address (e.g. yourname@brookes.ac.uk).", "danger")
+        if not domain:
+            flash("Please register with a valid institutional email address (e.g., @brookes.ac.uk).", "danger")
             return redirect(url_for("auth.register"))
-
-        # Allowed domain enforcement
+            
         if not is_domain_allowed(domain, current_app.config.get("ALLOWED_UNIVERSITY_DOMAINS", set())):
-            flash("Reuni is not yet available at your university. We're expanding soon.", "danger")
+            flash("Reuni is not yet available at your university.", "danger")
             return redirect(url_for("auth.register"))
 
         # Password strength validation
         min_pw_len = current_app.config.get("MIN_PASSWORD_LENGTH", 8)
+        max_pw_len = current_app.config.get("MAX_PASSWORD_LENGTH", 128)
         if len(password) < min_pw_len:
             flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return redirect(url_for("auth.register"))
+
+        if len(password) > max_pw_len:
+            flash(f"Password must be {max_pw_len} characters or fewer.", "danger")
             return redirect(url_for("auth.register"))
 
         if (not any(c.isupper() for c in password) or
@@ -100,17 +106,18 @@ def register():
                     except Exception as clean_err:
                         db.session.rollback()
                         current_app.logger.error(f"Error during JIT registration cleanup of expired account {existing_email.id}: {clean_err}")
-                        flash("An error occurred during registration. Please try again.", "danger")
+                        flash("A registration error occurred. Please try again.", "danger")
                         return redirect(url_for("auth.register"))
                 else:
-                    # Still in cooldown
-                    remaining = existing_email.deletion_pending_until - now
-                    days = max(1, remaining.days)
-                    flash(f"This email is associated with an account pending deletion. You can register a new account in {days} days.", "danger")
-                    return redirect(url_for("auth.register"))
+                    # Still in cooldown — silently redirect as if registration succeeded (blocks enumeration)
+                    session["verify_email"] = email
+                    flash("A verification code has been sent to your email.", "info")
+                    return redirect(url_for("auth.verify_email"))
             elif existing_email.is_verified:
-                flash("An account with this email already exists.", "danger")
-                return redirect(url_for("auth.register"))
+                # Already exists — silently redirect (no email sent, no info leaked)
+                session["verify_email"] = email
+                flash("A verification code has been sent to your email.", "info")
+                return redirect(url_for("auth.verify_email"))
             else:
                 db.session.delete(existing_email)
                 db.session.commit()
@@ -134,14 +141,14 @@ def register():
         db.session.add(user)
         try:
             db.session.commit()
+            email_hash = hashlib.sha256(email.encode('utf-8')).hexdigest()[:16]
+            current_app.logger.info(f"SECURITY: User registration successful for email_hash={email_hash} (user={user.id})")
         except IntegrityError as e:
             db.session.rollback()
-            existing_email = User.query.filter_by(email=email).first()
-            if existing_email and existing_email.is_verified:
-                flash("An account with this email already exists.", "danger")
-            else:
-                flash("An account with this email is currently pending registration. Please try again shortly.", "danger")
-            return redirect(url_for("auth.register"))
+            # Silently redirect as if registration succeeded to block enumeration
+            session["verify_email"] = email
+            flash("A verification code has been sent to your email.", "info")
+            return redirect(url_for("auth.verify_email"))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Database error during registration: {e}")
@@ -155,7 +162,7 @@ def register():
             current_app.logger.error(f"Failed to send verification email to user {user.id}: {e}")
 
         session['verify_email'] = email
-        flash("We've sent a 6-digit verification code to your university email. Please check your inbox.", "success")
+        flash("A verification code has been sent to your email.", "info")
         return redirect(url_for("auth.verify_email"))
 
     return render_template("auth/register.html")
@@ -180,6 +187,7 @@ def login():
             return redirect(url_for("auth.login"))
 
         user = User.query.filter_by(email=email).first()
+        email_hash = hashlib.sha256(email.encode('utf-8')).hexdigest()[:16]
 
         if user:
             # Block login if the account is deactivated or pending deletion
@@ -188,8 +196,7 @@ def login():
                 return redirect(url_for("auth.login"))
             # 1. Check lockout status first
             if user.locked_until and user.locked_until > datetime.now(timezone.utc).replace(tzinfo=None):
-                remaining = int((user.locked_until - datetime.now(timezone.utc).replace(tzinfo=None)).total_seconds() / 60)
-                flash(f"This account has been locked due to too many failed login attempts. Please try again in {max(1, remaining)} minutes.", "danger")
+                flash("Invalid email or password.", "danger")
                 return redirect(url_for("auth.login"))
 
             # 2. Verify password
@@ -199,9 +206,11 @@ def login():
                     user.locked_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=15)
                     user.failed_login_attempts = 0
                     db.session.commit()
-                    flash("Too many failed login attempts. This account has been locked for 15 minutes.", "danger")
+                    current_app.logger.warning(f"SECURITY: Account {user.id} locked after 5 failed attempts from {request.remote_addr}")
+                    flash("Invalid email or password.", "danger")
                 else:
                     db.session.commit()
+                    current_app.logger.warning(f"SECURITY: Failed login attempt for email_hash={email_hash} from {request.remote_addr} (attempt {user.failed_login_attempts}/5)")
                     flash("Invalid email or password.", "danger")
                 return redirect(url_for("auth.login"))
 
@@ -210,6 +219,7 @@ def login():
             user.locked_until = None
             db.session.commit()
         else:
+            current_app.logger.warning(f"SECURITY: Failed login attempt for unknown email_hash={email_hash} from {request.remote_addr}")
             flash("Invalid email or password.", "danger")
             return redirect(url_for("auth.login"))
 
@@ -223,7 +233,11 @@ def login():
             flash("This account has been deactivated. Contact support.", "danger")
             return redirect(url_for("auth.login"))
 
+        # Regenerate session to prevent session fixation attacks
+        session.clear()
         login_user(user)
+        current_app.logger.info(f"SECURITY: Successful login for user {user.id} from {request.remote_addr}")
+
         if user.role == 'partner':
             session['logged_in_at'] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         flash(f"Welcome back, {user.name}.", "success")
@@ -374,10 +388,21 @@ def invite_register(token):
             flash("Passwords do not match.", "danger")
             return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
 
-        # Validate password length
+        # Validate password constraints
         min_pw_len = current_app.config.get("MIN_PASSWORD_LENGTH", 8)
+        max_pw_len = current_app.config.get("MAX_PASSWORD_LENGTH", 128)
         if len(password) < min_pw_len:
             flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
+
+        if len(password) > max_pw_len:
+            flash(f"Password must be {max_pw_len} characters or fewer.", "danger")
+            return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
+
+        if (not any(c.isupper() for c in password) or
+            not any(c.islower() for c in password) or
+            not any(c.isdigit() for c in password)):
+            flash("Password must contain at least one uppercase letter, one lowercase letter, and one digit.", "danger")
             return render_template("partner/invite_register.html", token=token, university_domain=university_domain)
 
         # Validate domain
@@ -538,8 +563,13 @@ def reset_password(token):
             return render_template("auth/reset_password.html", token=token)
 
         min_pw_len = current_app.config.get("MIN_PASSWORD_LENGTH", 8)
+        max_pw_len = current_app.config.get("MAX_PASSWORD_LENGTH", 128)
         if len(new_password) < min_pw_len:
             flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return render_template("auth/reset_password.html", token=token)
+
+        if len(new_password) > max_pw_len:
+            flash(f"Password must be {max_pw_len} characters or fewer.", "danger")
             return render_template("auth/reset_password.html", token=token)
 
         if (not any(c.isupper() for c in new_password) or
@@ -555,6 +585,7 @@ def reset_password(token):
         try:
             db.session.commit()
             session.pop('reset_token', None)
+            current_app.logger.info(f"SECURITY: Password reset completed for user {user.id}")
             flash("Password updated. You can now log in.", "success")
             return redirect(url_for("auth.login"))
         except Exception as e:
