@@ -12,7 +12,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
+    # services:
       # Optional: if you transition to redis/postgres database for production rate limiting/limiter storage URI
       # redis:
       #   image: redis
@@ -34,7 +34,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install testing utility packages if not in requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov beautifulsoup4
 
       - name: Run Pytest Regression Suite
         env:
