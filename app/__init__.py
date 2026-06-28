@@ -611,11 +611,10 @@ def create_app(config_class=None):
         if r2_url:
             img_src_directive += f" {r2_url}"
 
-        # script-src 'self' has NO unsafe-inline. Style-src allows self, google fonts, and nonce.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self'; "
-            f"style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             f"{img_src_directive}; "
             "connect-src 'self'; "
