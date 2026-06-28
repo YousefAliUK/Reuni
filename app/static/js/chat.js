@@ -66,6 +66,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const countdownEl = document.getElementById('expiry-countdown');
     if (countdownEl && countdownEl.dataset.expires) {
         const expiresTime = new Date(countdownEl.dataset.expires).getTime();
+        let expiryTimerId = null;
+        let hasReloadedAfterExpiry = false;
         
         function updateTimer() {
             const now = new Date().getTime();
@@ -73,7 +75,14 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (diff <= 0) {
                 countdownEl.textContent = "Expired";
-                location.reload();
+                if (expiryTimerId) {
+                    clearInterval(expiryTimerId);
+                    expiryTimerId = null;
+                }
+                if (!hasReloadedAfterExpiry) {
+                    hasReloadedAfterExpiry = true;
+                    location.reload();
+                }
                 return;
             }
             
@@ -97,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         updateTimer();
-        setInterval(updateTimer, 1000);
+        expiryTimerId = setInterval(updateTimer, 1000);
     }
 
     // ── 1c. PIN Enterer Focus-Advancing & AJAX Submit ──
@@ -138,7 +147,9 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (currentVal.length === 4) {
                 if (confirmBtn) confirmBtn.disabled = false;
-                if (otpForm) otpForm.dispatchEvent(new Event('submit'));
+                if (otpForm && !isPinSubmitting) {
+                    otpForm.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
             } else {
                 if (confirmBtn) confirmBtn.disabled = true;
             }
@@ -172,9 +183,14 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        let isPinSubmitting = false;
+
         if (otpForm) {
             otpForm.addEventListener('submit', function (e) {
                 e.preventDefault();
+                if (isPinSubmitting) return;
+                isPinSubmitting = true;
+
                 if (confirmBtn) {
                     confirmBtn.disabled = true;
                     confirmBtn.innerHTML = '<span>Confirming</span><span class="warning-pulse">…</span>';
@@ -190,12 +206,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .then(response => {
-                    return response.json().then(data => {
-                        if (!response.ok) {
-                            return Promise.reject(data);
-                        }
-                        return data;
-                    });
+                    const contentType = response.headers.get('Content-Type') || '';
+                    if (contentType.includes('application/json')) {
+                        return response.json().then(data => {
+                            if (!response.ok) return Promise.reject(data);
+                            return data;
+                        });
+                    } else {
+                        return Promise.reject({ error: 'A network or system error occurred.' });
+                    }
                 })
                 .then(data => {
                     const card = document.getElementById('pin-interaction-card');
@@ -208,27 +227,34 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div style="background: var(--color-success-muted); border-radius: var(--radius-xl); padding: 24px; width: 100%; box-sizing: border-box; margin-bottom: var(--space-6);">
                                     <div id="celebration-kg" style="font-family: var(--font-mono); font-size: 40px; font-weight: 800; color: var(--color-success); line-height: 1.2;">0.0 kg</div>
                                     <div style="font-size: 14px; color: var(--color-success); font-weight: 600; margin-top: 4px;">saved from landfill</div>
-                                    <div id="celebration-total" style="font-size: 12px; color: var(--color-ink-secondary); font-family: var(--font-mono); margin-top: 8px;">Added to your total: ${data.total_kg.toFixed(1)} kg overall</div>
+                                    <div id="celebration-total" style="font-size: 12px; color: var(--color-ink-secondary); font-family: var(--font-mono); margin-top: 8px;"></div>
                                 </div>
                                 
-                                <a href="${data.redirect_url}" class="btn btn--primary" style="height: 48px; width: 100%; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <a id="celebration-redirect" href="#" class="btn btn--primary" style="height: 48px; width: 100%; border-radius: var(--radius-md); font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
                                     Back to Marketplace
                                     <span class="material-symbols-outlined">arrow_forward</span>
                                 </a>
                             </div>
                         `;
-                        const kgEl = document.getElementById('celebration-kg');
-                        if (kgEl) {
-                            countUp(kgEl, data.kg_saved, 1000);
+                        const totalKg = Number(data.total_kg);
+                        const kgSaved = Number(data.kg_saved);
+                        const redirectUrl = new URL(data.redirect_url || '/', window.location.origin);
+
+                        if (Number.isFinite(totalKg) && Number.isFinite(kgSaved) && redirectUrl.origin === window.location.origin) {
+                            const totalEl = document.getElementById('celebration-total');
+                            if (totalEl) totalEl.textContent = `Added to your total: ${totalKg.toFixed(1)} kg overall`;
+                            
+                            const redirectBtn = document.getElementById('celebration-redirect');
+                            if (redirectBtn) redirectBtn.setAttribute('href', `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
+
+                            const kgEl = document.getElementById('celebration-kg');
+                            if (kgEl) {
+                                countUp(kgEl, kgSaved, 1000);
+                            }
                         }
                     }
                 })
-                .catch(error => {
-                    if (error.redirect_url) {
-                        window.location.href = error.redirect_url;
-                        return;
-                    }
-
+                    isPinSubmitting = false;
                     let errorAlert = document.getElementById('pin-error-alert');
                     if (!errorAlert) {
                         errorAlert = document.createElement('div');
@@ -548,9 +574,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         body: JSON.stringify({ content: content })
                     });
 
+                    const contentType = response.headers.get('Content-Type') || '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('A network or system error occurred.');
+                    }
                     const data = await response.json();
                     if (response.ok) {
-                        chatMessages.appendChild(createMessageElement(data.message, partnerName));
+                        const messageId = String(data.message.id);
+                        const alreadyRendered = !!chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                        if (!alreadyRendered) {
+                            chatMessages.appendChild(createMessageElement(data.message, partnerName));
+                        }
                         if (data.message.id > lastMessageId) lastMessageId = data.message.id;
                         chatInput.value = '';
                         chatInput.style.height = '48px';

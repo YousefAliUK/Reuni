@@ -167,6 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
             function previewFile(file) {
                 const allowed = ['image/jpeg', 'image/png', 'image/webp'];
                 if (!allowed.includes(file.type)) {
+                    fileInput.value = '';
+                    if (photoPreview) {
+                        photoPreview.src = '';
+                        photoPreview.style.display = 'none';
+                    }
+                    if (removePhotoBtn) removePhotoBtn.style.display = 'none';
+                    if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
                     alert('Please upload a JPG, PNG, or WebP image.');
                     return;
                 }
@@ -280,12 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // ── 7. New Listing Reset on pageshow (list_item only) ──
     const isNewListingForm = form.getAttribute('action') && form.getAttribute('action').includes('list');
     if (isNewListingForm) {
-        window.addEventListener('pageshow', function() {
-            setTimeout(function() {
-                form.reset();
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                setTimeout(function() {
+                    form.reset();
                 
                 // Re-enable and restore submit button states
                 const submitBtns = form.querySelectorAll('button[type="submit"]');

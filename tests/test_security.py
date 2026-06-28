@@ -110,14 +110,66 @@ def test_timing_safe_pin_comparison():
 
 def test_rate_limiting_registration(app, client):
     """Verify that registration route rate limits successive attempts."""
-    # Enable rate limiting specifically for testing this behavior
-    # Flask-Limiter is enabled in app config
-    # In TestingConfig, RATELIMIT_ENABLED is usually False by default to prevent test suites from breaking.
-    # Let's check if we can toggle it, or check limiter registration.
     limiter = app.extensions.get("limiter")
     if limiter:
-        # Check that auth.register is rate-limited
-        # Flask-Limiter stores route limit decorators or rule limits
-        # We verify that register route has a limiter rule associated
         rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint == "auth.register"]
         assert len(rules) > 0
+
+
+def test_login_user_enumeration_prevention(client, db_session):
+    """Verify that login error responses are identical for existing vs non-existing emails."""
+    user = User(
+        email="enum-test@brookes.ac.uk",
+        name="Enum User",
+        is_verified=True,
+        university_domain="brookes.ac.uk"
+    )
+    user.set_password("SecurePassword123")
+    db_session.session.add(user)
+    db_session.session.commit()
+
+    # 1. Non-existent email
+    res1 = client.post("/auth/login", data={
+        "email": "nonexistent-enum@brookes.ac.uk",
+        "password": "SomePassword123"
+    }, follow_redirects=True)
+
+    # 2. Existing email, wrong password
+    res2 = client.post("/auth/login", data={
+        "email": "enum-test@brookes.ac.uk",
+        "password": "WrongPassword123"
+    }, follow_redirects=True)
+
+    assert b"Invalid email or password" in res1.data
+    assert b"Invalid email or password" in res2.data
+
+
+def test_register_domain_check(client):
+    """Verify registration differentiates unpartnered domain from invalid format in a secure way."""
+    # Unpartnered domain
+    res1 = client.post("/auth/register", data={
+        "email": "test@unpartnered-uni.ac.uk",
+        "name": "Uni Student",
+        "password": "SecurePassword123",
+        "confirm_password": "SecurePassword123"
+    }, follow_redirects=True)
+    assert b"Reuni is not yet available at your university" in res1.data
+
+    # Invalid email format
+    res2 = client.post("/auth/register", data={
+        "email": "invalid-email-format",
+        "name": "Bad Email",
+        "password": "SecurePassword123",
+        "confirm_password": "SecurePassword123"
+    }, follow_redirects=True)
+    assert b"Please register with a valid institutional email address" in res2.data
+
+
+def test_notifications_api_requires_login(client):
+    """Verify that notifications endpoints require authentication."""
+    res1 = client.get("/api/notifications")
+    assert res1.status_code == 302 or res1.status_code == 401
+
+    res2 = client.post("/api/notifications/1/read")
+    assert res2.status_code == 302 or res2.status_code == 401
+

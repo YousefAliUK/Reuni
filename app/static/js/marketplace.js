@@ -11,22 +11,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const filterForm = document.querySelector('.filter-control-bar__form');
     const sectionWrapper = document.getElementById('listings-section-wrapper');
 
+    let filterRequestController = null;
+    let filterRequestId = 0;
+
     // AJAX live update function
-    function fetchFilteredItems(url) {
+    function fetchFilteredItems(url, options = {}) {
+        const { updateHistory = true } = options;
+        const requestId = ++filterRequestId;
+        if (filterRequestController) {
+            filterRequestController.abort();
+        }
+        filterRequestController = new AbortController();
+
         const grid = document.getElementById('marketplace-grid');
         if (grid) grid.style.opacity = '0.5';
 
-        fetch(url)
-            .then(res => res.text())
+        fetch(url, { signal: filterRequestController.signal })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Filter request failed with HTTP ${res.status}`);
+                }
+                return res.text();
+            })
             .then(html => {
+                if (requestId !== filterRequestId) return;
+
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
                 // 1. Swap listings section
                 const newSection = doc.getElementById('listings-section-wrapper');
-                if (newSection && sectionWrapper) {
-                    sectionWrapper.innerHTML = newSection.innerHTML;
+                if (!newSection || !sectionWrapper) {
+                    throw new Error('Filter response missing listings section');
                 }
+                sectionWrapper.innerHTML = newSection.innerHTML;
 
                 // 2. Sync category strip
                 const newStrip = doc.querySelector('.category-strip');
@@ -132,9 +150,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 // 8. Update browser history URL
-                history.pushState(null, '', url);
+                if (updateHistory) {
+                    history.pushState(null, '', url);
+                }
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 // Network failure — restore opacity
                 const grid = document.getElementById('marketplace-grid');
                 if (grid) grid.style.opacity = '1';
@@ -332,5 +353,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         requestAnimationFrame(updateCount);
+    });
+
+    window.addEventListener('popstate', function () {
+        fetchFilteredItems(window.location.href, { updateHistory: false });
     });
 });

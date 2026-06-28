@@ -162,7 +162,7 @@
                     <span class="material-symbols-outlined" aria-hidden="true">menu</span>
                 </button>
             {% else %}
-                <button type="button" class="mobile-top-bar__icon-btn" onclick="if(document.referrer.includes(window.location.host)){history.back()}else{window.location.href='{{ url_for('index') }}'}" aria-label="Back">
+                <button type="button" class="mobile-top-bar__icon-btn" data-action="back" aria-label="Back">
                     <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
                 </button>
             {% endif %}
@@ -364,7 +364,7 @@
                             {% endif %}
                         </span>
                         <span class="flash-alert__message">{{ message }}</span>
-                        <button type="button" class="flash-alert__dismiss" aria-label="Dismiss alert" onclick="this.parentElement.remove()">×</button>
+                        <button type="button" class="flash-alert__dismiss" aria-label="Dismiss alert">×</button>
                     </div>
                 {% endfor %}
             </div>

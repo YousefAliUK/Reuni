@@ -28,7 +28,7 @@ migrate = Migrate()
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["1000 per day", "1000 per hour"],
-    storage_uri="memory://",
+    storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
 )
 
 
@@ -48,8 +48,11 @@ def create_app(config_class=None):
             config_class = TestingConfig
         else:
             from app.config import DevelopmentConfig
-            config_class = DevelopmentConfig
     app.config.from_object(config_class)
+
+    # Disable rate limits during local pentests if env var is True
+    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True":
+        app.config["RATELIMIT_ENABLED"] = False
 
     # Trust reverse proxy headers (Railway, Nginx) in non-debug/non-testing modes
     if not app.debug and not app.testing:

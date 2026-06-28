@@ -110,9 +110,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const desktopSearchClearBtn = document.getElementById('desktop-search-clear-btn');
     const desktopChipsContainer = document.getElementById('desktop-search-chips-container');
 
+    function getRecentSearches() {
+        try {
+            const parsed = JSON.parse(lsGet('recent_searches', '[]') || '[]');
+            return Array.isArray(parsed) ? parsed.filter(s => typeof s === 'string') : [];
+        } catch (e) {
+            lsRemove('recent_searches');
+            return [];
+        }
+    }
+
+    function saveRecentSearch(query) {
+        if (!query) return;
+        const searches = [query, ...getRecentSearches().filter(s => s !== query)].slice(0, 5);
+        lsSet('recent_searches', JSON.stringify(searches));
+    }
+
     function renderDesktopRecentSearches() {
         if (!desktopChipsContainer || !desktopSearchClearBtn) return;
-        const searches = JSON.parse(lsGet('recent_searches') || '[]');
+        const searches = getRecentSearches();
         if (searches.length === 0) {
             if (desktopSearchDropdown) desktopSearchDropdown.style.display = 'none';
             return;
@@ -164,11 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (desktopSearchForm) {
         desktopSearchForm.addEventListener('submit', () => {
             const query = desktopSearchInput.value.trim();
-            if (query) {
-                let searches = JSON.parse(lsGet('recent_searches') || '[]');
-                searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
-                lsSet('recent_searches', JSON.stringify(searches));
-            }
+            saveRecentSearch(query);
         });
     }
 
@@ -201,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderRecentSearches() {
         if (!chipsContainer || !searchClearBtn) return;
-        const searches = JSON.parse(lsGet('recent_searches') || '[]');
+        const searches = getRecentSearches();
         const historySection = document.getElementById('search-overlay-history');
         if (searches.length === 0) {
             if (historySection) historySection.style.display = 'none';
@@ -236,11 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
         overlayForm.addEventListener('submit', () => {
             if (searchOverlayInput) {
                 const query = searchOverlayInput.value.trim();
-                if (query) {
-                    let searches = JSON.parse(lsGet('recent_searches') || '[]');
-                    searches = [query, ...searches.filter(s => s !== query)].slice(0, 5);
-                    lsSet('recent_searches', JSON.stringify(searches));
-                }
+                saveRecentSearch(query);
             }
         });
     }
@@ -379,13 +387,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function setNotificationListMessage(listEl, message, modifier) {
+        const state = document.createElement('div');
+        state.className = `notification-dropdown__status${modifier ? ` notification-dropdown__status--${modifier}` : ''}`;
+        state.textContent = message;
+        listEl.replaceChildren(state);
+    }
+
     // Fetch notification items
     async function fetchNotifications() {
         const lists = [notifList, mobileNotifList].filter(Boolean);
         if (lists.length === 0) return;
         
         lists.forEach(l => {
-            l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-ink-tertiary);">Loading...</div>';
+            setNotificationListMessage(l, 'Loading...');
         });
 
         try {
@@ -397,13 +412,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderNotifications(notifications);
             } else {
                 lists.forEach(l => {
-                    l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-danger);">Failed to load notifications.</div>';
+                    setNotificationListMessage(l, 'Failed to load notifications.', 'error');
                 });
             }
         } catch (e) {
             console.error('Error fetching notifications:', e);
             lists.forEach(l => {
-                l.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--color-danger);">A network error occurred.</div>';
+                setNotificationListMessage(l, 'A network error occurred.', 'error');
             });
         }
     }
@@ -432,8 +447,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             notifications.forEach(notif => {
                 const row = document.createElement('a');
-                // Validate notification link prefix
-                row.href = (notif.link && notif.link.startsWith('/')) ? notif.link : '#';
+                // Validate notification link prefix (prevent protocol-relative links)
+                const safeLink = (
+                    typeof notif.link === 'string' &&
+                    notif.link.startsWith('/') &&
+                    !notif.link.startsWith('//')
+                ) ? notif.link : '#';
+                row.setAttribute('href', safeLink);
                 row.className = `notification-row ${!notif.is_read ? 'notification-row--unread' : ''}`;
                 row.dataset.id = notif.id;
 
@@ -478,8 +498,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         // Mark all notifications for the same link as read in DOM instantly
                         lists.forEach(otherList => {
                             if (otherList.el) {
-                                const siblings = otherList.el.querySelectorAll(`.notification-row[href="${notif.link}"]`);
-                                siblings.forEach(sib => {
+                                otherList.el.querySelectorAll('.notification-row').forEach(sib => {
+                                    if (sib.getAttribute('href') !== safeLink) return;
                                     if (sib.classList.contains('notification-row--unread')) {
                                         sib.classList.remove('notification-row--unread');
                                         const dot = sib.querySelector('.notification-row__dot');
@@ -585,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── 8. Dashboard Tab Switcher ──
-    window.switchTab = function (tab) {
+    function switchTab(tab) {
         const wrapper = document.querySelector('.dashboard-wrapper');
         
         // Reset all tabs
@@ -625,12 +645,30 @@ document.addEventListener('DOMContentLoaded', function () {
             if (tabBtn) tabBtn.classList.add('active-tab');
             if (tabContent) tabContent.style.display = 'flex';
         }
-    };
+    }
+
+    // Tab button click delegation (replace inline onclick)
+    document.addEventListener('click', (e) => {
+        const tabBtn = e.target.closest('[data-tab]');
+        if (tabBtn) {
+            e.preventDefault();
+            switchTab(tabBtn.dataset.tab);
+        }
+    });
 
     // Auto-init dashboard if overview tab exists
     if (document.getElementById('tab-btn-overview')) {
-        window.switchTab('overview');
+        switchTab('overview');
     }
+
+    // Confirm delete forms event delegation (replace inline onsubmit)
+    document.addEventListener('submit', (e) => {
+        if (e.target.classList.contains('confirm-delete-form')) {
+            if (!confirm('Are you sure you want to delete this listing?')) {
+                e.preventDefault();
+            }
+        }
+    });
 
     // ── 9. Description Show More Toggle ──
     const descContent = document.getElementById('detail-desc-content');
@@ -677,4 +715,25 @@ document.addEventListener('DOMContentLoaded', function () {
         
         requestAnimationFrame(animate);
     }
+
+    // Event delegation: Flash alert dismissal (replace inline onclick)
+    document.addEventListener('click', (e) => {
+        const dismissBtn = e.target.closest('.flash-alert__dismiss');
+        if (dismissBtn) {
+            dismissBtn.parentElement.remove();
+        }
+    });
+
+    // Event delegation: Mobile back button (replace inline onclick)
+    document.addEventListener('click', (e) => {
+        const backBtn = e.target.closest('[data-action="back"]');
+        if (backBtn) {
+            e.preventDefault();
+            if (document.referrer && document.referrer.includes(window.location.host)) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+    });
 });

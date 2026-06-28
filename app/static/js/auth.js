@@ -3,8 +3,7 @@
  */
 
 // 1. Password visibility toggle (defined globally for inline HTML click handlers)
-window.togglePasswordVisibility = function (id) {
-    const input = document.getElementById(id);
+function togglePasswordVisibilityByInput(input) {
     if (!input) return;
     const triggerBtn = input.nextElementSibling;
     if (!triggerBtn) return;
@@ -22,10 +21,19 @@ window.togglePasswordVisibility = function (id) {
         triggerBtn.setAttribute('aria-label', 'Show password');
         triggerBtn.setAttribute('aria-pressed', 'false');
     }
-};
+}
 
 document.addEventListener('DOMContentLoaded', function () {
-    // ── 2. Email Validation Hint ──
+    // 1. Password visibility toggle (replace inline onclick)
+    document.addEventListener('click', function (e) {
+        const toggleBtn = e.target.closest('[data-toggle-password]');
+        if (toggleBtn) {
+            const input = document.getElementById(toggleBtn.dataset.togglePassword);
+            togglePasswordVisibilityByInput(input);
+        }
+    });
+
+    // 2. Email Validation Hint ──
     const emailInput = document.getElementById('email');
     const validationHint = document.getElementById('email-validation-hint');
 
@@ -89,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 bar2.style.background = 'var(--color-surface-raised)';
                 bar3.style.background = 'var(--color-surface-raised)';
                 
-                if (val.length === 0) {
+                if (val.length < 8) {
                     label.textContent = 'Strength: too short';
                 } else if (score === 1) {
                     bar1.style.background = 'var(--color-danger)';
@@ -206,15 +214,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-});
-
-// Global validation function for old form-submit triggers
-window.validateDeleteConfirm = function () {
-    const deleteInput = document.getElementById('delete_confirm_text');
-    const val = deleteInput ? deleteInput.value.trim() : '';
-    if (val !== 'DELETE') {
-        alert('Please type DELETE exactly to confirm.');
-        return false;
+    const deleteForm = document.getElementById('delete-form');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function (e) {
+            const deleteInput = document.getElementById('delete_confirm_text');
+            const val = deleteInput ? deleteInput.value.trim() : '';
+            if (val !== 'DELETE') {
+                e.preventDefault();
+                alert('Please type DELETE exactly to confirm.');
+            }
+        });
     }
-    return true;
-};
+});
