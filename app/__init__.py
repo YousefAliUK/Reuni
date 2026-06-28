@@ -3,6 +3,8 @@ Reuni — Application Factory
 """
 
 import os
+import secrets
+import hashlib
 
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -26,7 +28,7 @@ migrate = Migrate()
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["1000 per day", "1000 per hour"],
-    storage_uri="memory://",
+    storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
 )
 
 
@@ -37,9 +39,26 @@ def create_app(config_class=None):
 
     # Load configuration
     if config_class is None:
-        from app.config import DevelopmentConfig
-        config_class = DevelopmentConfig
+        env = os.environ.get("FLASK_ENV", "development").lower()
+        if env == "production":
+            from app.config import ProductionConfig
+            config_class = ProductionConfig
+        elif env == "testing":
+            from app.config import TestingConfig
+            config_class = TestingConfig
+        else:
+            from app.config import DevelopmentConfig
+            config_class = DevelopmentConfig
     app.config.from_object(config_class)
+
+    # Disable rate limits during local pentests if env var is True
+    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True":
+        app.config["RATELIMIT_ENABLED"] = False
+
+    # Trust reverse proxy headers (Railway, Nginx) in non-debug/non-testing modes
+    if not app.debug and not app.testing:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     # Run production validation if available
     if hasattr(config_class, "init_app"):
@@ -342,8 +361,13 @@ def create_app(config_class=None):
 
         # Validate complexity
         min_pw_len = app.config.get("MIN_PASSWORD_LENGTH", 8)
+        max_pw_len = app.config.get("MAX_PASSWORD_LENGTH", 128)
         if len(new_password) < min_pw_len:
             flash(f"Password must be at least {min_pw_len} characters long.", "danger")
+            return redirect(url_for("settings"))
+
+        if len(new_password) > max_pw_len:
+            flash(f"Password must be {max_pw_len} characters or fewer.", "danger")
             return redirect(url_for("settings"))
 
         if (not any(c.isupper() for c in new_password) or
@@ -356,6 +380,7 @@ def create_app(config_class=None):
         current_user.set_password(new_password)
         try:
             db.session.commit()
+            app.logger.info(f"SECURITY: Password changed for user {current_user.id}")
             flash("Password updated successfully.", "success")
         except Exception as e:
             db.session.rollback()
@@ -511,42 +536,90 @@ def create_app(config_class=None):
     def make_session_permanent():
         session.permanent = True
 
+    @app.before_request
+    def generate_csp_nonce():
+        request.csp_nonce = secrets.token_urlsafe(32)
+
+    @app.context_processor
+    def inject_csp_nonce():
+        return {"csp_nonce": getattr(request, "csp_nonce", "")}
+
     # ── Request Entity Too Large error handler ──
     @app.errorhandler(413)
     def request_too_large(e):
         from flask import flash, redirect, url_for
         flash("Image too large. Maximum file size is 5MB.", "danger")
-        return redirect(request.referrer or url_for('index'))
+        # Validate request.referrer is same-origin to prevent open redirects
+        referrer = request.referrer
+        if referrer:
+            from urllib.parse import urlparse
+            parsed = urlparse(referrer)
+            if parsed.netloc and parsed.netloc != request.host:
+                referrer = None
+        return redirect(referrer or url_for('index'))
 
     # ── Custom error handlers ──
+    @app.errorhandler(400)
+    def bad_request(e):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "Bad Request"}, 400
+        return render_template('errors/400.html'), 400
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "Forbidden"}, 403
+        return render_template('errors/403.html'), 403
+
     @app.errorhandler(404)
     def page_not_found(e):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "Not Found"}, 404
         return render_template('errors/404.html'), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(e):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "Method Not Allowed"}, 405
+        return render_template('errors/405.html'), 405
+
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "Too many requests. Please try again later."}, 429
+        return render_template('errors/429.html'), 429
 
     @app.errorhandler(500)
     def internal_server_error(e):
         app.logger.error(e, exc_info=True)
         db.session.rollback()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json or "application/json" in request.accept_mimetypes:
+            return {"success": False, "error": "An internal server error occurred"}, 500
         return render_template('errors/500.html'), 500
 
     # ── Security response headers ──
     @app.after_request
     def set_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        
+        nonce = getattr(request, 'csp_nonce', '')
         r2_url = app.config.get("CF_R2_PUBLIC_URL")
         img_src_directive = "img-src 'self' data:"
         if r2_url:
             img_src_directive += f" {r2_url}"
 
+        # script-src 'self' has NO unsafe-inline. Style-src allows self, google fonts, and nonce.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "script-src 'self'; "
+            f"style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             f"{img_src_directive}; "
-            "connect-src 'self'"
+            "connect-src 'self'; "
+            "frame-ancestors 'none'"
         )
         if not app.debug and not app.testing:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"

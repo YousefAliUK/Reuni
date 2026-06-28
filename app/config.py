@@ -37,6 +37,7 @@ class Config:
 
     # Password policy
     MIN_PASSWORD_LENGTH = 8
+    MAX_PASSWORD_LENGTH = 128
 
     # Set of university domains permitted to register.
     # Use a Python set literal — {'brookes.ac.uk'} is a set, not a dict.
@@ -106,6 +107,12 @@ class ProductionConfig(Config):
                 "All email links (PIN notifications, cancellation emails, password resets) "
                 "will be broken without it. Set BASE_URL=https://your-domain.com in your "
                 "Railway environment variables."
+            )
+        if not cls.BREVO_API_KEY:
+            raise RuntimeError(
+                "BREVO_API_KEY environment variable is not set. "
+                "Email functionality (OTP verification, password resets, PIN notifications) "
+                "will be completely broken without it."
             )
         if cls.STORAGE_PROVIDER == "r2":
             missing_r2_vars = [

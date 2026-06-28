@@ -1,4 +1,5 @@
 import re
+import hashlib
 from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
@@ -41,7 +42,7 @@ def generate_invite():
     
     # Audit log entry
     current_app.logger.info(
-        f"Partner invite generated for {university_domain} by admin {current_user.email} at {datetime.now(timezone.utc).replace(tzinfo=None)}"
+        f"SECURITY: Partner invite generated for {university_domain} by admin id={current_user.id} at {datetime.now(timezone.utc).replace(tzinfo=None)}"
     )
     
     # Render with the generated URL (flashing it is easy, but we will pass it back to the template)
@@ -63,6 +64,7 @@ def deactivate_partner(user_id):
         
     user.is_active = False
     db.session.commit()
+    current_app.logger.info(f"SECURITY: Admin id={current_user.id} deactivated partner id={user.id}")
     
     # Send deactivation notification email
     try:
@@ -81,7 +83,9 @@ def deactivate_partner(user_id):
             html_content=email_html
         )
     except Exception as e:
-        current_app.logger.error(f"Failed to send deactivation email to {user.email}: {e}")
+        import hashlib
+        email_hash = hashlib.sha256(user.email.encode('utf-8')).hexdigest()[:16]
+        current_app.logger.error(f"Failed to send deactivation email to email_hash={email_hash}: {e}")
         
     flash(f"Partner account {user.email} has been deactivated.", "success")
     return redirect(url_for("admin.admin_partners"))

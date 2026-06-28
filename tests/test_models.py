@@ -24,8 +24,9 @@ class TestUserModel:
         assert user.kg_saved_total == 0.0
 
     def test_user_repr(self, sample_user):
-        """User repr should contain the email address."""
-        assert "test@university.ac.uk" in repr(sample_user)
+        """User repr should contain the ID and not expose email address PII."""
+        assert "test@university.ac.uk" not in repr(sample_user)
+        assert f"id={sample_user.id}" in repr(sample_user)
 
     def test_user_created_at(self, sample_user):
         """User should have a created_at timestamp."""

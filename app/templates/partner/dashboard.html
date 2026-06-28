@@ -9,9 +9,9 @@
         <div class="esg-title-block">
             <div class="esg-logo-wrapper">
                 {% if logo_url %}
-                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="esg-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="partner-avatar-img">
                 {% endif %}
-                <div class="esg-initials-avatar" style="display: {% if logo_url %}none{% else %}flex{% endif %};">
+                <div class="esg-initials-avatar partner-avatar-placeholder" style="display: {% if logo_url %}none{% else %}flex{% endif %};">
                     {{ uni_initials }}
                 </div>
             </div>
@@ -40,7 +40,7 @@
                 Last updated: <span id="last-updated-time">--:--</span>
             </div>
             
-            <button onclick="window.print();" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+            <button class="btn btn--outline" data-action="print-report" style="height: 40px; border-radius: var(--radius-md); border-color: var(--color-border); color: var(--color-ink-secondary); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
                 <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">download</span>
                 <span>Download report</span>
             </button>
@@ -179,7 +179,7 @@
     <div class="esg-report-card">
         <div class="esg-report-header">
             <h2 class="esg-report-eyebrow">For Your ESG Report</h2>
-            <button id="copy-esg-btn" onclick="copyESGText()" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary); cursor: pointer;">
+            <button id="copy-esg-btn" data-action="copy-esg-text" class="btn btn--outline" style="height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: 13px; display: inline-flex; align-items: center; gap: var(--space-1); border-color: var(--color-border); color: var(--color-ink-secondary); cursor: pointer;">
                 <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">content_copy</span>
                 <span>Copy text</span>
             </button>
@@ -197,28 +197,8 @@
     </div>
 
 </div>
+{% endblock %}
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Last updated timestamp
-        const timeEl = document.getElementById('last-updated-time');
-        if (timeEl) {
-            const now = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        }
-    });
-
-    function copyESGText() {
-        const text = document.getElementById('esg-report-text').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.getElementById('copy-esg-btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: var(--color-success);">check</span><span style="color: var(--color-success);">Copied!</span>';
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-            }, 2000);
-        });
-    }
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/partner.js') }}"></script>
 {% endblock %}

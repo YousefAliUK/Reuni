@@ -132,32 +132,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    function toggleInviteForm() {
-        const panel = document.getElementById('invite-form-panel');
-        if (panel) {
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                document.getElementById('university_domain').focus();
-            } else {
-                panel.style.display = 'none';
-            }
-        }
-    }
-
-    function toggleDeactivateConfirm(partnerId, showConfirm) {
-        const normalCells = document.querySelectorAll('.normal-cell-' + partnerId);
-        const confirmCell = document.querySelector('.confirm-cell-' + partnerId);
-        
-        if (normalCells.length && confirmCell) {
-            if (showConfirm) {
-                normalCells.forEach(cell => cell.style.display = 'none');
-                confirmCell.style.display = 'table-cell';
-            } else {
-                normalCells.forEach(cell => cell.style.display = 'table-cell');
-                confirmCell.style.display = 'none';
-            }
-        }
-    }
-</script>
+<script src="{{ url_for('static', filename='js/partner.js') }}"></script>
 {% endblock %}

@@ -48,7 +48,7 @@
                 <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
                 <input type="password" id="password" name="password" placeholder="••••••••" required minlength="8"
                        style="width: 100%; height: 48px; padding: 0 44px 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body); transition: border-color var(--transition);">
-                <button type="button" onclick="togglePasswordVisibility('password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                <button type="button" data-toggle-password="password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
                     <span class="material-symbols-outlined" id="eye-icon-password" style="font-size: 20px;">visibility</span>
                 </button>
             </div>
@@ -70,7 +70,7 @@
                 <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;">lock</span>
                 <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required minlength="8"
                        style="width: 100%; height: 48px; padding: 0 44px 0 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-ink-primary); font-family: var(--font-sans); font-size: var(--type-body); transition: border-color var(--transition);">
-                <button type="button" onclick="togglePasswordVisibility('confirm_password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
+                <button type="button" data-toggle-password="confirm_password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-ink-tertiary);">
                     <span class="material-symbols-outlined" id="eye-icon-confirm_password" style="font-size: 20px;">visibility</span>
                 </button>
             </div>
@@ -84,60 +84,8 @@
     </div>
 
 </div>
+{% endblock %}
 
-<script>
-    function togglePasswordVisibility(fieldId) {
-        var field = document.getElementById(fieldId);
-        var icon = document.getElementById('eye-icon-' + fieldId);
-        if (field && icon) {
-            if (field.type === 'password') {
-                field.type = 'text';
-                icon.textContent = 'visibility_off';
-            } else {
-                field.type = 'password';
-                icon.textContent = 'visibility';
-            }
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var passwordInput = document.getElementById('password');
-        if (passwordInput) {
-            passwordInput.addEventListener('input', function() {
-                var val = passwordInput.value;
-                var score = 0;
-                if (val.length >= 8) score++;
-                if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
-                if (/[0-9]/.test(val)) score++;
-                
-                var bar1 = document.getElementById('strength-bar-1');
-                var bar2 = document.getElementById('strength-bar-2');
-                var bar3 = document.getElementById('strength-bar-3');
-                var label = document.getElementById('strength-label');
-                
-                if (bar1 && bar2 && bar3 && label) {
-                    bar1.style.background = 'var(--color-surface-raised)';
-                    bar2.style.background = 'var(--color-surface-raised)';
-                    bar3.style.background = 'var(--color-surface-raised)';
-                    
-                    if (val.length === 0) {
-                        label.textContent = 'Strength: too short';
-                    } else if (score === 1) {
-                        bar1.style.background = 'var(--color-danger)';
-                        label.textContent = 'Strength: weak';
-                    } else if (score === 2) {
-                        bar1.style.background = 'var(--color-warning)';
-                        bar2.style.background = 'var(--color-warning)';
-                        label.textContent = 'Strength: medium';
-                    } else if (score === 3) {
-                        bar1.style.background = 'var(--color-success)';
-                        bar2.style.background = 'var(--color-success)';
-                        bar3.style.background = 'var(--color-success)';
-                        label.textContent = 'Strength: strong';
-                    }
-                }
-            });
-        }
-    });
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

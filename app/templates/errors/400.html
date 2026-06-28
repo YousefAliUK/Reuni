@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Server Error — Reuni{% endblock %}
+{% block title %}Bad Request — Reuni{% endblock %}
 
 {% block content %}
 <div class="error-container" style="min-height: calc(100vh - 64px - 140px); display: flex; align-items: center; justify-content: center; padding: var(--space-6);">
@@ -18,11 +18,11 @@
             border: 1px solid var(--color-border);
         }
         .error-icon {
-            color: var(--color-danger);
+            color: var(--color-ink-tertiary);
             font-size: 64px;
             margin-bottom: var(--space-2);
         }
-        .error-code-badge-500 {
+        .error-code-badge {
             font-family: var(--font-mono);
             font-size: 80px;
             font-weight: 800;
@@ -45,23 +45,20 @@
             line-height: var(--lead-body);
             margin: 0;
             max-width: 38ch;
+            margin-bottom: var(--space-6);
         }
     </style>
     
     <div class="error-card">
-        <span class="material-symbols-outlined error-icon" aria-hidden="true">error_outline</span>
-        <h1 class="error-code-badge-500">500</h1>
-        <h2 class="error-title">Server Error</h2>
+        <span class="material-symbols-outlined error-icon" aria-hidden="true">error</span>
+        <h1 class="error-code-badge">400</h1>
+        <h2 class="error-title">Bad Request</h2>
         <p class="error-text">
-            Something went wrong on our end. Even the best loops experience a hiccup. Our team has been notified and is working to restore balance.
+            Your browser sent a request that this server could not understand. Please try clearing your cache or checking your request format.
         </p>
         
-        <div style="margin-top: var(--space-6); display: flex; gap: var(--space-3); width: 100%;">
-            <button onclick="window.location.reload();" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer; color: white;">
-                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">refresh</span>
-                Try Refreshing
-            </button>
-            <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); font-weight: 600;">
+        <div style="width: 100%;">
+            <a href="{{ url_for('index') }}" class="btn btn--outline" style="height: 44px; border-radius: var(--radius-md); width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-color: var(--color-border); color: var(--color-ink-secondary); font-weight: 600;">
                 <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">home</span>
                 Back to Home
             </a>

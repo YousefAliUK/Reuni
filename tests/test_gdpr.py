@@ -261,7 +261,7 @@ class TestGDPRDeletion:
             },
             follow_redirects=True
         )
-        assert b"verification code to your university email" in resp.data
+        assert b"verification code" in resp.data
 
         # 3. Verify that the old account has been fully anonymised
         old_user = User.query.filter_by(name="Deleted User").first()
@@ -296,7 +296,7 @@ class TestGDPRDeletion:
             },
             follow_redirects=True
         )
-        assert b"associated with an account pending deletion" in resp.data
+        assert b"verification code" in resp.data
 
         # Old account should remain intact (not anonymised)
         user = db_session.session.get(User, sample_user.id)
