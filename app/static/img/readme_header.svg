@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" width="100%" height="auto">
+  <defs>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;family=JetBrains+Mono:wght@600&amp;display=swap');
+
+      /* Light Theme / Default */
+      .bg { fill: #F8FAFC; transition: fill 0.3s; }
+      .border { stroke: #E2E8F0; stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
+      
+      .brand-title { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; font-weight: 800; font-size: 54px; fill: #0F172A; transition: fill 0.3s; }
+      .brand-sub { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; font-weight: 700; font-size: 14px; fill: #0D9488; letter-spacing: 2px; }
+      .tagline { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; font-weight: 500; font-size: 16px; fill: #475569; transition: fill 0.3s; }
+      
+      .badge-bg { fill: #CCFBF1; transition: fill 0.3s; }
+      .badge-text { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; fill: #0D9488; transition: fill 0.3s; }
+      .accent-bg { fill: #FFEDD5; transition: fill 0.3s; }
+      .accent-text { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; fill: #F97316; transition: fill 0.3s; }
+      
+      .primary-fill-color { fill: url(#gradient-primary); }
+
+      /* Dark Theme Override */
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: #0F172A; }
+        .border { stroke: #334155; }
+        
+        .brand-title { fill: #F1F5F9; }
+        .brand-sub { fill: #70B8AE; }
+        .tagline { fill: #94A3B8; }
+        
+        .badge-bg { fill: rgba(13, 148, 136, 0.2); }
+        .badge-text { fill: #70B8AE; }
+        .accent-bg { fill: rgba(249, 115, 22, 0.2); }
+        .accent-text { fill: #FB923C; }
+        
+        .primary-fill-color { fill: url(#gradient-primary-dark); }
+      }
+    </style>
+
+    <!-- Gradients -->
+    <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#14B8A6" />
+    </linearGradient>
+    <linearGradient id="gradient-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+
+    <!-- Dark Mode Gradients -->
+    <linearGradient id="gradient-primary-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70B8AE" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+    <linearGradient id="gradient-accent-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <rect width="98.5%" height="95.2%" x="0.75%" y="2.4%" class="border" rx="14" />
+
+  <!-- Logo Graphics (Official Material Symbols Outlined Recycling Icon) -->
+  <g transform="translate(80, 125) scale(0.08) translate(-480, 480)">
+    <path d="m368-592 89-147-59-98q-12-20-34.5-20T329-837l-98 163 137 82Zm387 272-89-148 139-80 64 107q11 17 12 38t-9 39q-10 20-29.5 32T800-320h-45ZM640-40 480-200l160-160v80h190l-58 116q-11 20-30 32t-42 12h-60v80Zm-387-80q-20 0-36.5-10.5T192-158q-8-16-7.5-33.5T194-224l34-56h172v160H253Zm-99-114L89-364q-9-18-8.5-38.5T92-441l16-27-68-41 219-55 55 220-69-42-91 152Zm540-342-219-55 69-41-125-208h141q21 0 39.5 10.5T629-841l52 87 68-42-55 220Z" class="primary-fill-color" />
+  </g>
+
+  <!-- Text elements -->
+  <text x="170" y="80" class="brand-sub">CAMPUS CIRCULAR ECONOMY</text>
+  <text x="170" y="142" class="brand-title">Reuni</text>
+  <text x="170" y="182" class="tagline">A student-to-student sustainability marketplace preventing university waste.</text>
+
+  <!-- Badges -->
+  <g transform="translate(560, 45)">
+    <rect width="105" height="26" rx="13" class="badge-bg" />
+    <text x="52.5" y="17" text-anchor="middle" class="badge-text">#SDG12</text>
+  </g>
+  <g transform="translate(675, 45)">
+    <rect width="90" height="26" rx="13" class="accent-bg" />
+    <text x="45" y="17" text-anchor="middle" class="accent-text">kg saved</text>
+  </g>
+</svg>

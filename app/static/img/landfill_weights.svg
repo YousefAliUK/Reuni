@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" width="100%" height="auto">
+  <defs>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap');
+
+      /* Light Theme / Default */
+      .bg { fill: #F8FAFC; transition: fill 0.3s; }
+      .border { stroke: #E2E8F0; stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
+      
+      .card-bg { fill: #FFFFFF; stroke: #E2E8F0; stroke-width: 1; transition: fill 0.3s, stroke 0.3s; }
+      
+      .label-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 500;
+        font-size: 10px;
+        fill: #475569;
+        text-anchor: middle;
+        letter-spacing: 1.5px;
+        transition: fill 0.3s;
+      }
+      
+      .weight-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        fill: #0D9488;
+        text-anchor: middle;
+        transition: fill 0.3s;
+      }
+
+      /* Dark Theme Override */
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: #0F172A; }
+        .border { stroke: #334155; }
+        
+        .card-bg { fill: #1E293B; stroke: #334155; }
+        
+        .label-text { fill: #94A3B8; }
+        .weight-text { fill: #70B8AE; }
+      }
+    </style>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="100%" height="100%" class="bg" rx="16" />
+  <rect width="98.5%" height="92.5%" x="0.75%" y="3.75%" class="border" rx="14" />
+
+  <!-- Row 1 -->
+  <!-- Col 1: Furniture -->
+  <g transform="translate(25, 20)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">FURNITURE</text>
+    <text x="87.5" y="42" class="weight-text">12.0 kg</text>
+  </g>
+  
+  <!-- Col 2: Kitchenware -->
+  <g transform="translate(215, 20)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">KITCHENWARE</text>
+    <text x="87.5" y="42" class="weight-text">4.0 kg</text>
+  </g>
+
+  <!-- Col 3: Electronics -->
+  <g transform="translate(405, 20)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">ELECTRONICS</text>
+    <text x="87.5" y="42" class="weight-text">3.0 kg</text>
+  </g>
+
+  <!-- Col 4: Sports -->
+  <g transform="translate(595, 20)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">SPORTS</text>
+    <text x="87.5" y="42" class="weight-text">2.5 kg</text>
+  </g>
+
+  <!-- Row 2 -->
+  <!-- Col 1: Clothing -->
+  <g transform="translate(25, 85)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">CLOTHING</text>
+    <text x="87.5" y="42" class="weight-text">1.5 kg</text>
+  </g>
+
+  <!-- Col 2: Books -->
+  <g transform="translate(215, 85)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">BOOKS</text>
+    <text x="87.5" y="42" class="weight-text">0.8 kg</text>
+  </g>
+
+  <!-- Col 3: Stationery -->
+  <g transform="translate(405, 85)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">STATIONERY</text>
+    <text x="87.5" y="42" class="weight-text">0.3 kg</text>
+  </g>
+
+  <!-- Col 4: Other -->
+  <g transform="translate(595, 85)">
+    <rect width="175" height="54" rx="8" class="card-bg" />
+    <text x="87.5" y="22" class="label-text">OTHER ITEMS</text>
+    <text x="87.5" y="42" class="weight-text">1.0 kg</text>
+  </g>
+</svg>

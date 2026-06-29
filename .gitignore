@@ -28,15 +28,17 @@ app/static/uploads/
 *.swo
 *~
 
+
 # OS files
 .DS_Store
 Thumbs.db
 .aider*
 .rules
-.agents/skills
 
-# 1. Ignore all markdown files in the parent/root directory
 /*.md
+.agents/skills
+brag-output
+settings.local.json
 
 # 2. Exceptions: Allow specific files to be tracked
 !/README.md

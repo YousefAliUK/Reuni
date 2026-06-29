@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 605 32" width="100%" height="auto">
+  <defs>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&amp;display=swap');
+      
+      .pill-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        fill: #FFFFFF;
+        text-anchor: middle;
+        letter-spacing: 0.5px;
+      }
+
+      .border-glow {
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 1;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .border-glow {
+          stroke: rgba(255, 255, 255, 0.1);
+        }
+      }
+    </style>
+    
+    <!-- Premium Gradients -->
+    <linearGradient id="grad-teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#14B8A6" />
+    </linearGradient>
+    <linearGradient id="grad-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="grad-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+    <linearGradient id="grad-slate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+  </defs>
+
+  <!-- Row of Rounded Capsule Badges -->
+  <!-- Pill 1: Python -->
+  <g transform="translate(0, 2)">
+    <rect width="110" height="28" rx="14" fill="url(#grad-teal)" class="border-glow" />
+    <text x="55" y="18" class="pill-text">Python 3.10+</text>
+  </g>
+
+  <!-- Pill 2: Flask -->
+  <g transform="translate(120, 2)">
+    <rect width="90" height="28" rx="14" fill="url(#grad-teal)" class="border-glow" />
+    <text x="45" y="18" class="pill-text">Flask 3.1</text>
+  </g>
+
+  <!-- Pill 3: Tests -->
+  <g transform="translate(220, 2)">
+    <rect width="140" height="28" rx="14" fill="url(#grad-green)" class="border-glow" />
+    <text x="70" y="18" class="pill-text">210 Tests Passed</text>
+  </g>
+
+  <!-- Pill 4: SDG 12 -->
+  <g transform="translate(370, 2)">
+    <rect width="110" height="28" rx="14" fill="url(#grad-orange)" class="border-glow" />
+    <text x="55" y="18" class="pill-text">UN SDG 12</text>
+  </g>
+
+  <!-- Pill 5: Private Repo -->
+  <g transform="translate(490, 2)">
+    <rect width="115" height="28" rx="14" fill="url(#grad-slate)" class="border-glow" />
+    <text x="57.5" y="18" class="pill-text">Private Repo</text>
+  </g>
+</svg>
