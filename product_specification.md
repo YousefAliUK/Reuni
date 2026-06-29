@@ -790,8 +790,8 @@ New tables:
 | Upload limit       | `MAX_CONTENT_LENGTH = 5 MB`                                                                               |
 | Open redirect      | Login `?next=` param rejects absolute / external URLs                                                     |
 | Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and Strict-Transport-Security (STS)       |
-| CSP configuration  | Strict `Content-Security-Policy` header restricting assets, scripts, styles, and fonts to trusted sources |
-| Ownership checks   | Edit/delete routes verify `seller_id == current_user.id`                                                  |
+| CSP configuration  | Strict `Content-Security-Policy` header restricting script-src to `'self'` (blocking inline scripts) and style-src to `'self' 'unsafe-inline'` to support template dynamic style attributes |
+| Ownership checks   | Edit/delete routes verify `seller_id == current_user.id` (anti-IDOR)                                      |
 | Session management    | Flask-Login handles secure session cookies; hard 7-day timeout for partner sessions.                         |
 | Email OTP validation  | 6-digit OTP verified via secure hash comparison, 15m expiration, locked after 5 failed attempts              |
 | Account Lockout       | Temporary 15-minute account lockout after 5 consecutive failed login attempts                                |
@@ -800,6 +800,9 @@ New tables:
 | Account deletion      | Two-phase GDPR deletion: immediate deactivation → 30-day cooldown → nightly anonymisation at 2 AM           |
 | DB migrations         | Flask-Migrate (Alembic) — version-controlled schema changes, executed manually (`flask db upgrade`) in production (preventing race conditions) |
 | CLI Admin Promotion  | `promote_admin.py` is restricted to development environments (`app.debug=True`) and uses cryptographically secure random passwords to prevent accidental credential leakage in server logs. |
+| GDPR Log Masking      | All log entries slice and hash email addresses using SHA-256 (first 16 hex characters), and model representation (`__repr__`) methods are PII-free. |
+| Bcrypt DoS Protection | Password inputs are validated to a maximum of 128 characters on all registration and reset forms to protect against CPU starvation. |
+| CI Pipeline           | Automated GitHub Actions workflow running regression tests and active penetration testing simulations (`pentest.py`) on every Pull Request. |
 
 ### Planned (Production)
 
