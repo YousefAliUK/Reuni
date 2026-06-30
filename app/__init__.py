@@ -544,6 +544,12 @@ def create_app(config_class=None):
     def inject_csp_nonce():
         return {"csp_nonce": getattr(request, "csp_nonce", "")}
 
+    @app.context_processor
+    def inject_turnstile_sitekey():
+        return {
+            "turnstile_sitekey": app.config.get("TURNSTILE_SITE_KEY") or "1x00000000000000000000AA"
+        }
+
     # ── Request Entity Too Large error handler ──
     @app.errorhandler(413)
     def request_too_large(e):
@@ -613,19 +619,22 @@ def create_app(config_class=None):
 
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self'; "
+            "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             f"{img_src_directive}; "
-            "connect-src 'self'; "
+            "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; "
+            "frame-src 'self' https://challenges.cloudflare.com; "
             "frame-ancestors 'none'"
         )
         if not app.debug and not app.testing:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        # Disable Back-Forward Cache (bfcache) globally for dynamic HTML pages to prevent
-        # stale theme rendering (flashes) and cached inputs on back/forward navigation.
-        if response.mimetype == "text/html":
+        # Caching optimization: cache static assets heavily at Cloudflare Edge but check frequently in the browser.
+        # Disable Back-Forward Cache (bfcache) globally for dynamic HTML pages.
+        if request.path.startswith('/static/'):
+            response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=604800"
+        elif response.mimetype == "text/html":
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
