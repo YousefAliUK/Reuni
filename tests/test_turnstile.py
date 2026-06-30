@@ -10,7 +10,7 @@ def test_csp_headers_contain_cloudflare_domains(client):
     assert csp is not None
     
     # Check script-src
-    assert "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com" in csp
+    assert "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-zrG3FDnXUr1BeThMRU11CbTUYtlbvMN8FrQFRPbjYm8='" in csp
     
     # Check connect-src
     assert "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com" in csp
