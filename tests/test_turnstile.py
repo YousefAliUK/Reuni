@@ -11,6 +11,7 @@ def test_csp_headers_contain_cloudflare_domains(client):
     
     # Check script-src
     assert "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com" in csp
+    assert "'nonce-" in csp
     
     # Check connect-src
     assert "connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com" in csp
