@@ -88,6 +88,9 @@
                     By registering you agree to our <a href="{{ url_for('privacy') }}" style="color: var(--color-primary); text-decoration: underline;">Privacy Policy</a>.
                 </p>
 
+                <!-- Turnstile Widget -->
+                <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" style="margin: var(--space-4) 0;"></div>
+
                 <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%;">Create account</button>
             </form>
 
@@ -120,5 +123,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

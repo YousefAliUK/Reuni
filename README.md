@@ -146,7 +146,7 @@
 - **Rendering Engine:** `Jinja2` &amp; `Vanilla CSS / JS`
   <br />Buildless page compilation, layout structures styled with CSS Custom Properties, and modular script patterns.
 - **Auditing &amp; Testing:** `pytest` &amp; `beautifulsoup4`
-  <br />Validates authentication contexts, marketplace transaction steps, settings modifications, and GDPR anonymization loops across 210 test assertions.
+  <br />Validates authentication contexts, marketplace transaction steps, settings modifications, and GDPR anonymization loops across 218 test assertions.
 
 <br /><br />
 
@@ -292,6 +292,10 @@ CF_R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 CF_R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
 CF_R2_BUCKET_NAME=reuni-uploads
 CF_R2_PUBLIC_URL=https://pub-your-bucket-id.r2.dev
+
+# Cloudflare Turnstile CAPTCHA (Optional in local development; defaults to fallback test keys)
+TURNSTILE_SITE_KEY=your-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-turnstile-secret-key
 ```
 
 ### 4. Database Setup & Running

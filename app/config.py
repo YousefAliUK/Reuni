@@ -61,6 +61,10 @@ class Config:
     CF_R2_BUCKET_NAME = os.environ.get("CF_R2_BUCKET_NAME")
     CF_R2_PUBLIC_URL = os.environ.get("CF_R2_PUBLIC_URL")
 
+    # Cloudflare Turnstile Configuration
+    TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+    TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+
 
 class DevelopmentConfig(Config):
     """Development-specific settings."""

@@ -118,9 +118,10 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 #### Security, Auditing & Quality Assurance
 - ✅ **CSRF Protection:** Enabled globally on all POST forms via Flask-WTF.
 - ✅ **SQL Injection Prevention:** Parameterized SQL queries enforced through SQLAlchemy ORM.
-- ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy`. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
+- ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy` that authorizes Cloudflare integration. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
+- ✅ **Bot Protection:** Integrated Cloudflare Turnstile CAPTCHA (Managed mode) on public-facing authentication forms (Login, Registration, Forgot Password) to block automated spam/abuse.
 - ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, deactivation events, and GDPR actions.
-- ✅ **193 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
+- ✅ **218 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: Turnstile verification, CSP headers, authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
 
 ---
 
@@ -790,7 +791,9 @@ New tables:
 | Upload limit       | `MAX_CONTENT_LENGTH = 5 MB`                                                                               |
 | Open redirect      | Login `?next=` param rejects absolute / external URLs                                                     |
 | Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and Strict-Transport-Security (STS)       |
-| CSP configuration  | Strict `Content-Security-Policy` header restricting script-src to `'self'` (blocking inline scripts) and style-src to `'self' 'unsafe-inline'` to support template dynamic style attributes |
+| CSP configuration  | Strict `Content-Security-Policy` header restricting script-src to `'self'` and trusted Cloudflare domains (blocking inline scripts) and style-src to `'self' 'unsafe-inline'` to support template dynamic style attributes |
+| Bot protection     | Cloudflare Turnstile CAPTCHA (Managed mode) on register, login, and forgot-password endpoints              |
+| HTTPS              | Enforced via Cloudflare proxy SSL and Strict-Transport-Security (HSTS) configuration in production         |
 | Ownership checks   | Edit/delete routes verify `seller_id == current_user.id` (anti-IDOR)                                      |
 | Session management    | Flask-Login handles secure session cookies; hard 7-day timeout for partner sessions.                         |
 | Email OTP validation  | 6-digit OTP verified via secure hash comparison, 15m expiration, locked after 5 failed attempts              |
@@ -808,7 +811,7 @@ New tables:
 
 | Area              | Implementation                                          |
 | ----------------- | ------------------------------------------------------- |
-| HTTPS             | Cloudflare free tier / `Flask-Talisman`                 |
+| Static Assets CDN | Cloudflare Edge Caching configured via Cache-Control headers |
 
 ---
 

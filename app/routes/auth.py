@@ -13,6 +13,7 @@ from app import db, limiter
 from app.models import User
 from app.utils.email_validation import extract_university_domain, is_domain_allowed
 from app.utils.tokens import generate_password_reset_token, verify_password_reset_token
+from app.utils.turnstile import verify_turnstile
 from itsdangerous import URLSafeTimedSerializer
 from flask_limiter.util import get_remote_address
 
@@ -46,6 +47,12 @@ def register():
         return redirect(url_for("index"))
 
     if request.method == "POST":
+        # --- Turnstile validation ---
+        turnstile_token = request.form.get("cf-turnstile-response", "")
+        if not verify_turnstile(turnstile_token, remote_ip=request.remote_addr):
+            flash("Security verification failed. Please try again.", "danger")
+            return redirect(url_for("auth.register"))
+
         email = request.form.get("email", "").strip().lower()
         name = request.form.get("name", "").strip()
         password = request.form.get("password", "")
@@ -179,6 +186,12 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     if request.method == "POST":
+        # --- Turnstile validation ---
+        turnstile_token = request.form.get("cf-turnstile-response", "")
+        if not verify_turnstile(turnstile_token, remote_ip=request.remote_addr):
+            flash("Security verification failed. Please try again.", "danger")
+            return redirect(url_for("auth.login"))
+
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
@@ -480,6 +493,12 @@ def forgot_password():
         return redirect(url_for("index"))
 
     if request.method == "POST":
+        # --- Turnstile validation ---
+        turnstile_token = request.form.get("cf-turnstile-response", "")
+        if not verify_turnstile(turnstile_token, remote_ip=request.remote_addr):
+            flash("Security verification failed. Please try again.", "danger")
+            return redirect(url_for("auth.forgot_password"))
+
         email = request.form.get("email", "").strip().lower()
         if email:
             if email.endswith("@deleted.reuni") or email.startswith("deleted_"):
