@@ -619,7 +619,7 @@ def create_app(config_class=None):
 
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-zrG3FDnXUr1BeThMRU11CbTUYtlbvMN8FrQFRPbjYm8='; "
+            f"script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'nonce-{nonce}'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             f"{img_src_directive}; "
