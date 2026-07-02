@@ -48,6 +48,12 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
+    # Subdomain to University Domain mapping
+    SUBDOMAIN_UNIVERSITY_MAP = {
+        "brookes": "brookes.ac.uk",
+        "oxford": "oxford.ac.uk",
+    }
+
     # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL")
@@ -72,6 +78,7 @@ class DevelopmentConfig(Config):
     # Allow a fallback secret key ONLY in development
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
     SESSION_COOKIE_SECURE = False
+    SERVER_NAME = "reuni.local:5000"
 
 
 class TestingConfig(Config):

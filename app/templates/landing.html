@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Reuni — Select Your University{% endblock %}
+
+{% block head %}
+<style>
+    .landing-hero {
+        padding: 80px 20px;
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .landing-hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--color-primary), #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .landing-hero p {
+        font-size: 1.25rem;
+        color: var(--color-ink-secondary);
+        margin-bottom: 40px;
+    }
+    .uni-selector-card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        padding: 40px;
+        box-shadow: var(--shadow-card);
+        text-align: left;
+    }
+    .uni-selector-card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+    .uni-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .uni-button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        color: var(--color-ink-primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .uni-button:hover {
+        border-color: var(--color-primary);
+        background: var(--color-primary-muted);
+        color: var(--color-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="landing-hero" id="main-content">
+    <h1>The Circular Campus Marketplace</h1>
+    <p>Buy, sell, or giveaway items within your university community and track your environmental impact.</p>
+
+    <div class="uni-selector-card">
+        <h2>Select Your University</h2>
+        <p>Choose your campus to enter the local marketplace:</p>
+        
+        {% set parts = request.host.split('.') %}
+        {% if parts|length >= 3 %}
+            {% set base_domain = parts[1:]|join('.') %}
+        {% else %}
+            {% set base_domain = request.host %}
+        {% endif %}
+        
+        <div class="uni-list">
+            <a href="{{ request.scheme }}://brookes.{{ base_domain }}" class="uni-button">
+                <span>Oxford Brookes University</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </a>
+            <a href="{{ request.scheme }}://oxford.{{ base_domain }}" class="uni-button">
+                <span>University of Oxford</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

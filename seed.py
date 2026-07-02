@@ -300,6 +300,42 @@ SAMPLE_USERS = [
         "role": "partner",
         "partner_university": "brookes.ac.uk",
     },
+    # ── Oxford Demo Users ──
+    {
+        "email": "w.churchill@oxford.ac.uk",
+        "name": "Winston Churchill",
+        "password": "OxfordDemo1",
+        "role": "student",
+        "partner_university": None,
+    },
+    {
+        "email": "m.thatcher@oxford.ac.uk",
+        "name": "Margaret Thatcher",
+        "password": "OxfordDemo1",
+        "role": "student",
+        "partner_university": None,
+    },
+    {
+        "email": "a.turing@oxford.ac.uk",
+        "name": "Alan Turing",
+        "password": "OxfordDemo1",
+        "role": "student",
+        "partner_university": None,
+    },
+    {
+        "email": "admin@oxford.ac.uk",
+        "name": "Oxford Admin",
+        "password": "OxfordDemo1",
+        "role": "admin",
+        "partner_university": None,
+    },
+    {
+        "email": "sustainability@oxford.ac.uk",
+        "name": "Oxford Sustainability Office",
+        "password": "OxfordDemo1",
+        "role": "partner",
+        "partner_university": "oxford.ac.uk",
+    },
 ]
 
 SAMPLE_ITEMS = [
@@ -919,6 +955,98 @@ SAMPLE_ITEMS = [
         "days_ago_claimed": None,
         "days_active_before_claim": None,
         "days_ago_listed": 35,
+    },
+    # ── Oxford Demo Items ──
+    {
+        "title": "Oxford Leather College Chair",
+        "description": (
+            "Classic dark wood and leather library chair. Very comfortable and solid. "
+            "Has some minor wear on the arms but fits perfectly in any study room."
+        ),
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 20.00,
+        "is_free": False,
+        "seller_email": "w.churchill@oxford.ac.uk",
+        "image_file": "oxford_chair.jpg",
+        "is_sold": False,
+        "buyer_email": None,
+        "days_ago_claimed": None,
+        "days_active_before_claim": None,
+        "days_ago_listed": 4,
+    },
+    {
+        "title": "Introduction to Algorithms (CLRS) 4th Edition",
+        "description": (
+            "The bible of computer science. Clean copy, no highlighting or annotations. "
+            "Practically brand new, required for CS students."
+        ),
+        "category": "Books",
+        "condition": "New",
+        "price": 15.00,
+        "is_free": False,
+        "seller_email": "a.turing@oxford.ac.uk",
+        "image_file": "clrs_book.jpg",
+        "is_sold": False,
+        "buyer_email": None,
+        "days_ago_claimed": None,
+        "days_active_before_claim": None,
+        "days_ago_listed": 2,
+    },
+    {
+        "title": "Custom Mechanical Keyboard (Brown Switches)",
+        "description": (
+            "Keychron K2 with tactile Gateron Brown switches. Bluetooth and wired modes. "
+            "RGB backlighting. Includes original keycaps and keycap puller."
+        ),
+        "category": "Electronics",
+        "condition": "Like New",
+        "price": 30.00,
+        "is_free": False,
+        "seller_email": "a.turing@oxford.ac.uk",
+        "image_file": "keychron_keyboard.jpg",
+        "is_sold": True,
+        "buyer_email": "m.thatcher@oxford.ac.uk",
+        "days_ago_claimed": 3,
+        "days_active_before_claim": 5,
+        "days_ago_listed": 8,
+    },
+    {
+        "title": "Oxford Graduation Gown and Cap Bundle",
+        "description": (
+            "Official sub-fusc graduation gown and mortarboard cap. "
+            "Worn once. Fit for medium height (approx 170-180cm). "
+            "Giving away for free to anyone who needs it for their upcoming ceremony."
+        ),
+        "category": "Clothing",
+        "condition": "Like New",
+        "price": 0.00,
+        "is_free": True,
+        "seller_email": "m.thatcher@oxford.ac.uk",
+        "image_file": "gown_bundle.jpg",
+        "is_sold": False,
+        "buyer_email": None,
+        "days_ago_claimed": None,
+        "days_active_before_claim": None,
+        "days_ago_listed": 6,
+    },
+    {
+        "title": "Vintage Porcelain Tea Set",
+        "description": (
+            "Includes teapot, 4 cups, and saucers. Beautiful floral pattern with gold details. "
+            "No chips or cracks."
+        ),
+        "category": "Kitchenware",
+        "condition": "Good",
+        "price": 10.00,
+        "is_free": False,
+        "seller_email": "w.churchill@oxford.ac.uk",
+        "image_file": "tea_set.jpg",
+        "is_sold": False,
+        "buyer_email": None,
+        "days_ago_claimed": None,
+        "days_active_before_claim": None,
+        "days_ago_listed": 5,
     },
 ]
 

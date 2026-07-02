@@ -114,6 +114,47 @@ def create_app(config_class=None):
             db.session.expire_all()
 
     @app.before_request
+    def detect_subdomain():
+        from flask import g, abort, redirect
+        
+        # Skip subdomain checks for static files
+        if request.endpoint == 'static':
+            return
+            
+        host = request.host.split(':')[0].lower()
+        parts = host.split('.')
+        
+        subdomain = None
+        if len(parts) >= 3:
+            subdomain = parts[0]
+            
+        uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        if subdomain and subdomain != 'www':
+            if subdomain not in uni_map:
+                # Early rejection for unrecognized subdomains
+                abort(404)
+            g.current_uni_domain = uni_map[subdomain]
+        else:
+            g.current_uni_domain = None
+
+        # Redirect logged-in users to their own subdomain for account-scoped pages
+        if current_user.is_authenticated and g.current_uni_domain:
+            if current_user.university_domain and g.current_uni_domain != current_user.university_domain:
+                # Blueprints and endpoints that must belong to the user's university
+                if (request.blueprint in ['partner', 'admin'] or 
+                    request.endpoint in ['dashboard', 'profile', 'settings', 'enforce_session_rules']):
+                    
+                    rev_map = {v: k for k, v in uni_map.items()}
+                    correct_subdomain = rev_map.get(current_user.university_domain)
+                    if correct_subdomain:
+                        base_domain = '.'.join(parts[1:]) if len(parts) >= 3 else host
+                        port = request.host.split(':')[1] if ':' in request.host else None
+                        new_host = f"{correct_subdomain}.{base_domain}"
+                        if port:
+                            new_host = f"{new_host}:{port}"
+                        return redirect(f"{request.scheme}://{new_host}{request.full_path}")
+
+    @app.before_request
     def enforce_session_rules():
         from datetime import datetime, timezone, timedelta
         
@@ -172,7 +213,11 @@ def create_app(config_class=None):
     # ── Marketplace home page (merged browse + landing) ──
     @app.route("/")
     def index():
+        from flask import g
         from app.models import Item, CATEGORIES
+
+        if g.current_uni_domain is None:
+            return render_template("landing.html")
 
         active_category = request.args.get("category", "")
         search_query = request.args.get("q", "").strip()
@@ -182,7 +227,7 @@ def create_app(config_class=None):
         active_condition = request.args.get("condition", "")
         sort_by = request.args.get("sort", "newest")
 
-        query = Item.query.filter_by(is_sold=False)
+        query = Item.query.filter_by(is_sold=False, university_domain=g.current_uni_domain)
 
         # Apply Category Filter
         if active_category and active_category in CATEGORIES:
