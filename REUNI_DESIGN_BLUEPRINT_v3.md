@@ -665,13 +665,12 @@ The sticky CTA sits ABOVE the bottom tab bar (60px + safe area offset).
 
 ---
 
-**Component: WhatsApp Coordination Block (buyer only) (`.whatsapp-block`)**
+**Component: In-App Messaging Block (`.chat-block`)**
 - Border: `1px solid var(--color-border)`, `border-radius: var(--radius-lg)`, padding: `var(--space-5)`
-- Header: `chat` icon + "Contact the seller" label (`--type-small`, `font-weight: 600`)
-- **WhatsApp button:** `background: #25D366`, `color: #FFFFFF`, width: `100%`, `border-radius: var(--radius-md)`, `height: 48px`; `chat` icon left + "Open WhatsApp" label
-- **Deep link message formatting:** The WhatsApp link must pre-fill the seller's number and this exact encoded message body:
-  `https://wa.me/[seller_phone_e164]?text=Hey%2C+I+just+claimed+your+[ENCODED_TITLE]+on+Reuni.+When+can+we+meet+for+the+PIN+handshake%3F`
-- **Copy message button:** ghost text link below; on click, copy the pre-filled text, change label to `"Copied ✓"` in `--color-success` for `1000ms`, then revert.
+- Header: `chat` icon + "Chat with Buyer/Seller" label (`--type-small`, `font-weight: 600`)
+- **Message List (`.chat-messages`):** Scrollable list displaying messages. Buyer and seller messages are distinguished styling-wise (e.g. left vs right bubble alignments).
+- **Security Check:** Form input validation intercepts outgoing messages. If a user tries to send the 4-digit PIN code, the message is blocked and an alert is shown on screen.
+- **Form Controls:** Textarea input with a character limit and a Send button. Form controls are completely hidden/disabled when the transaction is completed (sold) or cancelled.
 
 ---
 
@@ -891,7 +890,6 @@ Metric animation: staggered scale-in on mount.
 
 **Layout:** Max-width `680px` centered. Sections separated by `var(--space-12)` vertical gap.
 
-- **Section: Phone Number:** Card layout, current E.164 number, inline edit form (+44 input + update button).
 - **Section: Change Password:** Card layout, Current / New / Confirm fields, password strength indicator bar (Weak/Fair/Strong in danger/warning/success colors), update button.
 - **Section: Account Deletion (Danger Zone):** Card with red border, danger-muted bg. Explains GDPR erasure, cooling-off period. Delete button triggers confirmation modal requiring typing "DELETE" to confirm.
 
@@ -903,7 +901,7 @@ Metric animation: staggered scale-in on mount.
 **Auth Card:** Modal-style card. Brand logo, title, sub-label.
 
 - **Login Page:** Email, Password (show/hide toggle), Forgot password link, Log in button, divider with "or", link to register.
-- **Register Page:** Display name, email (.ac.uk validation), phone number (+44, coordination warning), password (+ strength bar), terms checkbox, Create account button.
+- **Register Page:** Display name, email (.ac.uk validation), password (+ strength bar), terms checkbox, Create account button.
 - **OTP Verification Page:** Title, code details, 6-box OTP input grid (`44px × 52px` each), auto-submit, resend timer link.
 - **Forgot/Reset Password:** Single email input form, success state message banner. Reset page has New/Confirm inputs + strength bar.
 

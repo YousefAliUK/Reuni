@@ -444,6 +444,10 @@ def buy_item(item_id):
         flash("You can't buy your own item.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
 
+    if item.university_domain and item.university_domain != current_user.university_domain:
+        flash("You cannot claim items from other universities.", "danger")
+        return redirect(url_for("items.detail", item_id=item.id))
+
     # Atomic claim — prevents race condition when two buyers click simultaneously.
     # The WHERE clause ensures only one concurrent request can succeed.
     now = datetime.now(timezone.utc).replace(tzinfo=None)

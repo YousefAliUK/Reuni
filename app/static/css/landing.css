@@ -1,0 +1,1266 @@
+/* ==========================================================================
+   REUNI LANDING PAGE STYLES (landing.css)
+   Awwwards Bento Grid Design System & Dark-Ambient Mesh Canvas
+   ========================================================================== */
+
+/* ─── 1. DESIGN TOKENS & CANVAS INITIALISATION ─── */
+:root {
+  /* Canvas Backgrounds (Stone Ramp & Dark Emitters) */
+  --landing-bg:                 #0B0A09;  /* Stone-950 Warm Pitch Black */
+  --landing-surface:            rgba(28, 25, 23, 0.65); /* Translucent Stone-900 */
+  --landing-surface-raised:     rgba(41, 37, 36, 0.85);  /* Stone-800 Nested Card */
+  
+  /* Borders & Highlights */
+  --landing-border:             rgba(255, 255, 255, 0.05);
+  --landing-border-active:      rgba(45, 212, 191, 0.25); /* Brand Teal Active Edge */
+  --landing-border-glow:        rgba(255, 255, 255, 0.08);
+
+  /* Typography Ink (WCAG AAA Compliant Contrast) */
+  --landing-ink-primary:        #F5F5F4;  /* Stone-100 */
+  --landing-ink-secondary:      #A8A29E;  /* Stone-400 */
+  --landing-ink-tertiary:       #78716C;  /* Stone-500 */
+  --landing-ink-placeholder:    #57534E;  /* Stone-600 */
+
+  /* Accents */
+  --landing-teal:               #2DD4BF;  /* Teal-400 */
+  --landing-teal-hover:         #14B8A6;  /* Teal-500 */
+  --landing-teal-glow:          rgba(45, 212, 191, 0.15);
+  --landing-emerald:            #34D399;  /* Emerald-400 */
+  --landing-emerald-glow:       rgba(52, 211, 153, 0.08);
+  --landing-orange:             #F97316;  /* Orange-500 */
+  --landing-orange-hover:       #EA580C;  /* Orange-600 */
+  --landing-orange-glow:        rgba(249, 115, 22, 0.15);
+
+  /* Spacing */
+  --landing-gutter:             clamp(16px, 3vw, 28px);
+  --landing-padding:            clamp(20px, 4vw, 36px);
+
+  /* Borders & Radius */
+  --landing-radius-bento:       24px;
+  --landing-radius-card:        16px;
+  --landing-radius-pill:        9999px;
+
+  /* Easing Ramps */
+  --ease-spring:                cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-reveal:                cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Navbar & Canvas extras */
+  --landing-nav-bg:             rgba(11, 10, 9, 0.8);
+  --landing-mesh-opacity:       0.18;
+
+  /* Mockup Simulation variables - Dark theme defaults */
+  --landing-mock-bg:            #11100F;
+  --landing-mock-card:          #181716;
+  --landing-mock-border:        rgba(255, 255, 255, 0.03);
+  --landing-mock-img:           #252322;
+  --landing-mock-phone:         #181716;
+  --landing-mock-phone-border:  #292524;
+  --landing-mock-bubble:        rgba(255, 255, 255, 0.05);
+  --landing-mock-digit:         #252322;
+  --landing-mock-digit-border:  rgba(255, 255, 255, 0.1);
+  --landing-mock-shadow:        0 10px 30px rgba(0, 0, 0, 0.5);
+  --landing-mock-text:          var(--landing-ink-primary);
+  --landing-mock-overlay:       rgba(11, 10, 9, 0.92);
+}
+
+/* Light Mode Variables Override */
+[data-theme="light"] {
+  /* Canvas Backgrounds (Soft, light stone neutral warm tones) */
+  --landing-bg:                 #F9F8F6;  /* Stone-50 base */
+  --landing-surface:            rgba(245, 245, 244, 0.65); /* Translucent Stone-100 */
+  --landing-surface-raised:     rgba(231, 229, 228, 0.85); /* Stone-200 */
+  
+  /* Borders & Outlines */
+  --landing-border:             rgba(0, 0, 0, 0.06);
+  --landing-border-active:      rgba(13, 148, 136, 0.35); /* Brand Teal border */
+  --landing-border-glow:        rgba(0, 0, 0, 0.08);
+
+  /* Ink System */
+  --landing-ink-primary:        #1C1917;  /* Stone-900 */
+  --landing-ink-secondary:      #57534E;  /* Stone-600 */
+  --landing-ink-tertiary:       #78716C;  /* Stone-500 */
+  --landing-ink-placeholder:    #A8A29E;  /* Stone-400 */
+
+  /* Accents */
+  --landing-teal:               #0D9488;  /* Teal-600 */
+  --landing-teal-hover:         #0F766E;  /* Teal-700 */
+  --landing-teal-glow:          rgba(13, 148, 136, 0.08);
+  --landing-emerald:            #059669;  /* Emerald-600 */
+  --landing-emerald-glow:       rgba(5, 150, 105, 0.05);
+  --landing-orange:             #EA580C;  /* Orange-600 */
+  --landing-orange-hover:       #C2410C;  /* Orange-700 */
+  --landing-orange-glow:        rgba(234, 88, 12, 0.08);
+
+  --landing-nav-bg:             rgba(249, 248, 246, 0.8);
+  --landing-mesh-opacity:       0.06;
+
+  /* Mockup Simulation variables - Light theme overrides */
+  --landing-mock-bg:            #F5F5F4;
+  --landing-mock-card:          #FFFFFF;
+  --landing-mock-border:        rgba(0, 0, 0, 0.06);
+  --landing-mock-img:           #E7E5E4;
+  --landing-mock-phone:         #FFFFFF;
+  --landing-mock-phone-border:  #D6D3D1;
+  --landing-mock-bubble:        rgba(0, 0, 0, 0.04);
+  --landing-mock-digit:         #E7E5E4;
+  --landing-mock-digit-border:  rgba(0, 0, 0, 0.08);
+  --landing-mock-shadow:        0 10px 30px rgba(0, 0, 0, 0.08);
+  --landing-mock-text:          #1C1917;
+  --landing-mock-overlay:       rgba(249, 248, 246, 0.94);
+}
+
+/* Base Body Styles Overrides for Landing Page */
+body.guest-shell-layout {
+  background-color: var(--landing-bg) !important;
+  color: var(--landing-ink-primary) !important;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  display: flex !important;
+  flex-direction: column !important;
+  padding-top: 120px !important; /* Space for fixed floating header */
+  padding-bottom: 0 !important; /* Override standard mobile bottom tabs padding */
+}
+
+body.guest-shell-layout .main-shell {
+  flex-grow: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.guest-shell-layout .landing-wrapper {
+  flex-grow: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Disable navigation bars default borders on landing to keep look sleek */
+body.guest-shell-layout .navbar {
+  background: var(--landing-nav-bg) !important;
+  backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid var(--landing-border) !important;
+}
+
+body.guest-shell-layout .footer {
+  border-top: 1px solid var(--landing-border) !important;
+  background: var(--landing-bg) !important;
+}
+
+/* ─── 2. AMBIENT MESH CANVAS ─── */
+.mesh-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.85;
+}
+
+.mesh-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: var(--landing-mesh-opacity);
+  mix-blend-mode: screen;
+}
+
+.mesh-blob--emerald {
+  top: -10%;
+  left: -10%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, var(--landing-emerald) 0%, transparent 70%);
+  animation: float-emerald 25s infinite alternate ease-in-out;
+}
+
+.mesh-blob--teal {
+  bottom: -15%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, var(--landing-teal) 0%, transparent 70%);
+  animation: float-teal 30s infinite alternate ease-in-out;
+}
+
+@keyframes float-emerald {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, 10%) scale(1.1); }
+  100% { transform: translate(-5%, 5%) scale(0.9); }
+}
+
+@keyframes float-teal {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-8%, -12%) scale(0.95); }
+  100% { transform: translate(4%, -4%) scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesh-blob {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ─── 3. TYPOGRAPHY CONFIGURATION ─── */
+.font-display {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-accent {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+}
+
+.font-numeric {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── 4. BENTO LAYOUT ARCHITECTURE ─── */
+.landing-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 60px 24px 100px 24px;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--landing-gutter);
+  width: 100%;
+}
+
+/* Bento Card Base */
+.bento-card {
+  background: var(--landing-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-radius-bento);
+  padding: var(--landing-padding);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(255,255,255,0.02), transparent 40%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bento-card:hover {
+  border-color: var(--landing-border-glow);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Grid Spans */
+.bento-card--hero {
+  grid-column: span 12;
+  text-align: center;
+  align-items: center;
+  padding: 80px var(--landing-padding);
+}
+
+.bento-card--showcase {
+  grid-column: span 8;
+  height: 520px;
+}
+
+.bento-card--impact {
+  grid-column: span 4;
+  height: 520px;
+}
+
+.bento-card--selector {
+  grid-column: span 5;
+  height: auto;
+  min-height: 480px;
+}
+
+.bento-card--rivalry {
+  grid-column: span 7;
+  height: auto;
+  min-height: 480px;
+}
+
+@media (max-width: 1024px) {
+  .bento-card--hero,
+  .bento-card--showcase,
+  .bento-card--impact,
+  .bento-card--selector,
+  .bento-card--rivalry {
+    grid-column: span 12 !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+  
+  /* Prevent simulated showcase viewport from collapsing to height 0 on tablet/mobile */
+  .showcase-viewport {
+    height: 380px !important;
+  }
+}
+
+/* Accessibility Focus States */
+.bento-card a:focus-visible,
+.bento-card button:focus-visible,
+.bento-card input:focus-visible {
+  outline: 2px solid var(--landing-teal);
+  outline-offset: 4px;
+}
+
+/* ─── 5. MODULE SPECIFIC COMPONENTS ─── */
+
+/* Module 1: Hero */
+.hero-tagline {
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--landing-teal);
+  font-weight: 700;
+  margin-bottom: 24px;
+  background: rgba(45, 212, 191, 0.08);
+  padding: 8px 18px;
+  border-radius: var(--landing-radius-pill);
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  display: inline-block;
+}
+
+.hero-heading {
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--landing-ink-primary);
+  max-width: 20ch;
+  margin-bottom: 24px;
+  text-wrap: balance;
+}
+
+.hero-heading span.highlight {
+  color: var(--landing-teal);
+  font-style: italic;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  display: inline-block;
+  padding-bottom: 4px;
+}
+
+.hero-description {
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  line-height: 1.65;
+  color: var(--landing-ink-secondary);
+  max-width: 60ch;
+  margin-bottom: 40px;
+  text-wrap: balance;
+}
+
+.hero-pillars {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  border-top: 1px solid var(--landing-border);
+  padding-top: 32px;
+  width: 100%;
+}
+
+.hero-pillar {
+  font-size: 0.875rem;
+  color: var(--landing-ink-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-pillar::before {
+  content: '✦';
+  color: var(--landing-teal);
+}
+
+/* Module 2: Showcase Widget */
+.showcase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+  z-index: 10;
+}
+
+.showcase-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--landing-ink-primary);
+  letter-spacing: -0.02em;
+}
+
+.segmented-control {
+  display: flex;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  padding: 4px;
+  border-radius: var(--landing-radius-pill);
+}
+
+.segment-btn {
+  background: transparent;
+  border: none;
+  color: var(--landing-ink-secondary);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--landing-radius-pill);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-spring);
+}
+
+.segment-btn--active {
+  background: var(--landing-surface-raised);
+  color: var(--landing-ink-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Showcase Screen/Mockup Container */
+.showcase-viewport {
+  flex-grow: 1;
+  background: var(--landing-mock-bg);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-radius-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.showcase-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.showcase-screen--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Simulated UI: Student Mode Marketplace */
+.mock-marketplace {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  height: 100%;
+}
+
+.mock-card {
+  background: var(--landing-mock-card);
+  border: 1px solid var(--landing-mock-border);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: var(--landing-mock-shadow);
+}
+
+.mock-img {
+  height: 100px;
+  background: var(--landing-mock-img);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--landing-ink-tertiary);
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.mock-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.mock-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.mock-badge {
+  font-size: 0.625rem;
+  padding: 2px 6px;
+  border-radius: var(--landing-radius-pill);
+  font-weight: 700;
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--landing-emerald);
+}
+
+.mock-price {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--landing-ink-primary);
+}
+
+/* Animated Handshake Sequence simulation overlay */
+.handshake-simulation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--landing-mock-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 5;
+  text-align: center;
+  padding: 30px;
+  color: var(--landing-mock-text);
+}
+
+.handshake-simulation--visible {
+  opacity: 1;
+}
+
+.sim-phone {
+  background: var(--landing-mock-phone);
+  border: 2px solid var(--landing-mock-phone-border);
+  border-radius: 16px;
+  width: 170px;
+  padding: 16px;
+  box-shadow: var(--landing-mock-shadow);
+  transform: translateY(20px);
+  transition: transform 0.6s var(--ease-spring);
+}
+
+.handshake-simulation--visible .sim-phone {
+  transform: translateY(0);
+}
+
+.sim-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--landing-teal);
+  margin: 0 auto 12px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--landing-bg);
+}
+
+.sim-bubble {
+  background: var(--landing-mock-bubble);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 0.6875rem;
+  margin-bottom: 8px;
+  text-align: left;
+  line-height: 1.3;
+  color: var(--landing-mock-text);
+}
+
+.sim-pin-input {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.sim-digit {
+  width: 22px;
+  height: 28px;
+  background: var(--landing-mock-digit);
+  border: 1px solid var(--landing-mock-digit-border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--landing-mock-text);
+}
+
+/* Simulated ESG Dashboard */
+.mock-dashboard {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  height: 100%;
+}
+
+.mock-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.mock-metric-card {
+  background: var(--landing-mock-card);
+  border: 1px solid var(--landing-mock-border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.mock-metric-label {
+  font-size: 0.625rem;
+  color: var(--landing-ink-tertiary);
+  margin-bottom: 4px;
+}
+
+.mock-metric-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--landing-teal);
+}
+
+.mock-chart-container {
+  background: var(--landing-mock-card);
+  border: 1px solid var(--landing-mock-border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mock-chart-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--landing-ink-secondary);
+  margin-bottom: 12px;
+}
+
+.mock-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.mock-bar-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6875rem;
+}
+
+.mock-bar-lbl {
+  color: var(--landing-ink-secondary);
+}
+
+.mock-bar-track {
+  background: var(--landing-mock-bubble);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mock-bar-fill {
+  height: 100%;
+  background: var(--landing-teal);
+  border-radius: 4px;
+  width: 0;
+  transition: width 1s ease-in-out;
+}
+
+.mock-bar-num {
+  text-align: right;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .mock-marketplace {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .mock-card:nth-child(2) {
+    display: flex !important;
+  }
+  .mock-card:nth-child(3) {
+    display: none !important;
+  }
+  .mock-img {
+    height: 70px !important;
+    font-size: 16px !important;
+  }
+  .mock-title {
+    font-size: 0.6875rem !important;
+  }
+  .mock-price {
+    font-size: 0.6875rem !important;
+  }
+  .mock-badge {
+    font-size: 0.5625rem !important;
+    padding: 1px 4px !important;
+  }
+
+  /* Mobile Hero Redesign overrides */
+  .bento-card--hero {
+    padding: 48px 16px !important;
+  }
+  
+  .hero-tagline {
+    font-size: 0.65rem !important;
+    letter-spacing: 0.04em !important;
+    line-height: 1.4 !important;
+    padding: 6px 12px !important;
+  }
+
+  .hero-heading {
+    font-size: 2.125rem !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  .hero-description {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    margin-bottom: 28px !important;
+  }
+
+  .hero-cta-group {
+    width: 100% !important;
+  }
+
+  .hero-cta-group .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 14px 20px !important;
+  }
+
+  .hero-pillars {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: center !important;
+    margin-top: 32px !important;
+  }
+
+  /* Simulated Mobile Showcase/Mockup Layout details */
+  .showcase-viewport {
+    height: 380px !important;
+    padding: 12px !important;
+  }
+
+  /* Hide the 3rd metric card on mobile to prevent clipping */
+  .mock-metrics-row .mock-metric-card:nth-child(3) {
+    display: none !important;
+  }
+  .mock-metrics-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .mock-metric-card {
+    padding: 8px !important;
+  }
+  .mock-metric-label {
+    font-size: 0.5625rem !important;
+  }
+  .mock-metric-val {
+    font-size: 0.875rem !important;
+  }
+
+  /* Compact mock chart layout for narrow viewports */
+  .mock-chart-container {
+    padding: 10px !important;
+  }
+  .mock-chart-title {
+    font-size: 0.6875rem !important;
+    margin-bottom: 8px !important;
+  }
+  .mock-bar-row {
+    grid-template-columns: 45px 1fr 24px !important;
+    gap: 6px !important;
+    font-size: 0.625rem !important;
+  }
+  .mock-bar-track {
+    height: 6px !important;
+  }
+
+  /* Stacking the inter-university rivalry badge on mobile */
+  .rivalry-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+  .rivalry-title {
+    font-size: 1.125rem !important;
+  }
+  .rivalry-cup-badge {
+    font-size: 0.65rem !important;
+    padding: 4px 10px !important;
+  }
+
+  /* Compact select campus search input */
+  .selector-input {
+    padding: 12px 12px 12px 40px !important;
+    font-size: 0.8125rem !important;
+  }
+  .selector-search-icon {
+    left: 12px !important;
+    font-size: 18px !important;
+  }
+
+  /* Stacking carbon-savings footer vertically on mobile */
+  body.guest-shell-layout .footer__inner {
+    flex-direction: column !important;
+    gap: 12px !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+}
+
+/* Module 3: ESG Impact Stats */
+.impact-header {
+  margin-bottom: 20px;
+}
+
+.impact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  color: var(--landing-emerald);
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  padding: 6px 12px;
+  border-radius: var(--landing-radius-pill);
+}
+
+.impact-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 16px;
+  letter-spacing: -0.01em;
+}
+
+.impact-metrics {
+  margin: 32px 0;
+}
+
+.impact-stat-group {
+  margin-bottom: 24px;
+}
+
+.impact-stat-label {
+  font-size: 0.8125rem;
+  color: var(--landing-ink-tertiary);
+  margin-bottom: 6px;
+}
+
+.impact-number-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.impact-stat-number {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 800;
+  color: var(--landing-ink-primary);
+  line-height: 1;
+}
+
+.impact-stat-unit {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--landing-emerald);
+}
+
+.impact-citation {
+  font-size: 0.725rem;
+  line-height: 1.4;
+  color: var(--landing-ink-tertiary);
+  border-top: 1px solid var(--landing-border);
+  padding-top: 16px;
+}
+
+/* Module 4: Campus Selector */
+.selector-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.selector-subtitle {
+  font-size: 0.875rem;
+  color: var(--landing-ink-secondary);
+  margin-bottom: 24px;
+}
+
+.selector-search-wrap {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.selector-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--landing-ink-tertiary);
+  font-size: 20px;
+}
+
+.selector-input {
+  width: 100%;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-radius-card);
+  padding: 16px 16px 16px 48px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.875rem;
+  color: var(--landing-ink-primary);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.selector-input:focus {
+  border-color: var(--landing-teal);
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.1);
+  outline: none;
+}
+
+.selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* University Button Entry */
+.uni-entry-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: var(--landing-surface-raised);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-radius-card);
+  color: var(--landing-ink-primary);
+  text-decoration: none !important;
+  font-weight: 600;
+  transition: all 0.3s var(--ease-spring);
+  position: relative;
+}
+
+.uni-entry-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--landing-radius-card);
+  box-shadow: 0 0 15px var(--landing-teal-glow);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.uni-entry-btn:hover {
+  border-color: var(--landing-teal);
+  transform: translateY(-2px);
+  background: rgba(45, 212, 191, 0.03);
+}
+
+.uni-entry-btn:hover::after {
+  opacity: 1;
+}
+
+.uni-entry-btn__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.uni-entry-btn__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.uni-entry-btn__listings {
+  font-size: 0.75rem;
+  color: var(--landing-ink-secondary);
+}
+
+.uni-entry-btn__badge {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: rgba(45, 212, 191, 0.1);
+  color: var(--landing-teal);
+  padding: 4px 10px;
+  border-radius: var(--landing-radius-pill);
+  border: 1px solid rgba(45, 212, 191, 0.15);
+  display: none;
+}
+
+.uni-entry-btn--highlighted {
+  border-color: rgba(45, 212, 191, 0.5);
+  background: rgba(45, 212, 191, 0.05);
+}
+
+.uni-entry-btn--highlighted .uni-entry-btn__badge {
+  display: block;
+}
+
+.uni-entry-btn__arrow {
+  color: var(--landing-ink-tertiary);
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.uni-entry-btn:hover .uni-entry-btn__arrow {
+  transform: translateX(4px);
+  color: var(--landing-teal);
+}
+
+/* Module 5: Inter-University Rivalry Cup */
+.rivalry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.rivalry-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rivalry-cup-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--landing-orange);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  padding: 6px 12px;
+  border-radius: var(--landing-radius-pill);
+}
+
+.rivalry-graph {
+  margin: 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rivalry-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rivalry-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.rivalry-bar-name {
+  color: var(--landing-ink-primary);
+}
+
+.rivalry-bar-val {
+  color: var(--landing-emerald);
+}
+
+.rivalry-progress {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--landing-border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.rivalry-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  transition: width 1.2s var(--ease-reveal);
+}
+
+.rivalry-progress-fill--brookes {
+  background: linear-gradient(90deg, var(--landing-teal) 0%, var(--landing-emerald) 100%);
+}
+
+.rivalry-progress-fill--oxford {
+  background: linear-gradient(90deg, #3B82F6 0%, #6366F1 100%); /* Oxford Blue Theme colors */
+}
+
+.rivalry-cup-leader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-radius-card);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.rivalry-cup-icon {
+  font-size: 28px;
+  color: var(--landing-orange);
+}
+
+.rivalry-cup-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rivalry-cup-lbl {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  color: var(--landing-ink-tertiary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.rivalry-cup-msg {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--landing-ink-primary);
+}
+
+.rivalry-cta-text {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--landing-ink-secondary);
+}
+
+/* ==========================================================================
+   8. GUEST / LANDING NAV BAR AESTHETICS
+   ========================================================================== */
+/* ==========================================================================
+   8. GUEST / LANDING NAV BAR AESTHETICS (FLOATING GLASSMORPHIC)
+   ========================================================================== */
+body.guest-shell-layout .navbar {
+  position: fixed !important;
+  top: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 32px) !important;
+  max-width: 1200px !important;
+  background: var(--landing-nav-bg) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid var(--landing-border) !important;
+  border-radius: var(--landing-radius-bento) !important;
+  padding: 12px 24px !important;
+  z-index: 1000 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.3s ease;
+}
+
+body.guest-shell-layout .navbar__brand {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 1.5rem !important;
+  letter-spacing: -0.03em !important;
+  color: var(--landing-ink-primary) !important;
+}
+
+body.guest-shell-layout .navbar__brand span.material-symbols-outlined {
+  color: var(--landing-teal) !important;
+  font-size: 2rem !important;
+}
+
+body.guest-shell-layout .btn--ghost-login {
+  color: var(--landing-ink-secondary) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  padding: 8px 18px !important;
+  border-radius: var(--landing-radius-pill) !important;
+  transition: all 0.3s var(--ease-spring) !important;
+}
+
+body.guest-shell-layout .btn--ghost-login:hover {
+  color: var(--landing-ink-primary) !important;
+  background: var(--landing-surface) !important;
+}
+
+body.guest-shell-layout .btn--primary-signup {
+  color: var(--landing-bg) !important;
+  background: var(--landing-ink-primary) !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  padding: 8px 18px !important;
+  border-radius: var(--landing-radius-pill) !important;
+  transition: all 0.3s var(--ease-spring) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.guest-shell-layout .btn--primary-signup:hover {
+  background: var(--landing-teal) !important;
+  color: var(--landing-bg) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--landing-teal-glow) !important;
+}
+
+/* Floating mobile top bar style overrides */
+body.guest-shell-layout .mobile-top-bar {
+  position: fixed !important;
+  top: 16px !important;
+  left: 16px !important;
+  right: 16px !important;
+  width: calc(100% - 32px) !important;
+  background: var(--landing-nav-bg) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid var(--landing-border) !important;
+  border-radius: 16px !important;
+  padding: 10px 16px !important;
+  z-index: 1000 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+}
+
+/* Adjust body padding on mobile */
+@media (max-width: 768px) {
+  body.guest-shell-layout {
+    padding-top: 90px !important;
+  }
+}
+

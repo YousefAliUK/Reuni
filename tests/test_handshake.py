@@ -209,6 +209,7 @@ class TestBuyItem:
             email="third@university.ac.uk",
             name="Third User",
             is_verified=True,
+            university_domain="university.ac.uk",
         )
         third.set_password("StrongPass123")
         db_session.session.add(third)
@@ -234,6 +235,7 @@ class TestBuyItem:
             email="third@university.ac.uk",
             name="Third User",
             is_verified=True,
+            university_domain="university.ac.uk",
         )
         third.set_password("StrongPass123")
         db_session.session.add(third)

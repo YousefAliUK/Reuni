@@ -75,8 +75,6 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 - ✅ **Role-Aware Instructions:** Customized headers guide users (e.g. Free seller vs. Paid seller) on when and who to reveal the PIN to.
 - ✅ **PIN Expiry & Rate Limiting:** Timed 72-hour PIN auto-expiry. Capped at 3 failed attempts to enter the PIN before the claim is automatically cancelled and the item is returned to "Available".
 - ✅ **PIN Email Delivery & Resend:** Automatically emails PIN codes to the respective code holder; features a resend action rate-limited to 3 times per hour.
-- ✅ **WhatsApp Bypass:** Phone numbers normalized (normalizes local 07 to `+44`) and validated as unique to detect alt accounts. The seller's phone number is securely revealed to the buyer only after claiming, with a pre-formatted message link to coordinate meeting.
-- ✅ **Phone Number Masking:** Displays masked phone numbers on-screen (e.g., showing only prefix and last 4 digits) to protect user PII from shoulder-surfing/screenshots while preserving deep-linked coordinates.
 - ✅ **Visual Viewport Keyboard Helper:** Uses the `visualViewport` resize listener on mobile devices to dynamically center input cards and prevent soft keyboard layout overlap.
 
 #### Reputation & Cancellation Management
@@ -99,7 +97,7 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 - ✅ **Scientific Carbon Footprint Metrics:** Calculates carbon equivalent savings (`total_co2e` in kg CO₂e) based on item categories and WRAP/DEFRA conversion factors rather than duplicating landfill weight metrics.
 
 #### Account Management & GDPR
-- ✅ **Account Settings:** Authenticated users can update their phone number (uniqueness-enforced, E.164 normalisation) and change their password (complexity policy: 8+ chars, mixed case, digit required) from a dedicated settings page.
+- ✅ **Account Settings:** Authenticated users can change their password (complexity policy: 8+ chars, mixed case, digit required) from a dedicated settings page.
 - ✅ **GDPR Account Deletion (Right to Erasure):** Users can permanently delete their account from the settings page. On submission:
   - All active claims (as buyer and seller) are atomically cancelled with email notifications to the other parties.
   - All unsold listings and their uploaded images are immediately deleted.
@@ -107,13 +105,13 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
   - User is immediately logged out and the session is cleared.
   - Rate-limited to 3 requests per hour per user ID to prevent abuse.
   - Admin and partner accounts are blocked from self-deletion (require offboarding workflows).
-- ✅ **Nightly GDPR Anonymisation Job:** An APScheduler `BackgroundScheduler` cron runs at **2:00 AM nightly** querying for deactivated accounts whose 30-day cooling-off period has expired, and calls `User.anonymise()` on each: replaces name, email, phone, and password hash with anonymised values, zeroes `kg_saved_total`, and clears all verification fields. Sold items retain their `kg_saved` and `university_domain` for ESG data integrity.
+- ✅ **Nightly GDPR Anonymisation Job:** An APScheduler `BackgroundScheduler` cron runs at **2:00 AM nightly** querying for deactivated accounts whose 30-day cooling-off period has expired, and calls `User.anonymise()` on each: replaces name, email, and password hash with anonymised values, zeroes `kg_saved_total`, and clears all verification fields. Sold items retain their `kg_saved` and `university_domain` for ESG data integrity.
 - ✅ **Privacy Policy Page:** A dedicated `/privacy` route rendering a full privacy policy covering data collected, retention periods, user rights, and GDPR contact information.
 
 #### User Interface & Experience
 - ✅ **Custom Error Pages:** Branded 404 (Not Found) and 500 (Internal Server Error) pages that match the application's design system, with helpful navigation back to the marketplace.
 - ✅ **Deactivated Account Guard:** A `before_request` hook checks on every request whether the logged-in user's account has been deactivated; if so, they are immediately logged out and redirected.
-- ✅ **JIT Registration Cleanup:** If a user with a deletion-pending account tries to re-register with the same email or phone after the cooling-off period has elapsed (before the nightly cron runs), the system anonymises the old account just-in-time so the re-registration can proceed.
+- ✅ **JIT Registration Cleanup:** If a user with a deletion-pending account tries to re-register with the same email after the cooling-off period has elapsed (before the nightly cron runs), the system anonymises the old account just-in-time so the re-registration can proceed.
 
 #### Security, Auditing & Quality Assurance
 - ✅ **CSRF Protection:** Enabled globally on all POST forms via Flask-WTF.
@@ -547,7 +545,7 @@ Once Reuni has hundreds of users and proven data across multiple universities:
 - ✅ **"Delete my account" (right to erasure):** Full two-phase deletion: immediate deactivation + claim cleanup → 30-day cooling-off → nightly anonymisation job at 2 AM.
 - ✅ **Data anonymisation:** `User.anonymise()` wipes all PII on the user record. Sold items retain `kg_saved` and `university_domain` for ESG integrity (data minimisation).
 - **Planned:** Cookie consent banner (if analytics or non-essential cookies are introduced).
-- **Data stored:** Email, name, phone_number, hashed password, transaction and cancellation history
+- **Data stored:** Email, name, hashed password, transaction and cancellation history
 - **No:** GPS tracking, advertising IDs, third-party data sharing
 
 ---
@@ -596,10 +594,8 @@ When an item receives enough reports, it's shown to **3 random users with 120+ t
 
 ---
 
-### 6.4 Alt-Account Detection
-
-- **Flag duplicate WhatsApp/phone numbers:** Enforced in registration database constraints. (Built)
-- **Shadow fingerprinting:** Shadow-banned users who register with a second `.ac.uk` email can be detected via shared device fingerprint or phone number. (Planned)
+- **Domain scoping:** Signup requires a unique `.ac.uk` email address. (Built)
+- **Shadow fingerprinting:** Shadow-banned users who register with a second `.ac.uk` email can be detected via shared device fingerprint or other indicators. (Planned)
 
 ---
 
@@ -691,7 +687,6 @@ erDiagram
         int id PK
         string email UK
         string name
-        string phone_number UK
         string password_hash
         numeric kg_saved_total
         int failed_login_attempts

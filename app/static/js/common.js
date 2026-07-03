@@ -736,4 +736,47 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // ── 4. Change Campus Functionality ──
+    const changeCampusFooterLink = document.getElementById('change-campus-footer-link');
+    const changeCampusDropdownLink = document.getElementById('change-campus-dropdown-link');
+    
+    function handleChangeCampus(e) {
+        e.preventDefault();
+        
+        // Dynamically compute wildcard domain for clearing the cookie
+        const hostParts = window.location.hostname.split('.');
+        let domainAttr = "";
+        let mainHost = window.location.host;
+        
+        if (hostParts.length >= 2) {
+            // Find base domain: e.g. brookes.reuni.local -> reuni.local
+            const baseParts = hostParts.slice(-2);
+            const parentDomain = baseParts.join('.');
+            domainAttr = `; domain=.${parentDomain}`;
+            
+            // Calculate landing URL host (removing subdomain)
+            mainHost = parentDomain;
+            const port = window.location.port;
+            if (port) {
+                mainHost = `${mainHost}:${port}`;
+            }
+        }
+        
+        // Clear selected_uni cookie by expiring it in the past on wildcard domain
+        document.cookie = `selected_uni=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC${domainAttr};`;
+        
+        // Double-check: clear exact host cookie just in case it was written there
+        document.cookie = `selected_uni=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+        
+        // Redirect back to main domain landing page with noredirect=true parameter
+        window.location.href = `${window.location.protocol}//${mainHost}/?noredirect=true`;
+    }
+    
+    if (changeCampusFooterLink) {
+        changeCampusFooterLink.addEventListener('click', handleChangeCampus);
+    }
+    if (changeCampusDropdownLink) {
+        changeCampusDropdownLink.addEventListener('click', handleChangeCampus);
+    }
 });

@@ -218,44 +218,20 @@ Links: Privacy Policy · © 2026 Reuni
 
 These patch the PIN page spec in v2.0 Page 3. All other PIN page specs remain as defined.
 
-#### A.4.1 — WhatsApp Message Copy Template (Exact String)
+#### A.4.1 — Secure In-App Chat Coordination Specifications
 
-The WhatsApp deep-link must pre-fill this EXACT message body:
+Rather than relying on third-party messaging channels like WhatsApp which require exposing student phone numbers (PII), all communications between the buyer and seller must happen inside a secure in-app messaging log built directly on the PIN handshake page.
 
-```
-"Hey, I just claimed your [item_title] on Reuni. When can we meet for the PIN handshake?"
-```
+**UI Specifications:**
+- Message bubbles are aligned to the left for the other party, and aligned to the right (with standard brand Teal coloring) for the logged-in sender.
+- Includes a character counter to prevent excessive bulk payloads.
 
-Where `[item_title]` is the URL-encoded item title injected server-side into the Jinja2 template.
+**Security Constraints:**
+- Outgoing message payloads are scanned in both client-side JavaScript and server-side routes before database storage.
+- If a user attempts to send the transaction's 4-digit PIN code, the message is immediately intercepted and blocked. A high-contrast warning banner will display: `"Security Alert: Do not share the claim PIN in chat."`
 
-**WhatsApp URL format:**
-```
-https://wa.me/[seller_phone_e164]?text=Hey%2C+I+just+claimed+your+[ENCODED_TITLE]+on+Reuni.+When+can+we+meet+for+the+PIN+handshake%3F
-```
-
-**Copy Message button behavior:**
-```
-Default label:   "Copy message"
-  --type-small, --color-primary, no underline, cursor: pointer
-  
-On click:
-  1. Copy the EXACT string above (with resolved item_title) to clipboard
-  2. Change label to: "Copied ✓"
-     color: --color-success
-     transition: color var(--duration-fast) var(--ease-out)
-  3. After 1000ms: revert label back to "Copy message"
-     transition: same
-
-JavaScript pattern:
-  navigator.clipboard.writeText(messageText).then(() => {
-    btn.textContent = 'Copied ✓';
-    btn.style.color = 'var(--color-success)';
-    setTimeout(() => {
-      btn.textContent = 'Copy message';
-      btn.style.color = '';
-    }, 1000);
-  });
-```
+**Lifecycle Controls:**
+- The chat form is active only during an active claim. Once the transaction completes (PIN validated) or is cancelled, the message input and submit controls are removed, rendering the thread read-only.
 
 ---
 

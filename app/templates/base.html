@@ -38,6 +38,7 @@
             </a>
 
             <!-- Zone 2: Search Bar -->
+            {% if g.current_uni_domain %}
             <div class="navbar__center">
                 <form method="GET" action="{{ url_for('index') }}" class="navbar__search-form" id="desktop-search-form">
                     <div class="navbar__search-input-wrapper">
@@ -61,6 +62,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
 
             <!-- Zone 3: Controls -->
             <div class="navbar__actions">
@@ -69,27 +71,29 @@
                 </button>
 
                 {% if current_user.is_authenticated %}
-                    <!-- Desktop Notification Bell -->
-                    <div style="position: relative;">
-                        <button type="button" class="notification-bell" id="notification-bell-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
-                            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
-                            <span class="notification-bell__badge" id="notification-badge" style="display: none;">0</span>
-                        </button>
-                        <div class="notification-dropdown" id="notification-dropdown">
-                            <div class="notification-dropdown__header">
-                                <span class="notification-dropdown__title">Notifications</span>
-                                <button type="button" class="notification-dropdown__clear" id="notification-clear-all">Mark all as read</button>
-                            </div>
-                            <div class="notification-dropdown__list" id="notification-list">
-                                <!-- Populated dynamically by JS -->
+                    {% if g.current_uni_domain %}
+                        <!-- Desktop Notification Bell -->
+                        <div style="position: relative;">
+                            <button type="button" class="notification-bell" id="notification-bell-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                                <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                                <span class="notification-bell__badge" id="notification-badge" style="display: none;">0</span>
+                            </button>
+                            <div class="notification-dropdown" id="notification-dropdown">
+                                <div class="notification-dropdown__header">
+                                    <span class="notification-dropdown__title">Notifications</span>
+                                    <button type="button" class="notification-dropdown__clear" id="notification-clear-all">Mark all as read</button>
+                                </div>
+                                <div class="notification-dropdown__list" id="notification-list">
+                                    <!-- Populated dynamically by JS -->
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <a href="{{ url_for('items.list_item') }}" class="btn btn--primary navbar__sell-btn">
-                        <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                        <span>List an Item</span>
-                    </a>
+                        <a href="{{ url_for('items.list_item') }}" class="btn btn--primary navbar__sell-btn">
+                            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                            <span>List an Item</span>
+                        </a>
+                    {% endif %}
                     <div class="user-dropdown">
                         <button type="button" class="user-dropdown__trigger" id="profile-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-label="User dropdown menu">
                             <span class="user-dropdown__avatar" aria-hidden="true">{{ current_user.name[0]|upper }}</span>
@@ -120,6 +124,12 @@
                                 <span class="material-symbols-outlined" aria-hidden="true">settings</span>
                                 <span>Settings</span>
                             </a>
+                            {% if g.current_uni_domain %}
+                                <a href="#" id="change-campus-dropdown-link" class="user-dropdown__item" role="menuitem">
+                                    <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+                                    <span>Change Campus</span>
+                                </a>
+                            {% endif %}
                             
                             {% if current_user.is_partner or current_user.is_admin %}
                                 <hr class="user-dropdown__divider" role="none">
@@ -157,14 +167,16 @@
     <!-- ─── Mobile Top Bar ─── -->
     <div class="mobile-top-bar">
         <div class="mobile-top-bar__left">
-            {% if request.endpoint == 'index' or request.endpoint == 'dashboard' or request.endpoint == 'profile' or request.endpoint == 'settings' %}
-                <button type="button" class="mobile-top-bar__icon-btn" id="mobile-hamburger-btn" aria-label="Open menu">
-                    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
-                </button>
-            {% else %}
-                <button type="button" class="mobile-top-bar__icon-btn" data-action="back" aria-label="Back">
-                    <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-                </button>
+            {% if g.current_uni_domain %}
+                {% if request.endpoint == 'index' or request.endpoint == 'dashboard' or request.endpoint == 'profile' or request.endpoint == 'settings' %}
+                    <button type="button" class="mobile-top-bar__icon-btn" id="mobile-hamburger-btn" aria-label="Open menu">
+                        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+                    </button>
+                {% else %}
+                    <button type="button" class="mobile-top-bar__icon-btn" data-action="back" aria-label="Back">
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                    </button>
+                {% endif %}
             {% endif %}
         </div>
         <div class="mobile-top-bar__center">
@@ -266,6 +278,7 @@
     </aside>
 
     <!-- ─── Mobile Bottom Tab Bar ─── -->
+    {% if g.current_uni_domain %}
     <nav class="mobile-tabs" aria-label="Mobile bottom navigation">
         <a href="{{ url_for('index') }}" class="mobile-tabs__item {% if request.endpoint == 'index' %}mobile-tabs__item--active{% endif %}">
             <span class="material-symbols-outlined" aria-hidden="true">home</span>
@@ -295,6 +308,7 @@
             </a>
         {% endif %}
     </nav>
+    {% endif %}
 
     {% if current_user.is_authenticated %}
         <!-- Mobile Notification Dropdown Panel -->
@@ -384,12 +398,27 @@
             <div class="footer__impact">
                 <span class="material-symbols-outlined" aria-hidden="true">eco</span>
                 <span class="footer__impact-text">
-                    <strong class="footer__impact-weight">{{ "%.1f"|format(campus_total_kg or 0.0) }}</strong> kg saved at Brookes
+                    {% if g.current_uni_domain %}
+                        <strong class="footer__impact-weight">{{ "%.1f"|format(subdomain_total_kg or 0.0) }}</strong> kg saved at 
+                        {% if g.current_uni_domain == 'brookes.ac.uk' %}
+                            Brookes
+                        {% elif g.current_uni_domain == 'oxford.ac.uk' %}
+                            Oxford
+                        {% else %}
+                            {{ g.current_uni_domain }}
+                        {% endif %}
+                    {% else %}
+                        <strong class="footer__impact-weight">{{ "%.1f"|format(campus_total_kg or 0.0) }}</strong> kg saved globally
+                    {% endif %}
                 </span>
             </div>
             
             <!-- Right: Secondary Content -->
             <div class="footer__secondary">
+                {% if g.current_uni_domain %}
+                    <a href="#" id="change-campus-footer-link" class="footer__link">Change Campus</a>
+                    <span class="footer__dot" aria-hidden="true">&middot;</span>
+                {% endif %}
                 <a href="{{ url_for('privacy') }}" class="footer__link">Privacy Policy</a>
                 <span class="footer__dot" aria-hidden="true">&middot;</span>
                 <span class="footer__copy">© 2026 Reuni</span>
