@@ -1,381 +1,221 @@
 /**
  * Reuni Landing Page (landing.js)
- * Premium interactive features, spring metrics count-up, geolocation selector,
- * magnetic buttons, and CSP compliance (no inline scripts).
+ * Standalone landing script managing premium animations, theme toggles,
+ * sticky-scroll phone walkthroughs, search filtering, and mobile menus.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Check user preference for reduced motion
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  /* ==========================================================================
-     1. BENTO CARD MOUSE PROXIMITY GLOW EFFECT
-     ========================================================================== */
-  const bentoCards = document.querySelectorAll(".bento-card");
-  bentoCards.forEach(card => {
-    card.addEventListener("mousemove", e => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty("--mouse-x", `${x}px`);
-      card.style.setProperty("--mouse-y", `${y}px`);
-    });
-  });
-
-  /* ==========================================================================
-     2. DYNAMIC EXPERIENCE SHOWCASE WIDGET
-     ========================================================================== */
-  const studentBtn = document.getElementById("segment-student");
-  const partnerBtn = document.getElementById("segment-partner");
-  const studentScreen = document.getElementById("showcase-student");
-  const partnerScreen = document.getElementById("showcase-partner");
-
-  let simulationInterval = null;
-
-  function switchShowcaseMode(mode) {
-    if (mode === "student") {
-      studentBtn.classList.add("segment-btn--active");
-      partnerBtn.classList.remove("segment-btn--active");
-      studentScreen.classList.add("showcase-screen--active");
-      partnerScreen.classList.remove("showcase-screen--active");
-      startStudentSimulation();
-    } else {
-      partnerBtn.classList.add("segment-btn--active");
-      studentBtn.classList.remove("segment-btn--active");
-      partnerScreen.classList.add("showcase-screen--active");
-      studentScreen.classList.remove("showcase-screen--active");
-      stopStudentSimulation();
-      animatePartnerCharts();
+    // 1. FLOATING NAVBAR SCROLL SHADOW EFFECT
+    const navbar = document.querySelector('.floating-navbar');
+    if (navbar) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 60) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        }, { passive: true });
     }
-  }
 
-  if (studentBtn && partnerBtn) {
-    studentBtn.addEventListener("click", () => switchShowcaseMode("student"));
-    partnerBtn.addEventListener("click", () => switchShowcaseMode("partner"));
-  }
+    // 2. MOBILE DRAWER MENUS & NAV
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const drawer = document.getElementById('mobile-nav-drawer');
+    const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
+    const drawerClose = document.getElementById('mobile-drawer-close');
+    const drawerLinks = drawer ? drawer.querySelectorAll('.drawer-link, .drawer-cta') : [];
 
-  // A. Student Mode: Auto-Interactive Claim & Handshake Simulation
-  const mockCards = document.querySelectorAll(".mock-card");
-  const handshakeOverlay = document.getElementById("handshake-overlay");
-  const simPinDigits = document.querySelectorAll(".sim-digit");
-  
-  function startStudentSimulation() {
-    stopStudentSimulation();
-    
-    // Periodically simulate claiming an item (every 8 seconds)
-    simulationInterval = setInterval(() => {
-      // Pick the second card (Bicycle) for the demo
-      const targetCard = mockCards[1];
-      if (!targetCard) return;
-
-      // Phase 1: Highlights card
-      targetCard.style.borderColor = "var(--landing-teal)";
-      targetCard.style.transform = "scale(1.02)";
-      
-      setTimeout(() => {
-        // Phase 2: Show WhatsApp / PIN handshake overlay
-        if (handshakeOverlay) {
-          handshakeOverlay.classList.add("handshake-simulation--visible");
-          
-          // Animate PIN digits typing (e.g. 5, 8, 2, 4)
-          const pinDigits = ["5", "8", "2", "4"];
-          simPinDigits.forEach(d => { d.textContent = ""; d.style.borderColor = "rgba(255,255,255,0.1)"; });
-          
-          pinDigits.forEach((digit, idx) => {
-            setTimeout(() => {
-              if (simPinDigits[idx]) {
-                simPinDigits[idx].textContent = digit;
-                simPinDigits[idx].style.borderColor = "var(--landing-teal)";
-              }
-            }, (idx + 1) * 450);
-          });
+    function openDrawer() {
+        if (menuToggle && drawer) {
+            menuToggle.setAttribute('aria-expanded', 'true');
+            drawer.classList.add('active');
+            drawer.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         }
-      }, 1200);
+    }
 
-      setTimeout(() => {
-        // Phase 3: Successful transaction
-        if (handshakeOverlay) {
-          handshakeOverlay.classList.remove("handshake-simulation--visible");
+    function closeDrawer() {
+        if (menuToggle && drawer) {
+            menuToggle.setAttribute('aria-expanded', 'false');
+            drawer.classList.remove('active');
+            drawer.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
         }
-        targetCard.style.borderColor = "rgba(255,255,255,0.03)";
-        targetCard.style.transform = "none";
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            const expanded = menuToggle.getAttribute('aria-expanded') === 'true';
+            if (expanded) {
+                closeDrawer();
+            } else {
+                openDrawer();
+            }
+        });
+    }
+
+    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+    if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+    drawerLinks.forEach(link => link.addEventListener('click', closeDrawer));
+
+    // 3. THEME TOGGLE LOGIC
+    const themeToggle = document.getElementById('landing-theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            try {
+                localStorage.setItem('theme', target);
+            } catch (e) {
+                // localStorage unavailable (restricted browser/incognito)
+            }
+        });
+    }
+
+    // 4. METRICS COUNT-UP (LIVE PROOF)
+    const counter = document.querySelector('.kg-counter');
+    if (counter) {
+        const target = parseFloat(counter.getAttribute('data-value'));
+        const duration = 1400; // ms
         
-        // Show status badge as Sold
-        const badge = targetCard.querySelector(".mock-badge");
-        if (badge) {
-          badge.textContent = "Sold / Saved";
-          badge.style.background = "rgba(45, 212, 191, 0.15)";
-          badge.style.color = "var(--landing-teal)";
-        }
-      }, 5000);
-
-      // Reset badge after simulation loop completes
-      setTimeout(() => {
-        const badge = targetCard.querySelector(".mock-badge");
-        if (badge) {
-          badge.textContent = "12 kg saved";
-          badge.style.background = "rgba(52, 211, 153, 0.1)";
-          badge.style.color = "var(--landing-emerald)";
-        }
-      }, 7800);
-
-    }, 8000);
-  }
-
-  function stopStudentSimulation() {
-    if (simulationInterval) {
-      clearInterval(simulationInterval);
-      simulationInterval = null;
-    }
-    if (handshakeOverlay) {
-      handshakeOverlay.classList.remove("handshake-simulation--visible");
-    }
-    mockCards.forEach(c => {
-      c.style.borderColor = "rgba(255,255,255,0.03)";
-      c.style.transform = "none";
-    });
-  }
-
-  // B. Partner Mode: Simulated ESG Charts
-  const chartFills = document.querySelectorAll(".mock-bar-fill");
-  function animatePartnerCharts() {
-    chartFills.forEach(fill => {
-      const targetWidth = fill.getAttribute("data-width") || "0%";
-      fill.style.width = "0%";
-      setTimeout(() => {
-        fill.style.width = targetWidth;
-      }, 150);
-    });
-  }
-
-  // Initialize student simulation on start
-  startStudentSimulation();
-
-  /* ==========================================================================
-     3. SPRING METRIC COUNT-UP ANIMATION
-     ========================================================================== */
-  const statsSection = document.getElementById("bento-card-impact");
-  const statsElements = document.querySelectorAll(".impact-stat-number");
-
-  function animateCountUp(element, targetValue) {
-    if (prefersReducedMotion) {
-      element.textContent = targetValue.toFixed(element.dataset.decimals === "0" ? 0 : 1);
-      return;
-    }
-
-    let startTimestamp = null;
-    const duration = 1500; // ms
-    const isInt = element.dataset.decimals === "0";
-
-    function step(timestamp) {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      
-      // Snappy cubic ease-out
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const currentValue = easeProgress * targetValue;
-      
-      element.textContent = isInt ? Math.floor(currentValue) : currentValue.toFixed(1);
-      
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      } else {
-        element.textContent = isInt ? Math.floor(targetValue) : targetValue.toFixed(1);
-      }
-    }
-    window.requestAnimationFrame(step);
-  }
-
-  if (statsSection && statsElements.length > 0) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          statsElements.forEach(el => {
-            const target = parseFloat(el.getAttribute("data-target") || "0");
-            animateCountUp(el, target);
-          });
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    
-    observer.observe(statsSection);
-  }
-
-  /* ==========================================================================
-     4. GEOLOCATION SEARCH SELECTOR & NEAREST CAMPUS
-     ========================================================================== */
-  const searchInput = document.getElementById("campus-search-input");
-  const uniButtons = document.querySelectorAll(".uni-entry-btn");
-  const detectLocationBtn = document.getElementById("detect-location-btn");
-
-  // Search Filter
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => {
-      const term = e.target.value.toLowerCase().trim();
-      uniButtons.forEach(btn => {
-        const uniName = btn.querySelector(".uni-entry-btn__name").textContent.toLowerCase();
-        const uniDomain = btn.getAttribute("data-domain").toLowerCase();
-        if (uniName.includes(term) || uniDomain.includes(term)) {
-          btn.style.display = "flex";
-        } else {
-          btn.style.display = "none";
-        }
-      });
-    });
-  }
-
-  // Geolocation Distance Calculations
-  const CAMPUSES = [
-    { id: "brookes", name: "Oxford Brookes University", lat: 51.7538, lon: -1.2238 },
-    { id: "oxford", name: "University of Oxford", lat: 51.7520, lon: -1.2577 }
-  ];
-
-  function calculateDistance(lat1, lon1, lat2, lon2) {
-    // Haversine formula
-    const R = 6371; // km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  function highlightClosestCampus(userLat, userLon) {
-    let minDistance = Infinity;
-    let closestCampusId = null;
-
-    CAMPUSES.forEach(campus => {
-      const dist = calculateDistance(userLat, userLon, campus.lat, campus.lon);
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestCampusId = campus.id;
-      }
-    });
-
-    if (closestCampusId) {
-      uniButtons.forEach(btn => {
-        const btnId = btn.getAttribute("data-id");
-        if (btnId === closestCampusId) {
-          btn.classList.add("uni-entry-btn--highlighted");
-          const distLabel = btn.querySelector(".uni-entry-btn__listings");
-          if (distLabel) {
-            const listingsText = distLabel.dataset.listingsCount || "0";
-            distLabel.textContent = `${listingsText} active listings · Nearest to you (${minDistance.toFixed(1)} km away)`;
-          }
-        } else {
-          btn.classList.remove("uni-entry-btn--highlighted");
-          const distLabel = btn.querySelector(".uni-entry-btn__listings");
-          if (distLabel) {
-            distLabel.textContent = `${distLabel.dataset.listingsCount || "0"} active listings`;
-          }
-        }
-      });
-    }
-  }
-
-  if (detectLocationBtn) {
-    detectLocationBtn.addEventListener("click", () => {
-      if (navigator.geolocation) {
-        detectLocationBtn.textContent = "Locating...";
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            highlightClosestCampus(position.coords.latitude, position.coords.longitude);
-            detectLocationBtn.textContent = "Location Detected";
-            detectLocationBtn.style.color = "var(--landing-teal)";
-          },
-          (err) => {
-            console.warn("Geolocation permission denied or error:", err);
-            detectLocationBtn.textContent = "Location access denied";
-            detectLocationBtn.style.color = "var(--landing-orange)";
-          }
-        );
-      } else {
-        // Fallback for non-secure contexts (e.g. reuni.local) in development testing
-        detectLocationBtn.textContent = "Locating (Mock)...";
-        setTimeout(() => {
-          // Mock Brookes coordinate (51.7538, -1.2238)
-          highlightClosestCampus(51.7530, -1.2250);
-          detectLocationBtn.textContent = "Brookes Detected (Mock)";
-          detectLocationBtn.style.color = "var(--landing-teal)";
-        }, 850);
-      }
-    });
-  }
-
-  /* ==========================================================================
-     5. RIVALRY SEASON CUP PROGRESS ANIMATION
-     ========================================================================== */
-  const rivalrySection = document.getElementById("bento-card-rivalry");
-  const rivalryFills = document.querySelectorAll(".rivalry-progress-fill");
-
-  if (rivalrySection && rivalryFills.length > 0) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          rivalryFills.forEach(fill => {
-            const targetPct = fill.getAttribute("data-pct") || "50%";
-            fill.style.width = targetPct;
-          });
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    
-    observer.observe(rivalrySection);
-  }
-
-  /* ==========================================================================
-     6. COOKIE SETTING ON CAMPUS NODE SELECTION
-     ========================================================================== */
-  uniButtons.forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const slug = btn.getAttribute("data-id"); // e.g. "brookes"
-      if (slug) {
-        // Dynamically compute parent domain for local development or production
-        const hostParts = window.location.hostname.split('.');
-        let domainAttr = "";
-        if (hostParts.length >= 2) {
-          const baseParts = hostParts.slice(-2);
-          domainAttr = `; domain=.${baseParts.join('.')}`;
-        }
-        // Set selected_uni cookie for 1 year, SameSite=Lax
-        document.cookie = `selected_uni=${slug}; path=/; max-age=31536000; SameSite=Lax${domainAttr};`;
-      }
-    });
-  });
-
-  /* ==========================================================================
-     7. MAGNETIC HOVER BUTTONS
-     ========================================================================== */
-  const magneticButtons = document.querySelectorAll(".btn--magnetic");
-  
-  if (!prefersReducedMotion) {
-    magneticButtons.forEach(btn => {
-      btn.addEventListener("mousemove", (e) => {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
+        const countObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    countObserver.unobserve(entry.target);
+                    
+                    // Fallback if reduced-motion is requested
+                    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                        counter.innerHTML = target.toFixed(1) + '&nbsp;kg';
+                        return;
+                    }
+                    
+                    const start = performance.now();
+                    const tick = (now) => {
+                        const elapsed = Math.min((now - start) / duration, 1);
+                        // easeOutExpo
+                        const eased = elapsed === 1 ? 1 : 1 - Math.pow(2, -10 * elapsed);
+                        const currentVal = target * eased;
+                        counter.innerHTML = currentVal.toFixed(1) + '&nbsp;kg';
+                        
+                        if (elapsed < 1) {
+                            requestAnimationFrame(tick);
+                        } else {
+                            counter.innerHTML = target.toFixed(1) + '&nbsp;kg';
+                        }
+                    };
+                    requestAnimationFrame(tick);
+                }
+            });
+        }, { threshold: 0.3 });
         
-        // Translate button slightly in pointer direction
-        btn.style.transform = `translate(${x * 0.35}px, ${y * 0.35}px)`;
-        const icon = btn.querySelector(".btn__icon-wrapper");
-        if (icon) {
-          icon.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
-        }
-      });
-      
-      btn.addEventListener("mouseleave", () => {
-        btn.style.transform = "translate(0px, 0px)";
-        const icon = btn.querySelector(".btn__icon-wrapper");
-        if (icon) {
-          icon.style.transform = "translate(0px, 0px)";
-        }
-      });
-    });
-  }
+        countObserver.observe(counter);
+    }
 
+    // 5. STICKY-SCROLL WALKTHROUGH (DESKTOP)
+    const steps = document.querySelectorAll('.step-text-block');
+    const screens = document.querySelectorAll('.phone-screen');
+    const tabBtns = document.querySelectorAll('.walkthrough-tab-btn');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (steps.length > 0 && screens.length > 0 && !prefersReducedMotion) {
+        const stepObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const stepIdx = parseInt(entry.target.getAttribute('data-step'), 10);
+                    
+                    // Sync active status for step text blocks
+                    steps.forEach(s => s.classList.remove('active'));
+                    entry.target.classList.add('active');
+                    
+                    // Sync active status for phone screens
+                    screens.forEach(sc => sc.classList.remove('active'));
+                    if (screens[stepIdx]) {
+                        screens[stepIdx].classList.add('active');
+                    }
+                }
+            });
+        }, {
+            rootMargin: '-30% 0px -30% 0px', // Triggers when step text block reaches center
+            threshold: 0.1
+        });
+
+        steps.forEach(step => stepObserver.observe(step));
+    }
+
+    // 6. WALKTHROUGH STEP SWITCHER TABS (MOBILE)
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const stepIdx = parseInt(btn.id.replace('tab-step-', ''), 10);
+            
+            // Sync mobile tab button visual states
+            tabBtns.forEach(b => {
+                b.classList.remove('walkthrough-tab-btn--active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            btn.classList.add('walkthrough-tab-btn--active');
+            btn.setAttribute('aria-selected', 'true');
+            
+            // Sync active screens inside mock phone
+            screens.forEach((sc, idx) => {
+                if (idx === stepIdx) {
+                    sc.classList.add('active');
+                } else {
+                    sc.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // 7. UNIVERSITY PICKER CARD SELECTOR COOKIE SETTINGS
+    const uniCards = document.querySelectorAll('.uni-card');
+    uniCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const slug = card.getAttribute('data-slug');
+            if (slug) {
+                const hostParts = window.location.hostname.split('.');
+                let domainAttr = "";
+                if (hostParts.length >= 2) {
+                    const baseParts = hostParts.slice(-2);
+                    domainAttr = `; domain=.${baseParts.join('.')}`;
+                }
+                // Set selected_uni cookie on root domain for 1 year
+                document.cookie = `selected_uni=${slug}; path=/; max-age=31536000; SameSite=Lax${domainAttr}`;
+            }
+        });
+    });
+
+    // 8. UNIVERSITY SEARCH FIELD FILTERING
+    const searchInput = document.getElementById('landing-uni-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            uniCards.forEach(card => {
+                const uniName = card.querySelector('.uni-card-name').textContent.toLowerCase();
+                const uniDomain = card.getAttribute('data-domain').toLowerCase();
+                if (uniName.includes(query) || uniDomain.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // 9. ENTRANCE ANIMATION FADE REVEALS
+    const revealElements = document.querySelectorAll('.reveal');
+    if (revealElements.length > 0) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '0px 0px -10% 0px',
+            threshold: 0.05
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    }
 });

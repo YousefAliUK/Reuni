@@ -250,13 +250,13 @@ def create_app(config_class=None):
             
             # Fetch aggregates for landing page
             from app import db
-            from app.models import Item
+            from app.models import Item, User
             
             # 1. Total saved (all campuses)
             total_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
             total_co2 = total_saved * 2.5
             
-            # 2. Campus specific saved (for rivalry section)
+            # 2. Campus specific saved
             brookes_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
                 Item.is_sold == True, Item.university_domain == "brookes.ac.uk"
             ).scalar() or 0.0
@@ -265,20 +265,17 @@ def create_app(config_class=None):
                 Item.is_sold == True, Item.university_domain == "oxford.ac.uk"
             ).scalar() or 0.0
             
-            # Calculate leader
-            if brookes_saved > oxford_saved:
-                rivalry_leader = "Oxford Brookes University"
-                rivalry_diff = brookes_saved - oxford_saved
-            elif oxford_saved > brookes_saved:
-                rivalry_leader = "University of Oxford"
-                rivalry_diff = oxford_saved - brookes_saved
-            else:
-                rivalry_leader = None
-                rivalry_diff = 0.0
-                
             # 3. Active listing counts (for selector buttons)
             brookes_active = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain="brookes.ac.uk").count()
             oxford_active = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain="oxford.ac.uk").count()
+            
+            # 4. Total items circulated (sold + active)
+            brookes_circulated = Item.query.filter(Item.university_domain == "brookes.ac.uk").count()
+            oxford_circulated = Item.query.filter(Item.university_domain == "oxford.ac.uk").count()
+            
+            # 5. Active students (verified users)
+            brookes_students = User.query.filter_by(university_domain="brookes.ac.uk", is_verified=True).count()
+            oxford_students = User.query.filter_by(university_domain="oxford.ac.uk", is_verified=True).count()
             
             return render_template(
                 "landing.html",
@@ -286,10 +283,12 @@ def create_app(config_class=None):
                 total_co2_saved=total_co2,
                 brookes_saved_kg=brookes_saved,
                 oxford_saved_kg=oxford_saved,
-                rivalry_leader=rivalry_leader,
-                rivalry_diff=rivalry_diff,
                 brookes_active_count=brookes_active,
-                oxford_active_count=oxford_active
+                oxford_active_count=oxford_active,
+                brookes_circulated=brookes_circulated,
+                oxford_circulated=oxford_circulated,
+                brookes_students=brookes_students,
+                oxford_students=oxford_students
             )
 
         active_category = request.args.get("category", "")

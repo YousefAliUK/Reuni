@@ -1,224 +1,352 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Reuni — A hyper-local verified campus circular economy platform.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Reuni — Your Campus, Less Waste</title>
 
-{% block title %}Reuni — Select Your University{% endblock %}
+    <!-- Preload custom fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
-{% block head %}
-<!-- Load custom Google Fonts for Landing Page (Outfit & Syne) -->
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<!-- Link dedicated styles -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-{% endblock %}
+    <!-- Material Symbols (outlined) for icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
 
-{% block hero %}
-<!-- ─── DARK-AMBIENT MESH CANVAS ─── -->
-<div class="mesh-canvas" aria-hidden="true">
-    <div class="mesh-blob mesh-blob--emerald"></div>
-    <div class="mesh-blob mesh-blob--teal"></div>
-</div>
-{% endblock %}
+    <!-- Style tokens and landing styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 
-{% block content %}
-<div class="landing-wrapper">
-    <!-- ─── BENTO GRID CONTAINER ─── -->
-    <div class="bento-grid">
-        
-        <!-- MODULE 1: HERO PANEL (span 12) -->
-        <header class="bento-card bento-card--hero" id="bento-card-hero">
-            <div class="hero-tagline">
-                Circular Campus &middot; Zero Waste &middot; Free Exchanges
-            </div>
-            <h1 class="hero-heading font-display">
-                The circular marketplace built for <span class="highlight">your</span> campus.
-            </h1>
-            <p class="hero-description">
-                Swap, buy, or giveaway items instantly within your student community. Reuni connects peers to reduce waste, save money, and log environmental impact in real-time.
-            </p>
-            <div class="hero-cta-group">
-                <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--hero-cta btn--magnetic">
-                    <span>Register Free</span>
-                    <span class="btn__icon-wrapper">
-                        <span class="material-symbols-outlined">arrow_forward</span>
-                    </span>
-                </a>
-            </div>
-            
-            <div class="hero-pillars">
-                <span class="hero-pillar">Campus Verified Nodes</span>
-                <span class="hero-pillar">Community Trusted Sharing</span>
-                <span class="hero-pillar">Climate ESG Transparency</span>
-            </div>
-        </header>
+    <!-- Inline theme initializer to prevent light-theme flashing -->
+    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+</head>
+<body class="guest-shell-layout">
 
-        <!-- MODULE 2: INTERACTIVE EXPERIENCE SHOWCASE (span 8) -->
-        <section class="bento-card bento-card--showcase" id="bento-card-showcase" aria-label="Interactive Showcase">
-            <div class="showcase-header">
-                <h2 class="showcase-title font-display">Live Campus Experience</h2>
-                <div class="segmented-control" role="tablist">
-                    <button class="segment-btn segment-btn--active" id="segment-student" role="tab" aria-selected="true" aria-controls="showcase-student">
-                        Student Mode
-                    </button>
-                    <button class="segment-btn" id="segment-partner" role="tab" aria-selected="false" aria-controls="showcase-partner">
-                        Campus Partner
-                    </button>
-                </div>
+    <!-- Keyboard navigation bypass -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- ─── FLOATING PILL NAVBAR ─── -->
+    <nav class="floating-navbar" aria-label="Landing page navigation">
+        <div class="floating-navbar__inner">
+            <!-- Left: Wordmark -->
+            <a href="/" class="navbar-wordmark" aria-label="Reuni homepage">
+                <span class="material-symbols-outlined navbar-logo-icon" aria-hidden="true">recycling</span>
+                <span>reuni</span>
+            </a>
+
+            <!-- Center: Links (Desktop) -->
+            <div class="navbar-links" role="navigation">
+                <a href="#how-it-works" class="nav-link">How it works</a>
+                <a href="#campuses" class="nav-link">Universities</a>
             </div>
 
-            <div class="showcase-viewport">
-                <!-- Screen A: Student Mode (Marketplace + coordination handshake) -->
-                <div class="showcase-screen showcase-screen--active" id="showcase-student" role="tabpanel">
-                    <div class="mock-marketplace">
-                        <!-- Card 1: Textbook -->
-                        <div class="mock-card">
-                            <div class="mock-img">
-                                <span class="material-symbols-outlined">menu_book</span>
-                            </div>
-                            <div>
-                                <h4 class="mock-title">Organic Chemistry Textbook</h4>
-                                <div class="mock-meta">
-                                    <span class="mock-badge">0.8 kg saved</span>
-                                    <span class="mock-price">£15</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card 2: Bicycle -->
-                        <div class="mock-card" id="mock-bicycle-card">
-                            <div class="mock-img">
-                                <span class="material-symbols-outlined">directions_bike</span>
-                            </div>
-                            <div>
-                                <h4 class="mock-title">Campus Commuter Bicycle</h4>
-                                <div class="mock-meta">
-                                    <span class="mock-badge">12.0 kg saved</span>
-                                    <span class="mock-price">Free</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card 3: Mini Fridge -->
-                        <div class="mock-card">
-                            <div class="mock-img">
-                                <span class="material-symbols-outlined">kitchen</span>
-                            </div>
-                            <div>
-                                <h4 class="mock-title">Dorm Room Mini Fridge</h4>
-                                <div class="mock-meta">
-                                    <span class="mock-badge">24.0 kg saved</span>
-                                    <span class="mock-price">£30</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Overlay Handshake Sequence Simulation -->
-                    <div class="handshake-simulation" id="handshake-overlay" aria-hidden="true">
-                        <div class="sim-phone">
-                            <div class="sim-avatar">W</div>
-                            <div class="sim-bubble">Hi, I want to claim your commuter bike!</div>
-                            <div class="sim-bubble" style="background: var(--landing-teal-glow); color: var(--landing-teal); text-align: right;">Awesome, let's meet in-person! Give me your PIN to verify.</div>
-                            <div class="sim-pin-input">
-                                <div class="sim-digit"></div>
-                                <div class="sim-digit"></div>
-                                <div class="sim-digit"></div>
-                                <div class="sim-digit"></div>
-                            </div>
-                        </div>
-                        <p style="margin-top: 16px; font-size: 0.8125rem; font-weight: 600; color: var(--landing-teal);">Secure 4-Digit In-Person Verification PIN Handshake</p>
-                    </div>
-                </div>
-
-                <!-- Screen B: Campus Partner Mode (ESG Dashboard statistics) -->
-                <div class="showcase-screen" id="showcase-partner" role="tabpanel">
-                    <div class="mock-dashboard">
-                        <div class="mock-metrics-row">
-                            <div class="mock-metric-card">
-                                <div class="mock-metric-label">Circulating Items</div>
-                                <div class="mock-metric-val">1,248</div>
-                            </div>
-                            <div class="mock-metric-card">
-                                <div class="mock-metric-label">CO2e Offset</div>
-                                <div class="mock-metric-val">3,120 kg</div>
-                            </div>
-                            <div class="mock-metric-card">
-                                <div class="mock-metric-label">Active Users</div>
-                                <div class="mock-metric-val">87.5%</div>
-                            </div>
-                        </div>
-                        <div class="mock-chart-container">
-                            <h4 class="mock-chart-title">Landfill Diversion by Department</h4>
-                            <div class="mock-bar-chart">
-                                <div class="mock-bar-row">
-                                    <span class="mock-bar-lbl">Science</span>
-                                    <div class="mock-bar-track">
-                                        <div class="mock-bar-fill" data-width="85%" style="width: 0%;"></div>
-                                    </div>
-                                    <span class="mock-bar-num">85%</span>
-                                </div>
-                                <div class="mock-bar-row">
-                                    <span class="mock-bar-lbl">Arts</span>
-                                    <div class="mock-bar-track">
-                                        <div class="mock-bar-fill" data-width="62%" style="width: 0%;"></div>
-                                    </div>
-                                    <span class="mock-bar-num">62%</span>
-                                </div>
-                                <div class="mock-bar-row">
-                                    <span class="mock-bar-lbl">Business</span>
-                                    <div class="mock-bar-track">
-                                        <div class="mock-bar-fill" data-width="48%" style="width: 0%;"></div>
-                                    </div>
-                                    <span class="mock-bar-num">48%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- MODULE 3: ESG IMPACT STATS (span 4) -->
-        <section class="bento-card bento-card--impact" id="bento-card-impact" aria-label="ESG Impact Metrics">
-            <div class="impact-header">
-                <span class="impact-badge">
-                    <span class="material-symbols-outlined" style="font-size: 14px;">eco</span>
-                    Circular Impact
-                </span>
-                <h2 class="impact-title font-display">Global Campus Savings</h2>
-            </div>
-            
-            <div class="impact-metrics">
-                <div class="impact-stat-group">
-                    <div class="impact-stat-label">Total Landfill Waste Diverted</div>
-                    <div class="impact-number-wrap">
-                        <span class="impact-stat-number font-numeric" data-target="{{ total_saved_kg }}" data-decimals="1">0.0</span>
-                        <span class="impact-stat-unit">kg</span>
-                    </div>
-                </div>
-                <div class="impact-stat-group">
-                    <div class="impact-stat-label">CO₂e Carbon Emissions Avoided</div>
-                    <div class="impact-number-wrap">
-                        <span class="impact-stat-number font-numeric" data-target="{{ total_co2_saved }}" data-decimals="1">0.0</span>
-                        <span class="impact-stat-unit">kg</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="impact-citation">
-                Stats verified by real transaction logs and backed by WRAP UK product life-cycle benchmarks.
-            </div>
-        </section>
-
-        <!-- MODULE 4: CAMPUS SELECTOR (span 5) -->
-        <section class="bento-card bento-card--selector" id="bento-card-selector" aria-label="Campus Selector">
-            <div>
-                <h2 class="selector-title font-display">Select Campus Entry</h2>
-                <p class="selector-subtitle">Choose your university to enter the local marketplace:</p>
+            <!-- Right: Action elements -->
+            <div class="navbar-actions">
+                <button type="button" class="theme-toggle-btn" id="landing-theme-toggle" aria-label="Toggle theme">
+                    <span class="material-symbols-outlined theme-icon-sun" aria-hidden="true">light_mode</span>
+                    <span class="material-symbols-outlined theme-icon-moon" aria-hidden="true">dark_mode</span>
+                </button>
+                <a href="{{ url_for('auth.login') }}" class="login-link">Log in</a>
+                <a href="#campuses" class="btn btn--primary btn--pill get-started-btn">Get started</a>
                 
-                <div class="selector-search-wrap">
-                    <span class="material-symbols-outlined selector-search-icon">search</span>
-                    <input type="text" id="campus-search-input" class="selector-input" placeholder="Search domain (e.g. oxford.ac.uk)..." autocomplete="off" aria-label="Search campus domain">
+                <!-- Hamburger Trigger for Mobile Drawer -->
+                <button type="button" class="hamburger-btn" id="mobile-menu-toggle" aria-expanded="false" aria-label="Open navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="mobile-drawer" id="mobile-nav-drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+        <div class="mobile-drawer__backdrop" id="mobile-drawer-backdrop"></div>
+        <div class="mobile-drawer__panel">
+            <div class="mobile-drawer__header">
+                <span class="navbar-wordmark">
+                    <span class="material-symbols-outlined navbar-logo-icon" aria-hidden="true">recycling</span>
+                    <span>reuni</span>
+                </span>
+                <button type="button" class="drawer-close-btn" id="mobile-drawer-close" aria-label="Close navigation menu">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+            <div class="mobile-drawer__content">
+                <a href="#how-it-works" class="drawer-link" id="drawer-link-works">How it works</a>
+                <a href="#campuses" class="drawer-link" id="drawer-link-campuses">Universities</a>
+                <div class="drawer-divider"></div>
+                <a href="{{ url_for('auth.login') }}" class="drawer-link">Log in</a>
+                <a href="#campuses" class="btn btn--primary btn--pill drawer-cta" id="drawer-link-cta">Get started →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MAIN CONTENT CONTAINER ─── -->
+    <main id="main-content">
+        
+        <!-- SECTION 1: HERO -->
+        <section class="section-hero reveal" aria-label="Introduction">
+            <div class="hero-container">
+                <div class="hero-text-col">
+                    <h1 class="hero-headline">Your campus, less waste.</h1>
+                    <p class="hero-subheadline">
+                        Student-to-student marketplace. Every handoff verified in person. Real kg of waste prevented.
+                    </p>
+                    <div class="hero-cta-group">
+                        <a href="#campuses" class="btn btn--accent btn--pill hero-primary-cta">Find your campus &rarr;</a>
+                        <a href="#how-it-works" class="hero-secondary-link">How it works &darr;</a>
+                    </div>
+                </div>
+
+                <div class="hero-visual-col">
+                    <!-- Double-Bezel Card Tray -->
+                    <div class="hero-card-tray">
+                        <div class="hero-card-inner">
+                            <!-- Image Area -->
+                            <div class="hero-card-image-box">
+                                <svg width="100%" height="100%" viewBox="0 0 480 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Textbook stack illustration">
+                                    <rect width="480" height="360" fill="#ccfbf1" opacity="0.4"/>
+                                    <!-- Simple Flat Stacked Textbooks Illustration -->
+                                    <path d="M120 220H360V240C360 245.523 355.523 250 350 250H130C124.477 250 120 245.523 120 240V220Z" fill="#0f766e"/>
+                                    <rect x="120" y="190" width="240" height="30" fill="#b44018" rx="4"/>
+                                    <rect x="128" y="160" width="224" height="30" fill="#15803d" rx="4"/>
+                                    <rect x="140" y="130" width="200" height="30" fill="#b45309" rx="4"/>
+                                    <path d="M140 135H340V140H140V135Z" fill="#fff" opacity="0.3"/>
+                                    <path d="M128 165H352V170H128V165Z" fill="#fff" opacity="0.3"/>
+                                    <path d="M120 195H360V200H120V195Z" fill="#fff" opacity="0.3"/>
+                                </svg>
+                                <!-- Floating absolute campus badge -->
+                                <div class="floating-campus-badge">
+                                    <span class="material-symbols-outlined" aria-hidden="true">place</span>
+                                    <span>Brookes campus only</span>
+                                </div>
+                            </div>
+                            <!-- Content Details -->
+                            <div class="hero-card-details">
+                                <div class="card-tag-row">
+                                    <span class="category-pill">Books & Notes</span>
+                                </div>
+                                <h3 class="hero-card-title">Introduction to Psychology</h3>
+                                <div class="card-bottom-row">
+                                    <span class="card-price font-numeric">£8.00</span>
+                                    <span class="card-kg-badge font-numeric">
+                                        <span class="material-symbols-outlined" aria-hidden="true">eco</span>
+                                        0.6 kg
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: LIVE PROOF -->
+        <section class="section-live-proof reveal" aria-label="Waste prevention statistics">
+            <div class="live-proof-stack">
+                <span class="material-symbols-outlined live-proof-eco" aria-hidden="true">eco</span>
+                <span class="live-proof-label">Waste prevented across all campuses, to date</span>
+                <span class="kg-counter font-numeric" data-value="{{ total_saved_kg }}">{{ "%.1f"|format(total_saved_kg) }}&nbsp;kg</span>
+                <span class="live-proof-descriptor">in verified campus transactions · no fees · all in person</span>
+            </div>
+        </section>
+
+        <!-- SECTION 3: HOW IT WORKS (Cinematic Walkthrough) -->
+        <section class="walkthrough-section" id="how-it-works" aria-label="Walkthrough of how Reuni works">
+            <div class="walkthrough-header reveal">
+                <h2 class="walkthrough-heading">List it. Claim it. Hand it over.</h2>
+                <p class="walkthrough-subheading">
+                    Every transaction ends with a physical PIN handshake. That's how the kg is real.
+                </p>
+            </div>
+
+            <!-- Mobile Walkthrough Tabs (Hidden on Desktop) -->
+            <div class="mobile-walkthrough-tabs" role="tablist" aria-label="Walkthrough steps">
+                <button type="button" class="walkthrough-tab-btn walkthrough-tab-btn--active" role="tab" aria-selected="true" aria-controls="mobile-screen-1" id="tab-step-0">List</button>
+                <button type="button" class="walkthrough-tab-btn" role="tab" aria-selected="false" aria-controls="mobile-screen-2" id="tab-step-1">Claim</button>
+                <button type="button" class="walkthrough-tab-btn" role="tab" aria-selected="false" aria-controls="mobile-screen-3" id="tab-step-2">PIN</button>
+            </div>
+
+            <!-- Sticky Scroll Walkthrough Frame -->
+            <div class="sticky-walkthrough-frame">
+                <!-- Left: Step Texts -->
+                <div class="walkthrough-text-column">
+                    <div class="step-text-block active" data-step="0">
+                        <div class="step-number font-mono">01</div>
+                        <h3 class="step-title">List your item</h3>
+                        <p class="step-body">
+                            Add a photo, write a description, set your price. Free items are welcome.
+                        </p>
+                    </div>
+                    <div class="step-text-block" data-step="1">
+                        <div class="step-number font-mono">02</div>
+                        <h3 class="step-title">A verified student claims it</h3>
+                        <p class="step-body">
+                            Another student at your campus — registered with their university email — claims the item.
+                        </p>
+                    </div>
+                    <div class="step-text-block" data-step="2">
+                        <div class="step-number font-mono">03</div>
+                        <h3 class="step-title">PIN handshake confirms the exchange</h3>
+                        <p class="step-body">
+                            You meet on campus. One party holds a 4-digit PIN. They share it. The exchange is verified. The kg is logged.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right: Sticky Phone Mock -->
+                <div class="walkthrough-visual-column">
+                    <div class="phone-frame-wrapper">
+                        <div class="phone-shell">
+                            <!-- Status bar/header spacer -->
+                            <div class="phone-shell-top-bar">
+                                <span class="phone-wordmark">reuni</span>
+                            </div>
+                            
+                            <!-- Internal Screens Container -->
+                            <div class="phone-inner-screen">
+                                <!-- Phone Screen 1: Listing form -->
+                                <div class="phone-screen active" id="mobile-screen-1">
+                                    <div class="phone-screen-header">
+                                        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                                        <span class="phone-header-title">List an Item</span>
+                                        <span class="material-symbols-outlined" style="opacity: 0;" aria-hidden="true">arrow_back</span>
+                                    </div>
+                                    <div class="screen-pad">
+                                        <div class="mini-app-img-placeholder">
+                                            <span class="material-symbols-outlined" style="font-size:28px; color: var(--color-ink-tertiary); opacity:0.5" aria-hidden="true">add_photo_alternate</span>
+                                            <span style="font-size: 10px; color: var(--color-ink-tertiary); margin-top: 4px;">Add Photo</span>
+                                        </div>
+                                        <div class="mini-app-label">Title</div>
+                                        <div class="mini-app-input">
+                                            Intro to Psychology<span class="cursor-blink"></span>
+                                        </div>
+                                        <div class="mini-app-label">Price</div>
+                                        <div class="mini-app-price-row">
+                                            <div class="mini-app-price-val font-numeric">£ 8.00</div>
+                                            <div class="mini-app-btn">Post Listing</div>
+                                        </div>
+                                        <div class="mini-app-eco-row">
+                                            <span class="material-symbols-outlined" style="font-size:12px; color: var(--color-success);" aria-hidden="true">eco</span>
+                                            <span><strong class="font-numeric">0.6 kg</strong> saved if rehomed</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Screen 2: Secure Chat Thread -->
+                                <div class="phone-screen" id="mobile-screen-2">
+                                    <div class="phone-screen-header">
+                                        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                                        <span class="phone-header-title">Sarah (Seller)</span>
+                                        <span class="material-symbols-outlined" style="font-size:16px;" aria-hidden="true">more_vert</span>
+                                    </div>
+                                    <!-- Context item header inside chat -->
+                                    <div class="phone-chat-item-context">
+                                        <div class="chat-item-thumb"></div>
+                                        <div class="chat-item-meta">
+                                            <span class="chat-item-title-text">Intro to Psychology</span>
+                                            <span class="chat-item-price-text font-numeric">£8.00 · 0.6 kg</span>
+                                        </div>
+                                        <span class="chat-item-status-tag">Claimed</span>
+                                    </div>
+                                    <div class="screen-pad screen-pad--chat">
+                                        <div class="chat-bubble chat-bubble--incoming">
+                                            Hi! Let's meet in front of the library tomorrow at 2 PM?
+                                        </div>
+                                        <div class="chat-bubble chat-bubble--outgoing">
+                                            Sounds good, see you there!
+                                        </div>
+                                        <div class="chat-system-banner">
+                                            <span class="material-symbols-outlined" style="font-size:11px;" aria-hidden="true">info</span>
+                                            <span>Verify in-person handoff with the PIN</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Screen 3: PIN entry -->
+                                <div class="phone-screen" id="mobile-screen-3">
+                                    <div class="phone-screen-header">
+                                        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                                        <span class="phone-header-title">PIN Handshake</span>
+                                        <span class="material-symbols-outlined" style="opacity: 0;" aria-hidden="true">arrow_back</span>
+                                    </div>
+                                    <div class="screen-pad screen-pad--center">
+                                        <div class="mini-app-lock-circle">
+                                            <span class="material-symbols-outlined" style="color:var(--color-primary); font-size:24px;" aria-hidden="true">lock</span>
+                                        </div>
+                                        <div class="mini-app-lock-title">Enter the PIN</div>
+                                        <div class="mini-app-lock-sub">The buyer will tell you the 4-digit code after payment.</div>
+                                        <div class="mini-app-pin-inputs">
+                                            <div class="pin-box font-numeric">7</div>
+                                            <div class="pin-box font-numeric">4</div>
+                                            <div class="pin-box pin-box--empty font-numeric">_</div>
+                                            <div class="pin-box pin-box--empty font-numeric">_</div>
+                                        </div>
+                                        <div class="mini-app-lock-footer">Both phones out · Exchange in person</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: TRUST LAYER -->
+        <section class="section-trust-layer reveal" aria-label="Security and safety benefits">
+            <div class="trust-pillars-container">
+                <div class="trust-pillar">
+                    <div class="trust-icon-container">
+                        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+                    </div>
+                    <div class="trust-text-stack">
+                        <span class="trust-title">.ac.uk email required</span>
+                        <span class="trust-detail">Every account is a real student</span>
+                    </div>
+                </div>
+                <div class="trust-divider" aria-hidden="true"></div>
+                <div class="trust-pillar">
+                    <div class="trust-icon-container">
+                        <span class="material-symbols-outlined" aria-hidden="true">place</span>
+                    </div>
+                    <div class="trust-text-stack">
+                        <span class="trust-title">Campus-only listings</span>
+                        <span class="trust-detail">Items never ship. Always in person.</span>
+                    </div>
+                </div>
+                <div class="trust-divider" aria-hidden="true"></div>
+                <div class="trust-pillar">
+                    <div class="trust-icon-container">
+                        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                    </div>
+                    <div class="trust-text-stack">
+                        <span class="trust-title">PIN-verified exchanges</span>
+                        <span class="trust-detail">Both parties confirm physically, every time.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: ACTIVE CAMPUSES -->
+        <section class="section-campuses" id="campuses" aria-label="Campus Selector">
+            <div class="campuses-header reveal">
+                <h2 class="campuses-title">Find your campus.</h2>
+                <p class="campuses-subheading">Pick your university to browse its marketplace.</p>
+            </div>
+
+            <!-- Search wrapper -->
+            <div class="campuses-search-box reveal">
+                <div class="search-input-inner">
+                    <span class="material-symbols-outlined search-icon-inset" aria-hidden="true">search</span>
+                    <input type="text" id="landing-uni-search" class="search-input-field" placeholder="Search universities..." aria-label="Search universities">
                 </div>
             </div>
 
-            <!-- List of Universities -->
-            <div class="selector-list" id="uni-links-container">
+            <!-- Cards Grid -->
+            <div class="campuses-grid reveal">
                 {% set parts = request.host.split('.') %}
                 {% if parts|length >= 3 %}
                     {% set base_domain = parts[1:]|join('.') %}
@@ -226,103 +354,175 @@
                     {% set base_domain = request.host %}
                 {% endif %}
 
-                <!-- Oxford Brookes Entry -->
-                <a href="{{ request.scheme }}://brookes.{{ base_domain }}" class="uni-entry-btn" data-id="brookes" data-domain="brookes.ac.uk" id="uni-brookes-link">
-                    <div class="uni-entry-btn__content">
-                        <span class="uni-entry-btn__name">Oxford Brookes University</span>
-                        <span class="uni-entry-btn__listings" data-listings-count="{{ brookes_active_count }}">
+                <!-- Oxford Brookes -->
+                <a href="{{ request.scheme }}://brookes.{{ base_domain }}/" class="uni-card" data-slug="brookes" data-domain="brookes.ac.uk">
+                    <div class="uni-card-monogram">
+                        <span>OB</span>
+                    </div>
+                    <div class="uni-card-text">
+                        <span class="uni-card-name">Oxford Brookes University</span>
+                        <span class="uni-card-listings" data-count="{{ brookes_active_count }}">
                             {{ brookes_active_count }} active listings
                         </span>
                     </div>
-                    <span class="uni-entry-btn__badge">Nearest</span>
-                    <span class="material-symbols-outlined uni-entry-btn__arrow">arrow_forward</span>
+                    <span class="material-symbols-outlined uni-card-arrow" aria-hidden="true">arrow_forward</span>
                 </a>
 
-                <!-- Oxford University Entry -->
-                <a href="{{ request.scheme }}://oxford.{{ base_domain }}" class="uni-entry-btn" data-id="oxford" data-domain="oxford.ac.uk" id="uni-oxford-link">
-                    <div class="uni-entry-btn__content">
-                        <span class="uni-entry-btn__name">University of Oxford</span>
-                        <span class="uni-entry-btn__listings" data-listings-count="{{ oxford_active_count }}">
+                <!-- Oxford University -->
+                <a href="{{ request.scheme }}://oxford.{{ base_domain }}/" class="uni-card" data-slug="oxford" data-domain="oxford.ac.uk">
+                    <div class="uni-card-monogram" style="background-color: rgba(99, 102, 241, 0.1); color: rgb(99, 102, 241);">
+                        <span>OX</span>
+                    </div>
+                    <div class="uni-card-text">
+                        <span class="uni-card-name">University of Oxford</span>
+                        <span class="uni-card-listings" data-count="{{ oxford_active_count }}">
                             {{ oxford_active_count }} active listings
                         </span>
                     </div>
-                    <span class="uni-entry-btn__badge">Nearest</span>
-                    <span class="material-symbols-outlined uni-entry-btn__arrow">arrow_forward</span>
+                    <span class="material-symbols-outlined uni-card-arrow" aria-hidden="true">arrow_forward</span>
                 </a>
             </div>
-
-            <button type="button" id="detect-location-btn" class="btn btn--ghost-login" style="margin-top: 20px; width: 100%; border: 1px dashed var(--landing-border); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">near_me</span>
-                <span>Auto-detect closest campus</span>
-            </button>
         </section>
 
-        <!-- MODULE 5: INTER-UNIVERSITY RIVALRY PREVIEW (span 7) -->
-        <section class="bento-card bento-card--rivalry" id="bento-card-rivalry" aria-label="Inter-University Rivalry">
-            <div class="rivalry-header">
-                <h2 class="rivalry-title font-display font-display--heading">Campus Cup Leaderboard</h2>
-                <span class="rivalry-cup-badge">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">emoji_events</span>
-                    🌱 Season 1 — Summer Cup
-                </span>
-            </div>
+        <!-- SECTION 6: SUSTAINABILITY SIGNAL (B2B layer) -->
+        <section class="section-sustainability reveal" aria-label="Institutional partnerships">
+            <div class="sustainability-container">
+                <div class="sustainability-text-col">
+                    <span class="sustainability-eyebrow">For universities & sustainability teams</span>
+                    <h2 class="sustainability-heading">Every kg is verified. Not estimated.</h2>
+                    <p class="sustainability-subheading">
+                        The PIN handshake means every transaction in your campus circular economy is confirmed by both parties in person. Your sustainability data is real.
+                    </p>
 
-            {% set total_rivalry = brookes_saved_kg + oxford_saved_kg %}
-            {% if total_rivalry > 0 %}
-                {% set brookes_pct = (brookes_saved_kg / total_rivalry) * 100 %}
-                {% set oxford_pct = (oxford_saved_kg / total_rivalry) * 100 %}
-            {% else %}
-                {% set brookes_pct = 50.0 %}
-                {% set oxford_pct = 50.0 %}
-            {% endif %}
-
-            <div class="rivalry-graph">
-                <!-- Brookes Bar -->
-                <div class="rivalry-bar-wrap">
-                    <div class="rivalry-bar-meta">
-                        <span class="rivalry-bar-name">Oxford Brookes</span>
-                        <span class="rivalry-bar-val font-numeric">{{ "%.1f"|format(brookes_saved_kg) }} kg saved</span>
-                    </div>
-                    <div class="rivalry-progress">
-                        <div class="rivalry-progress-fill rivalry-progress-fill--brookes" data-pct="{{ brookes_pct }}%" style="width: 0%;"></div>
+                    <!-- Pillars list -->
+                    <div class="sustainability-pillars">
+                        <div class="sustainability-pillar">
+                            <div class="pillar-icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">assessment</span>
+                            </div>
+                            <div class="pillar-text">
+                                <span class="pillar-title">ESG dashboard included</span>
+                                <p class="pillar-desc">kg_saved data, category breakdown, transaction velocity — all in one partner view.</p>
+                            </div>
+                        </div>
+                        <div class="sustainability-pillar">
+                            <div class="pillar-icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                            </div>
+                            <div class="pillar-text">
+                                <span class="pillar-title">Audit-trail verified</span>
+                                <p class="pillar-desc">Every kg confirmed by a physical PIN exchange between two students. No estimates, no projections.</p>
+                            </div>
+                        </div>
+                        <div class="sustainability-pillar">
+                            <div class="pillar-icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">download</span>
+                            </div>
+                            <div class="pillar-text">
+                                <span class="pillar-title">Export-ready reports</span>
+                                <p class="pillar-desc">CSV and PDF exports for board reports, sustainability submissions, and annual reviews.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Oxford Bar -->
-                <div class="rivalry-bar-wrap">
-                    <div class="rivalry-bar-meta">
-                        <span class="rivalry-bar-name">Oxford Uni</span>
-                        <span class="rivalry-bar-val font-numeric" style="color: #6366F1;">{{ "%.1f"|format(oxford_saved_kg) }} kg saved</span>
-                    </div>
-                    <div class="rivalry-progress">
-                        <div class="rivalry-progress-fill rivalry-progress-fill--oxford" data-pct="{{ oxford_pct }}%" style="width: 0%;"></div>
+                <div class="sustainability-visual-col">
+                    <!-- ESG Partner Preview Card (Fixed Dark Surface) -->
+                    <div class="esg-dashboard-card">
+                        <div class="esg-dashboard-inner">
+                            <div class="esg-card-header">
+                                <span class="esg-uni-context">Oxford Brookes · 2025–26</span>
+                                <span class="esg-partner-badge">Partner Dashboard</span>
+                            </div>
+
+                            <div class="esg-metric-rows">
+                                <div class="esg-metric-row">
+                                    <div class="esg-metric-label">
+                                        <span class="material-symbols-outlined esg-icon-teal" aria-hidden="true">eco</span>
+                                        <span>Total kg saved</span>
+                                    </div>
+                                    <span class="esg-metric-value esg-value-teal font-numeric">{{ "%.1f"|format(brookes_saved_kg) }}&nbsp;kg</span>
+                                </div>
+                                <div class="esg-metric-row">
+                                    <div class="esg-metric-label">
+                                        <span class="material-symbols-outlined" aria-hidden="true">inventory</span>
+                                        <span>Items circulated</span>
+                                    </div>
+                                    <span class="esg-metric-value font-numeric">{{ brookes_circulated }}</span>
+                                </div>
+                                <div class="esg-metric-row">
+                                    <div class="esg-metric-label">
+                                        <span class="material-symbols-outlined" aria-hidden="true">people</span>
+                                        <span>Active students</span>
+                                    </div>
+                                    <span class="esg-metric-value font-numeric">{{ brookes_students }}</span>
+                                </div>
+                            </div>
+
+                            <div class="esg-trend-container">
+                                <span class="esg-trend-label">Last 8 weeks</span>
+                                <div class="esg-trend-bars">
+                                    <!-- Proportional bars using simulated or actual seed numbers -->
+                                    <div class="esg-bar" style="height: 24px;" aria-label="Week 1: low activity"></div>
+                                    <div class="esg-bar" style="height: 32px;" aria-label="Week 2: medium activity"></div>
+                                    <div class="esg-bar" style="height: 28px;" aria-label="Week 3: medium-low activity"></div>
+                                    <div class="esg-bar" style="height: 48px;" aria-label="Week 4: high activity"></div>
+                                    <div class="esg-bar" style="height: 42px;" aria-label="Week 5: high activity"></div>
+                                    <div class="esg-bar" style="height: 36px;" aria-label="Week 6: medium-high activity"></div>
+                                    <div class="esg-bar" style="height: 52px;" aria-label="Week 7: very high activity"></div>
+                                    <div class="esg-bar esg-bar--active" style="height: 64px;" aria-label="Week 8: current week peak activity"></div>
+                                </div>
+                            </div>
+
+                            <div class="esg-card-footer">
+                                Data generated from PIN-verified student transactions
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Rivalry Leader Badge -->
-            <div class="rivalry-cup-leader">
-                <span class="material-symbols-outlined rivalry-cup-icon">military_tech</span>
-                <div class="rivalry-cup-info">
-                    <span class="rivalry-cup-lbl">Current Leader</span>
-                    {% if rivalry_leader %}
-                        <span class="rivalry-cup-msg">{{ rivalry_leader }} leads by {{ "%.1f"|format(rivalry_diff) }} kg</span>
-                    {% else %}
-                        <span class="rivalry-cup-msg">It's a dead heat! Both universities are neck and neck.</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <p class="rivalry-cta-text">
-                Help your university win the cup. List items you no longer need, or claim available campus resources to boost your institution's score.
-            </p>
         </section>
 
-    </div>
-</div>
-{% endblock %}
+        <!-- SECTION 7: DUAL CTA -->
+        <section class="section-dual-cta reveal" id="partner" aria-label="Get started or partner with us">
+            <div class="dual-cta-grid">
+                <!-- Left: Student CTA -->
+                <div class="cta-block">
+                    <h2 class="cta-heading">Something you don't need is something someone does.</h2>
+                    <p class="cta-sub">No commission. No fees. University email required.</p>
+                    <a href="#campuses" class="btn btn--pill cta-btn-light">Find your campus &rarr;</a>
+                </div>
 
-{% block scripts %}
-<!-- Load dedicated JavaScript script -->
-<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
-{% endblock %}
+                <!-- Desktop Vertical Divider -->
+                <div class="cta-grid-divider" aria-hidden="true"></div>
+
+                <!-- Right: Institutional CTA -->
+                <div class="cta-block">
+                    <h2 class="cta-heading">Bring verified circular economy data to your campus.</h2>
+                    <p class="cta-sub">ESG dashboard, student engagement, zero cost to the institution. Let's talk.</p>
+                    <a href="mailto:yousef@reuni.uk" class="btn btn--pill cta-btn-outline">Get in touch &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ─── Minimal Footer ─── -->
+    <footer class="landing-footer">
+        <div class="footer-inner">
+            <div class="footer-left">
+                <span class="navbar-wordmark">reuni</span>
+                <span class="footer-copyright"> · &copy; 2026 Reuni</span>
+            </div>
+            <div class="footer-right">
+                <a href="{{ url_for('privacy') }}" class="footer-link">Privacy Policy</a>
+                <span class="footer-link-divider"> · </span>
+                <a href="mailto:yousef@reuni.uk" class="footer-link" translate="no">yousef@reuni.uk</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Dedicated walkthrough, scroll and animation javascript logic -->
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+</body>
+</html>

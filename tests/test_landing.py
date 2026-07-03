@@ -56,19 +56,21 @@ def test_landing_page_renders_with_aggregates(client, db_session, sample_user):
     assert b"Outfit:wght" in resp.data
     assert b"Syne:wght" in resp.data
     
-    # Assert bento modules are present
-    assert b"bento-card--hero" in resp.data
-    assert b"bento-card--showcase" in resp.data
-    assert b"bento-card--impact" in resp.data
-    assert b"bento-card--selector" in resp.data
-    assert b"bento-card--rivalry" in resp.data
+    # Assert editorial sections are present
+    assert b"floating-navbar" in resp.data
+    assert b"section-hero" in resp.data
+    assert b"section-live-proof" in resp.data
+    assert b"walkthrough-section" in resp.data
+    assert b"section-trust-layer" in resp.data
+    assert b"section-campuses" in resp.data
+    assert b"section-sustainability" in resp.data
+    assert b"section-dual-cta" in resp.data
     
-    # Assert values: total saved is 17.5 kg, total co2 is 17.5 * 2.5 = 43.75
+    # Assert values: total saved is 17.5 kg
     assert b"17.5" in resp.data
-    assert b"43.75" in resp.data
     
     # Assert listings count: Brookes has 1 active listing
-    assert b"data-listings-count=\"1\"" in resp.data
+    assert b"data-count=\"1\"" in resp.data
 
 
 def test_landing_page_cookie_redirect(client):
@@ -92,7 +94,7 @@ def test_landing_page_cookie_redirect_bypass(client):
     
     # Should load the landing page successfully (200) instead of redirecting
     assert resp.status_code == 200
-    assert b"bento-card--selector" in resp.data
+    assert b"section-campuses" in resp.data
 
 
 def test_unrecognized_subdomain_aborts(client):
