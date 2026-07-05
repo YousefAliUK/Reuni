@@ -8037,11 +8037,11 @@ body {
 }
 
 .esg-logo-wrapper {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
     border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    border: 1px solid var(--color-border);
+    background: #ffffff; /* Solid white background in both light and dark modes */
+    border: 1px solid #e2e8f0; /* Always light border to match light theme */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -8052,12 +8052,14 @@ body {
 .esg-logo-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    padding: 6px;
+    box-sizing: border-box;
 }
 
 .esg-initials-avatar {
     font-weight: 700;
-    font-size: 20px;
+    font-size: 28px; /* Sized up to match 64px wrapper */
     color: var(--color-primary);
     width: 100%;
     height: 100%;

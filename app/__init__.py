@@ -102,7 +102,7 @@ def create_app(config_class=None):
     limiter.init_app(app)
 
     # User loader for Flask-Login
-    from app.models import User
+    from app.models import User, Item, CancellationRecord, Message, Notification, UniversityLogo
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -277,6 +277,22 @@ def create_app(config_class=None):
             brookes_students = User.query.filter_by(university_domain="brookes.ac.uk", is_verified=True).count()
             oxford_students = User.query.filter_by(university_domain="oxford.ac.uk", is_verified=True).count()
             
+            # Dynamic university list for bento cards
+            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            from app.routes.partner import get_uni_name, get_uni_initials
+            universities = []
+            for slug, domain in mapping.items():
+                active_count = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain=domain).count()
+                name = get_uni_name(domain)
+                initials = get_uni_initials(name)
+                universities.append({
+                    "slug": slug,
+                    "domain": domain,
+                    "name": name,
+                    "initials": initials,
+                    "active_count": active_count
+                })
+
             return render_template(
                 "landing.html",
                 total_saved_kg=total_saved,
@@ -288,7 +304,8 @@ def create_app(config_class=None):
                 brookes_circulated=brookes_circulated,
                 oxford_circulated=oxford_circulated,
                 brookes_students=brookes_students,
-                oxford_students=oxford_students
+                oxford_students=oxford_students,
+                universities=universities
             )
 
         active_category = request.args.get("category", "")
@@ -681,6 +698,49 @@ def create_app(config_class=None):
         return {
             "turnstile_sitekey": app.config.get("TURNSTILE_SITE_KEY") or "1x00000000000000000000AA"
         }
+
+    @app.context_processor
+    def inject_logo_helpers():
+        def get_logo_status(domain):
+            # 1. Determine local file existence
+            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            reverse_map = {v: k for k, v in mapping.items()}
+            slug = reverse_map.get(domain, domain.split('.')[0])
+            
+            filepath = os.path.join(app.static_folder, 'img', 'logos', f'{slug}.svg')
+            if os.path.exists(filepath):
+                return 'fetched'
+                
+            # 2. Check database status
+            from app.models import UniversityLogo
+            logo_rec = UniversityLogo.query.filter_by(domain=domain).first()
+            if logo_rec:
+                if logo_rec.logo_status == 'no_logo':
+                    return 'no_logo'
+                return logo_rec.logo_status
+                
+            # 3. If unknown, trigger background fetch
+            from app.utils.logo_downloader import start_logo_fetch_job
+            start_logo_fetch_job(app, domain)
+            return 'pending'
+            
+        def get_brand_color(domain):
+            colors = {
+                "brookes.ac.uk": "#002855",
+                "oxford.ac.uk": "#002147"
+            }
+            return colors.get(domain, "var(--color-primary-muted)")
+            
+        def get_brand_text_color(domain):
+            if domain in ["brookes.ac.uk", "oxford.ac.uk"]:
+                return "#ffffff"
+            return "var(--color-primary)"
+            
+        return dict(
+            get_logo_status=get_logo_status,
+            get_brand_color=get_brand_color,
+            get_brand_text_color=get_brand_text_color
+        )
 
     # ── Request Entity Too Large error handler ──
     @app.errorhandler(413)

@@ -253,3 +253,19 @@ class Notification(db.Model):
 
     def __repr__(self):
         return f"<Notification id={self.id} user={self.user_id}>"
+
+
+# ──────────────────────────────────────────────
+# University Logo Metadata Model
+# ──────────────────────────────────────────────
+class UniversityLogo(db.Model):
+    __tablename__ = "university_logos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    domain = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    logo_status = db.Column(db.String(20), nullable=False, default="pending") # 'pending', 'fetched', 'no_logo'
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f"<UniversityLogo domain={self.domain} status={self.logo_status}>"
+
