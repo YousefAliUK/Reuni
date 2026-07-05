@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const drawer = document.getElementById('mobile-nav-drawer');
     const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
     const drawerClose = document.getElementById('mobile-drawer-close');
-    const drawerLinks = drawer ? drawer.querySelectorAll('.drawer-link, .drawer-cta') : [];
+    const drawerLinks = drawer ? drawer.querySelectorAll('.landing-drawer__link, .landing-drawer__btn-login, .landing-drawer__btn-cta') : [];
 
     function openDrawer() {
         if (menuToggle && drawer) {

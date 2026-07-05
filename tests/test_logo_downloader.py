@@ -73,7 +73,7 @@ def test_fetch_university_logo_fallback_google_favicon(mock_get, tmp_path):
     assert success is True
     assert test_file.exists()
     assert test_file.read_bytes() == b'google_bytes'
-    mock_get.assert_any_call("https://www.google.com/s2/favicons?sz=256&domain=oxford.ac.uk", headers={}, timeout=8)
+    mock_get.assert_any_call("https://www.google.com/s2/favicons?sz=256&domain=oxford.ac.uk", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}, timeout=8)
 
 @patch('app.utils.logo_downloader.fetch_university_logo')
 def test_bg_fetch_logo_success_updates_db(mock_fetch, app, db_session):

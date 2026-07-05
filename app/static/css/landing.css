@@ -251,8 +251,8 @@ body.guest-shell-layout {
   transform: translateY(-6px) rotate(-45deg);
 }
 
-/* ─── 3. MOBILE MENU DRAWER ─── */
-.mobile-drawer {
+/* ─── 3. LANDING MENU DRAWER ─── */
+.landing-drawer {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
@@ -261,12 +261,12 @@ body.guest-shell-layout {
   transition: opacity var(--duration-base) var(--ease-out), visibility var(--duration-base) var(--ease-out);
 }
 
-.mobile-drawer.active {
+.landing-drawer.active {
   opacity: 1;
   visibility: visible;
 }
 
-.mobile-drawer__backdrop {
+.landing-drawer__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(28, 25, 23, 0.4);
@@ -274,7 +274,7 @@ body.guest-shell-layout {
   -webkit-backdrop-filter: blur(4px);
 }
 
-.mobile-drawer__panel {
+.landing-drawer__panel {
   position: absolute;
   top: 0;
   right: 0;
@@ -292,11 +292,11 @@ body.guest-shell-layout {
   overscroll-behavior: contain;
 }
 
-.mobile-drawer.active .mobile-drawer__panel {
+.landing-drawer.active .landing-drawer__panel {
   transform: translateX(0);
 }
 
-.mobile-drawer__header {
+.landing-drawer__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -320,39 +320,54 @@ body.guest-shell-layout {
   color: var(--color-ink-primary);
 }
 
-.mobile-drawer__content {
+.landing-drawer__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.landing-drawer__nav {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.drawer-link {
-  font-size: var(--type-body);
+.landing-drawer__link {
+  font-family: var(--font-sans);
+  font-size: 1.125rem; /* 18px */
   font-weight: 600;
   color: var(--color-ink-secondary);
   text-decoration: none;
   padding: var(--space-2) 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  display: block;
 }
 
-[data-theme="dark"] .drawer-link {
-  border-bottom-color: rgba(255, 255, 255, 0.03);
-}
-
-.drawer-link:hover {
+.landing-drawer__link:hover {
   color: var(--color-ink-primary);
+  transform: translateX(4px);
 }
 
-.drawer-divider {
+.landing-drawer__divider {
   height: 1px;
   background: var(--color-border);
-  margin: var(--space-2) 0;
+  margin: 0;
 }
 
-.drawer-cta {
+.landing-drawer__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.landing-drawer__btn-login,
+.landing-drawer__btn-cta {
   height: 48px !important;
   font-size: var(--type-body) !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-full) !important;
+  width: 100%;
 }
 
 /* ─── 4. SECTION 1 — HERO ─── */
