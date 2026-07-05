@@ -1306,32 +1306,32 @@ body.guest-shell-layout {
   transform: scale(0.98);
 }
 
-.uni-card-monogram {
+.uni-logo-wrap {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-primary-muted);
-  color: var(--color-primary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.uni-card-logo-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain; /* Prevents stretching and cropping */
+}
+
+.uni-card-monogram {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px; /* Clean squircle fallbacks */
   font-family: var(--font-sans);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.uni-card-logo-full {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md); /* Rounded square tile matching the dashboard cards to prevent circular clipping */
-  background-color: #ffffff; /* Solid white background so it acts like light mode directly around the logo */
-  border: 1px solid #e2e8f0; /* Always light border in both modes */
-  padding: 4px;
-  box-sizing: border-box;
-  object-fit: contain;
-  flex-shrink: 0;
-  display: block;
 }
 
 .uni-card-text {

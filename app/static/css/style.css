@@ -8039,7 +8039,7 @@ body {
 .esg-logo-wrapper {
     width: 64px;
     height: 64px;
-    border-radius: var(--radius-md);
+    border-radius: 12px; /* Enforced 12px squircle for dashboard logo */
     background: #ffffff; /* Solid white background in both light and dark modes */
     border: 1px solid #e2e8f0; /* Always light border to match light theme */
     display: flex;

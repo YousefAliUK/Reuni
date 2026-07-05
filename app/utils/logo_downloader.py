@@ -1,12 +1,9 @@
-import urllib.request
-import json
-import urllib.parse
 import os
 import re
-import base64
 import threading
-import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from app import db
 from app.models import UniversityLogo
 
@@ -15,163 +12,154 @@ def get_slug_from_domain(app, domain):
     reverse_map = {v: k for k, v in mapping.items()}
     return reverse_map.get(domain, domain.split('.')[0])
 
-def sanitize_svg(svg_content):
-    """Sanitize SVG content by stripping script tags, event handlers, and external href links."""
+DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
+
+def _download_and_save(url: str, path: str, headers: dict = None, min_size: int = 0) -> bool:
+    if not headers:
+        headers = DEFAULT_HEADERS
     try:
-        root = ET.fromstring(svg_content)
+        r = requests.get(url, headers=headers, timeout=8)
+        if r.status_code == 200 and len(r.content) > min_size * 100:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "wb") as f:
+                f.write(r.content)
+            return True
     except Exception:
-        raise ValueError("Invalid SVG XML structure")
-        
-    for elem in root.iter():
-        tag_name = elem.tag.split('}')[-1].lower()
-        if tag_name == 'script':
-            elem.clear()
-            elem.tag = 'g'  # Convert script tag to empty group to safe-strip it
-            
-        # Strip all event handlers starting with "on"
-        for attr in list(elem.attrib.keys()):
-            attr_name = attr.split('}')[-1].lower()
-            if attr_name.startswith('on'):
-                del elem.attrib[attr]
-            elif attr_name in ('href', 'xlink:href'):
-                val = elem.attrib[attr].strip().lower()
-                # Remove links pointing to external or javascript handlers
-                if any(val.startswith(p) for p in ('javascript:', 'data:', 'http:', 'https:')):
-                    del elem.attrib[attr]
+        pass
+    return False
+
+def _fallback_google_favicon(domain: str, slug: str, save_path: str) -> bool:
+    url = f"https://www.google.com/s2/favicons?sz=256&domain={domain}"
+    return _download_and_save(url, save_path, {}, min_size=0)
+
+def fetch_from_wikimedia_png(slug: str) -> str:
+    """Query Wikimedia Commons for a university coat of arms/logo and get a PNG render URL."""
+    search_queries = [
+        f"University of {slug} coat of arms",
+        f"{slug} university coat of arms",
+        f"{slug} university logo",
+        f"{slug} university shield"
+    ]
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)'}
+    for query in search_queries:
+        try:
+            params = {
+                'action': 'query',
+                'list': 'search',
+                'srsearch': query,
+                'srnamespace': 6, # File namespace only
+                'srlimit': 3,
+                'format': 'json',
+                'utf8': 1
+            }
+            api_url = f"https://commons.wikimedia.org/w/api.php"
+            r = requests.get(api_url, params=params, headers=headers, timeout=5)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            results = data.get('query', {}).get('search', [])
+            file_title = None
+            for res in results:
+                title = res.get('title', '')
+                if title.startswith('File:') and title.lower().endswith(('.svg', '.png')):
+                    file_title = title
+                    break
                     
-    return ET.tostring(root, encoding='unicode')
+            if file_title:
+                # Query ImageInfo with iiurlwidth=256 to get the PNG thumbnail url
+                info_params = {
+                    'action': 'query',
+                    'titles': file_title,
+                    'prop': 'imageinfo',
+                    'iiprop': 'url',
+                    'iiurlwidth': 256,
+                    'format': 'json'
+                }
+                r_info = requests.get(api_url, params=info_params, headers=headers, timeout=5)
+                if r_info.status_code != 200:
+                    continue
+                info_data = r_info.json()
+                pages = info_data.get('query', {}).get('pages', {})
+                for page_id, page_data in pages.items():
+                    imageinfo = page_data.get('imageinfo', [])
+                    if imageinfo:
+                        direct_url = imageinfo[0].get('thumburl')
+                        if not direct_url:
+                            direct_url = imageinfo[0].get('url')
+                        return direct_url
+        except Exception:
+            pass
+    return None
 
-def make_svg_single_color(svg_content):
-    """Convert SVG to a single-color stencil by setting fill and stroke to currentColor."""
-    try:
-        root = ET.fromstring(svg_content)
-    except Exception:
-        return svg_content
-        
-    for elem in root.iter():
-        tag_name = elem.tag.split('}')[-1].lower()
-        if tag_name in ('path', 'rect', 'circle', 'polygon', 'ellipse', 'line', 'polyline'):
-            # Convert normal fills to currentColor
-            fill = elem.attrib.get('fill')
-            if fill and fill.lower() != 'none':
-                elem.attrib['fill'] = 'currentColor'
-                
-            stroke = elem.attrib.get('stroke')
-            if stroke and stroke.lower() != 'none':
-                elem.attrib['stroke'] = 'currentColor'
-                
-            # Inline style attribute cleanup
-            style = elem.attrib.get('style')
-            if style:
-                rules = style.split(';')
-                new_rules = []
-                for rule in rules:
-                    if ':' in rule:
-                        k, v = rule.split(':', 1)
-                        k_clean = k.strip().lower()
-                        v_clean = v.strip().lower()
-                        if k_clean == 'fill' and v_clean != 'none':
-                            new_rules.append(f"{k.strip()}: currentColor")
-                        elif k_clean == 'stroke' and v_clean != 'none':
-                            new_rules.append(f"{k.strip()}: currentColor")
-                        elif k_clean in ('color', 'background-color'):
-                            pass
-                        else:
-                            new_rules.append(rule)
-                    else:
-                        new_rules.append(rule)
-                elem.attrib['style'] = ';'.join(new_rules)
-                
-    return ET.tostring(root, encoding='unicode')
-
-def wrap_png_in_svg(png_bytes):
-    """Wrap raw PNG bytes in a standard base64-encoded SVG element."""
-    base64_data = base64.b64encode(png_bytes).decode('utf-8')
-    return (
-        '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">\n'
-        f'  <image href="data:image/png;base64,{base64_data}" x="0" y="0" width="100" height="100"/>\n'
-        '</svg>\n'
-    )
-
-def fetch_from_clearbit(domain):
-    """Attempt to fetch the logo from Clearbit's API."""
-    url = f"https://logo.clearbit.com/{domain}"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    # Specifying a strict 5s timeout to prevent infinite hanging
-    with urllib.request.urlopen(req, timeout=5) as response:
-        content_type = response.headers.get('Content-Type', '').lower()
-        data = response.read()
-        
-    if 'image/svg' in content_type:
-        return 'svg', data.decode('utf-8')
-    elif 'image/png' in content_type:
-        return 'png', data
-    return None, None
-
-def fetch_from_wikimedia(domain):
-    """Query Wikimedia Commons API to find and download a university crest SVG."""
-    # First search for the file using the domain name or university term
-    search_query = f"{domain.split('.')[0]} university coat of arms"
-    params = {
-        'action': 'query',
-        'list': 'search',
-        'srsearch': search_query,
-        'srlimit': 5,
-        'format': 'json',
-        'utf8': 1
-    }
-    url_params = urllib.parse.urlencode(params)
-    api_url = f"https://commons.wikimedia.org/w/api.php?{url_params}"
+def fetch_university_logo(domain: str, slug: str, save_path: str) -> bool:
+    """
+    Fetch the best available icon mark for a university domain.
+    Priority: apple-touch-icon (180px) → high-res manifest icon → 
+              og:image/large icon → Wikimedia Commons PNG → Google favicon.ico
+    Saves to static/img/logos/{slug}.png
+    Returns True if saved, False if nothing found.
+    """
+    base_url = f"https://{domain}"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
     
-    req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req, timeout=5) as r:
-        search_data = json.loads(r.read().decode('utf-8'))
-        
-    results = search_data.get('query', {}).get('search', [])
-    file_title = None
-    for res in results:
-        title = res.get('title', '')
-        if title.startswith('File:') and title.lower().endswith('.svg'):
-            file_title = title
-            break
-            
-    if not file_title:
-        return None
-        
-    # Query ImageInfo to get direct download URL
-    info_params = {
-        'action': 'query',
-        'titles': file_title,
-        'prop': 'imageinfo',
-        'iiprop': 'url',
-        'format': 'json'
-    }
-    info_url = f"https://commons.wikimedia.org/w/api.php?{urllib.parse.urlencode(info_params)}"
-    req_info = urllib.request.Request(info_url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req_info, timeout=5) as r_info:
-        info_data = json.loads(r_info.read().decode('utf-8'))
-        
-    pages = info_data.get('query', {}).get('pages', {})
-    direct_url = None
-    for page_id, page_data in pages.items():
-        imageinfo = page_data.get('imageinfo', [])
-        if imageinfo:
-            direct_url = imageinfo[0].get('url')
-            break
-            
-    if not direct_url:
-        return None
-        
-    # Download the SVG content
-    req_dl = urllib.request.Request(direct_url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req_dl, timeout=5) as r_dl:
-        svg_text = r_dl.read().decode('utf-8')
-        
-    return svg_text
+    try:
+        resp = requests.get(base_url, headers=headers, timeout=8)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    except Exception:
+        # If the main website is unreachable, fallback to Wikimedia search, then Google favicon
+        wiki_png_url = fetch_from_wikimedia_png(slug)
+        if wiki_png_url and _download_and_save(wiki_png_url, save_path, {}, min_size=0):
+            return True
+        return _fallback_google_favicon(domain, slug, save_path)
+    
+    # Priority 1 — apple-touch-icon (180×180, always the icon mark)
+    for rel in ["apple-touch-icon-precomposed", "apple-touch-icon"]:
+        tag = soup.find("link", rel=lambda r: r and r.lower() == rel)
+        if tag and tag.get("href"):
+            url = urljoin(base_url, tag["href"])
+            if _download_and_save(url, save_path, headers, min_size=60):
+                return True
+    
+    # Priority 2 — web app manifest icons (often 192px or 512px)
+    manifest_tag = soup.find("link", rel=lambda r: r and r.lower() == "manifest")
+    if manifest_tag and manifest_tag.get("href"):
+        try:
+            manifest_url = urljoin(base_url, manifest_tag["href"])
+            manifest = requests.get(manifest_url, headers=headers, timeout=5).json()
+            icons = sorted(
+                manifest.get("icons", []),
+                key=lambda i: int(re.sub(r"[^\d]", "", i.get("sizes","0").split()[0]) or 0),
+                reverse=True
+            )
+            for icon in icons:
+                url = urljoin(base_url, icon.get("src",""))
+                if _download_and_save(url, save_path, headers, min_size=60):
+                    return True
+        except Exception:
+            pass
+    
+    # Priority 3 — any large favicon link tag
+    for tag in soup.find_all("link", rel=lambda r: r and "icon" in r.lower()):
+        sizes = tag.get("sizes", "0x0")
+        try:
+            w = int(sizes.split("x")[0])
+        except (ValueError, IndexError):
+            w = 0
+        if w >= 96 and tag.get("href"):
+            url = urljoin(base_url, tag["href"])
+            if _download_and_save(url, save_path, headers, min_size=60):
+                return True
+                
+    # Priority 4 — Wikimedia Commons PNG
+    wiki_png_url = fetch_from_wikimedia_png(slug)
+    if wiki_png_url and _download_and_save(wiki_png_url, save_path, {}, min_size=0):
+        return True
+
+    # Priority 5 — Google favicon at sz=256
+    return _fallback_google_favicon(domain, slug, save_path)
 
 def bg_fetch_logo(app, domain):
-    """Background worker task to fetch, sanitize, and save a university logo."""
+    """Background worker task to fetch and save a university PNG logo."""
     with app.app_context():
         app.logger.info(f"Background logo fetch started for domain: {domain}")
         logo_record = UniversityLogo.query.filter_by(domain=domain).first()
@@ -181,7 +169,7 @@ def bg_fetch_logo(app, domain):
             db.session.commit()
             
         slug = get_slug_from_domain(app, domain)
-        dest_filename = f"{slug}.svg"
+        dest_filename = f"{slug}.png"
         dest_path = os.path.join(app.static_folder, 'img', 'logos', dest_filename)
         
         # Ensure directories exist
@@ -196,44 +184,16 @@ def bg_fetch_logo(app, domain):
                 app.logger.warning(f"Database commit error in bg_fetch_logo thread for {domain}: {e}")
                 return False
 
-        # 1. Try Clearbit Logo API
         try:
-            format_type, data = fetch_from_clearbit(domain)
-            if format_type == 'svg':
-                sanitized = sanitize_svg(data)
-                with open(dest_path, 'w', encoding='utf-8') as f:
-                    f.write(sanitized)
+            success = fetch_university_logo(domain, slug, dest_path)
+            if success:
                 logo_record.logo_status = 'fetched'
                 if safe_commit():
-                    app.logger.info(f"Successfully fetched Clearbit SVG logo for {domain}")
-                return
-            elif format_type == 'png':
-                # Wrap PNG in SVG
-                wrapped = wrap_png_in_svg(data)
-                with open(dest_path, 'w', encoding='utf-8') as f:
-                    f.write(wrapped)
-                logo_record.logo_status = 'fetched'
-                if safe_commit():
-                    app.logger.info(f"Successfully wrapped Clearbit PNG logo for {domain} into SVG")
+                    app.logger.info(f"Successfully fetched PNG logo for {domain} and saved to {dest_path}")
                 return
         except Exception as e:
-            app.logger.warning(f"Failed to fetch logo from Clearbit for {domain}: {e}")
+            app.logger.warning(f"Failed to fetch logo for {domain}: {e}")
             
-        # 2. Try Wikimedia Commons
-        try:
-            svg_text = fetch_from_wikimedia(domain)
-            if svg_text:
-                sanitized = sanitize_svg(svg_text)
-                with open(dest_path, 'w', encoding='utf-8') as f:
-                    f.write(sanitized)
-                logo_record.logo_status = 'fetched'
-                if safe_commit():
-                    app.logger.info(f"Successfully fetched Wikimedia Commons SVG logo for {domain}")
-                return
-        except Exception as e:
-            app.logger.warning(f"Failed to fetch logo from Wikimedia Commons for {domain}: {e}")
-            
-        # If all sources fail, mark as no_logo
         logo_record.logo_status = 'no_logo'
         if safe_commit():
             app.logger.error(f"Could not find logo for university domain: {domain}. Marked status as no_logo.")

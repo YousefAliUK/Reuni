@@ -350,13 +350,18 @@
 
                 {% for uni in universities %}
                 <a href="{{ request.scheme }}://{{ uni.slug }}.{{ base_domain }}/" class="uni-card" data-slug="{{ uni.slug }}" data-domain="{{ uni.domain }}">
-                    {% if get_logo_status(uni.domain) == 'fetched' %}
-                        <img src="{{ url_for('static', filename='img/logos/' + uni.slug + '.svg') }}" alt="{{ uni.name }} logo" class="uni-card-logo-full" aria-hidden="true">
-                    {% else %}
-                        <div class="uni-card-monogram" style="background-color: {{ get_brand_color(uni.domain) }}; color: {{ get_brand_text_color(uni.domain) }};">
-                            <span>{{ uni.initials }}</span>
-                        </div>
-                    {% endif %}
+                    <div class="uni-logo-wrap">
+                        {% if get_logo_status(uni.domain) == 'fetched' %}
+                            <img src="{{ url_for('static', filename='img/logos/' + uni.slug + '.png') }}" alt="{{ uni.name }} logo" class="uni-card-logo-img" aria-hidden="true" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                            <div class="uni-card-monogram" style="display:none; background-color: {{ get_brand_color(uni.domain) }}; color: {{ get_brand_text_color(uni.domain) }};">
+                                <span>{{ uni.initials }}</span>
+                            </div>
+                        {% else %}
+                            <div class="uni-card-monogram" style="background-color: {{ get_brand_color(uni.domain) }}; color: {{ get_brand_text_color(uni.domain) }};">
+                                <span>{{ uni.initials }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
                     <div class="uni-card-text">
                         <span class="uni-card-name">{{ uni.name }}</span>
                         <span class="uni-card-listings" data-count="{{ uni.active_count }}">

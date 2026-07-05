@@ -114,9 +114,9 @@ def partner_dashboard():
         reverse_map = {v: k for k, v in mapping.items()}
         slug = reverse_map.get(uni_domain, uni_domain.split('.')[0])
         
-        filepath = os.path.join(current_app.static_folder, 'img', 'logos', f'{slug}.svg')
+        filepath = os.path.join(current_app.static_folder, 'img', 'logos', f'{slug}.png')
         if os.path.exists(filepath):
-            logo_url = f"img/logos/{slug}.svg"
+            logo_url = f"img/logos/{slug}.png"
         else:
             from app.models import UniversityLogo
             logo_rec = UniversityLogo.query.filter_by(domain=uni_domain).first()
