@@ -8,8 +8,9 @@ from app.utils.logo_downloader import (
     bg_fetch_logo
 )
 
+@patch('app.utils.logo_downloader._is_safe_url', return_value=True)
 @patch('requests.get')
-def test_download_and_save_success(mock_get, tmp_path):
+def test_download_and_save_success(mock_get, _mock_safe_url, tmp_path):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.content = b'a' * 7000  # min_size is 60 * 100 = 6000 bytes
@@ -21,8 +22,9 @@ def test_download_and_save_success(mock_get, tmp_path):
     assert test_file.exists()
     assert test_file.read_bytes() == b'a' * 7000
 
+@patch('app.utils.logo_downloader._is_safe_url', return_value=True)
 @patch('requests.get')
-def test_download_and_save_too_small(mock_get, tmp_path):
+def test_download_and_save_too_small(mock_get, _mock_safe_url, tmp_path):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.content = b'a' * 5000  # too small (less than 6000 bytes)
@@ -33,8 +35,9 @@ def test_download_and_save_too_small(mock_get, tmp_path):
     assert success is False
     assert not test_file.exists()
 
+@patch('app.utils.logo_downloader._is_safe_url', return_value=True)
 @patch('requests.get')
-def test_fetch_university_logo_apple_touch_icon(mock_get, tmp_path):
+def test_fetch_university_logo_apple_touch_icon(mock_get, _mock_safe_url, tmp_path):
     # Mocking HTML response with apple-touch-icon link tag
     html_response = MagicMock()
     html_response.status_code = 200
@@ -54,8 +57,9 @@ def test_fetch_university_logo_apple_touch_icon(mock_get, tmp_path):
     assert mock_get.call_count == 2
     mock_get.assert_any_call("https://oxford.ac.uk/icons/apple-icon.png", headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}, timeout=8)
 
+@patch('app.utils.logo_downloader._is_safe_url', return_value=True)
 @patch('requests.get')
-def test_fetch_university_logo_fallback_google_favicon(mock_get, tmp_path):
+def test_fetch_university_logo_fallback_google_favicon(mock_get, _mock_safe_url, tmp_path):
     def dynamic_get(url, *args, **kwargs):
         if "commons.wikimedia.org" in url:
             m = MagicMock(status_code=200)
@@ -105,8 +109,9 @@ def test_bg_fetch_logo_failure_sets_no_logo(mock_fetch, app, db_session):
     updated_rec = UniversityLogo.query.filter_by(domain=domain).first()
     assert updated_rec.logo_status == 'no_logo'
 
+@patch('app.utils.logo_downloader._is_safe_url', return_value=True)
 @patch('requests.get')
-def test_fetch_university_logo_fallback_wikimedia_png(mock_get, tmp_path):
+def test_fetch_university_logo_fallback_wikimedia_png(mock_get, _mock_safe_url, tmp_path):
     # Mock HTML request raising exception
     mock_html = Exception("Connection Error")
     

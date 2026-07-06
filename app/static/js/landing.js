@@ -68,10 +68,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Set cookie shared across subdomains
             const hostParts = window.location.hostname.split('.');
             let domainAttr = "";
-            if (hostParts.length >= 2) {
-                const baseParts = hostParts.slice(-2);
-                domainAttr = `; domain=.${baseParts.join('.')}`;
-            }
+            const isLocalhostSubdomain = hostParts.length >= 2 && hostParts[hostParts.length - 1] === "localhost";
+            if (isLocalhostSubdomain) domainAttr = "; domain=.localhost";
+            else if (hostParts.length >= 2) domainAttr = `; domain=.${hostParts.slice(-2).join('.')}`;
             document.cookie = `theme=${target}; path=/; max-age=31536000; SameSite=Lax${domainAttr}`;
 
             try {

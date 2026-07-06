@@ -708,9 +708,10 @@ def create_app(config_class=None):
             reverse_map = {v: k for k, v in mapping.items()}
             slug = reverse_map.get(domain, domain.split('.')[0])
             
-            filepath = os.path.join(app.static_folder, 'img', 'logos', f'{slug}.svg')
-            if os.path.exists(filepath):
-                return 'fetched'
+            for ext in ('png', 'svg'):
+                filepath = os.path.join(app.static_folder, 'img', 'logos', f'{slug}.{ext}')
+                if os.path.exists(filepath):
+                    return 'fetched'
                 
             # 2. Check database status
             from app.models import UniversityLogo
