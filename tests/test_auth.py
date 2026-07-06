@@ -91,6 +91,25 @@ class TestLogin:
         }, follow_redirects=False)
         assert resp.status_code == 302
 
+    def test_login_success_redirects_to_mapped_subdomain(self, client, db_session):
+        """Valid credentials for a user with a mapped university domain should redirect to their subdomain marketplace."""
+        user = User(
+            email="student@brookes.ac.uk",
+            name="Brookes Student",
+            is_verified=True,
+            university_domain="brookes.ac.uk",
+        )
+        user.set_password("StrongPass123")
+        db_session.session.add(user)
+        db_session.session.commit()
+
+        resp = client.post("/auth/login", data={
+            "email": "student@brookes.ac.uk",
+            "password": "StrongPass123",
+        }, follow_redirects=False)
+        assert resp.status_code == 302
+        assert "brookes.localhost" in resp.headers["Location"]
+
     def test_login_invalid_credentials(self, client, sample_user):
         """Wrong password should flash an error."""
         resp = client.post("/auth/login", data={

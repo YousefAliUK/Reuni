@@ -272,13 +272,15 @@ def login():
             return redirect(next_page)
         elif correct_subdomain:
             # Redirect directly to their university subdomain marketplace
-            host = request.host.split(':')[0].lower()
+            from urllib.parse import urlsplit
+            parsed = urlsplit(request.host_url)
+            host = parsed.hostname.lower() if parsed.hostname else ""
             parts = host.split('.')
             if host == "localhost" or host.endswith(".localhost"):
                 base_domain = "localhost"
             else:
                 base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
-            port = request.host.split(':')[1] if ':' in request.host else None
+            port = parsed.port
             new_host = f"{correct_subdomain}.{base_domain}"
             if port:
                 new_host = f"{new_host}:{port}"

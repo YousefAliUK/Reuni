@@ -132,3 +132,48 @@ def test_cannot_claim_item_from_different_university(auth_client, db_session, se
     item_after = db_session.session.get(Item, item.id)
     assert item_after.buyer_id is None
 
+
+def test_landing_page_authenticated_redirect(client, db_session):
+    """GET / with an authenticated user should redirect them to their mapped university subdomain."""
+    user = User(
+        email="student@brookes.ac.uk",
+        name="Brookes Student",
+        is_verified=True,
+        university_domain="brookes.ac.uk",
+    )
+    user.set_password("StrongPass123")
+    db_session.session.add(user)
+    db_session.session.commit()
+    
+    client.post("/auth/login", data={
+        "email": "student@brookes.ac.uk",
+        "password": "StrongPass123",
+    })
+    
+    resp = client.get("/", headers={"X-Test-Landing": "true"})
+    assert resp.status_code == 302
+    assert "brookes.localhost" in resp.headers["Location"]
+
+
+def test_landing_page_authenticated_redirect_bypass(client, db_session):
+    """GET /?noredirect=true with an authenticated user should bypass redirection."""
+    user = User(
+        email="student2@brookes.ac.uk",
+        name="Brookes Student 2",
+        is_verified=True,
+        university_domain="brookes.ac.uk",
+    )
+    user.set_password("StrongPass123")
+    db_session.session.add(user)
+    db_session.session.commit()
+    
+    client.post("/auth/login", data={
+        "email": "student2@brookes.ac.uk",
+        "password": "StrongPass123",
+    })
+    
+    resp = client.get("/?noredirect=true", headers={"X-Test-Landing": "true"})
+    assert resp.status_code == 200
+    assert b"section-campuses" in resp.data
+
+

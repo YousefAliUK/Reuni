@@ -121,7 +121,9 @@ def create_app(config_class=None):
         if request.endpoint == 'static':
             return
             
-        host = request.host.split(':')[0].lower()
+        from urllib.parse import urlsplit
+        parsed = urlsplit(request.host_url)
+        host = parsed.hostname.lower() if parsed.hostname else ""
         parts = host.split('.')
         
         subdomain = None
@@ -154,7 +156,7 @@ def create_app(config_class=None):
                             base_domain = "localhost"
                         else:
                             base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
-                        port = request.host.split(':')[1] if ':' in request.host else None
+                        port = parsed.port
                         new_host = f"{correct_subdomain}.{base_domain}"
                         if port:
                             new_host = f"{new_host}:{port}"
@@ -238,13 +240,15 @@ def create_app(config_class=None):
                 uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
                 if selected_uni in uni_map:
                     # Redirect to subdomain
-                    host = request.host.split(':')[0].lower()
+                    from urllib.parse import urlsplit
+                    parsed = urlsplit(request.host_url)
+                    host = parsed.hostname.lower() if parsed.hostname else ""
                     parts = host.split('.')
                     if host == "localhost" or host.endswith(".localhost"):
                         base_domain = "localhost"
                     else:
                         base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
-                    port = request.host.split(':')[1] if ':' in request.host else None
+                    port = parsed.port
                     new_host = f"{selected_uni}.{base_domain}"
                     if port:
                         new_host = f"{new_host}:{port}"
