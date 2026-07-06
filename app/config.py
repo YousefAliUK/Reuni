@@ -36,7 +36,7 @@ class Config:
     if not _session_domain:
         _url = os.environ.get("BASE_URL") or "http://localhost:5000"
         _base_host = _url.split("://")[-1].split(":")[0].lower()
-        if _base_host == "localhost":
+        if _base_host == "localhost" or _base_host.endswith(".localhost"):
             _session_domain = ".localhost"
         elif _base_host not in ["127.0.0.1", ""]:
             _parts = _base_host.split(".")

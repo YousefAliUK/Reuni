@@ -43,7 +43,9 @@ def db_session(app):
 @pytest.fixture()
 def client(app):
     """Flask test client for making HTTP requests."""
-    return app.test_client()
+    c = app.test_client()
+    c.allow_subdomain_redirects = True
+    return c
 
 
 @pytest.fixture()
@@ -110,6 +112,7 @@ def auth_client(client, sample_user):
 def second_auth_client(app, second_user):
     """Return a test client logged in as second_user."""
     c = app.test_client()
+    c.allow_subdomain_redirects = True
     c.post("/auth/login", data={
         "email": "other@university.ac.uk",
         "password": "StrongPass123",

@@ -121,7 +121,9 @@ def create_app(config_class=None):
         if request.endpoint == 'static':
             return
             
-        host = request.host.split(':')[0].lower()
+        from urllib.parse import urlsplit
+        parsed = urlsplit(request.host_url)
+        host = parsed.hostname.lower() if parsed.hostname else ""
         parts = host.split('.')
         
         subdomain = None
@@ -150,8 +152,11 @@ def create_app(config_class=None):
                     rev_map = {v: k for k, v in uni_map.items()}
                     correct_subdomain = rev_map.get(current_user.university_domain)
                     if correct_subdomain:
-                        base_domain = '.'.join(parts[1:]) if len(parts) >= 3 else host
-                        port = request.host.split(':')[1] if ':' in request.host else None
+                        if host == "localhost" or host.endswith(".localhost"):
+                            base_domain = "localhost"
+                        else:
+                            base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
+                        port = parsed.port
                         new_host = f"{correct_subdomain}.{base_domain}"
                         if port:
                             new_host = f"{new_host}:{port}"
@@ -235,14 +240,15 @@ def create_app(config_class=None):
                 uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
                 if selected_uni in uni_map:
                     # Redirect to subdomain
-                    host = request.host.split(':')[0].lower()
+                    from urllib.parse import urlsplit
+                    parsed = urlsplit(request.host_url)
+                    host = parsed.hostname.lower() if parsed.hostname else ""
                     parts = host.split('.')
-                    base_domain = '.'.join(parts[1:]) if len(parts) >= 3 else host
-                    port = request.host.split(':')[1] if ':' in request.host else None
-                    
-                    if len(parts) < 3 and ('localhost' in host or 'reuni.local' in host or '127.0.0.1' in host):
-                        base_domain = host
-                        
+                    if host == "localhost" or host.endswith(".localhost"):
+                        base_domain = "localhost"
+                    else:
+                        base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
+                    port = parsed.port
                     new_host = f"{selected_uni}.{base_domain}"
                     if port:
                         new_host = f"{new_host}:{port}"
