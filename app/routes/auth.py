@@ -274,12 +274,10 @@ def login():
             # Redirect directly to their university subdomain marketplace
             host = request.host.split(':')[0].lower()
             parts = host.split('.')
-            base_domain = '.'.join(parts[1:]) if len(parts) >= 3 else host
-            
-            # Fallback domain check for local environment subdomains
-            if len(parts) < 3 and ('localhost' in host or 'reuni.local' in host or '127.0.0.1' in host):
-                base_domain = host
-                
+            if host == "localhost" or host.endswith(".localhost"):
+                base_domain = "localhost"
+            else:
+                base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
             port = request.host.split(':')[1] if ':' in request.host else None
             new_host = f"{correct_subdomain}.{base_domain}"
             if port:
