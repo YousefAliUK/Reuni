@@ -85,6 +85,22 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const copyInviteLink = event.target.closest('[data-action="copy-invite-link"]');
+        if (copyInviteLink) {
+            event.preventDefault();
+            const inviteUrl = copyInviteLink.dataset.inviteUrl;
+            if (inviteUrl) {
+                navigator.clipboard.writeText(inviteUrl).then(() => {
+                    const icon = copyInviteLink.querySelector('.material-symbols-outlined');
+                    if (icon) {
+                        icon.textContent = 'done';
+                        setTimeout(() => { icon.textContent = 'content_copy' }, 1000);
+                    }
+                });
+            }
+            return;
+        }
+
         const printButton = event.target.closest('[data-action="print-report"]');
         if (printButton) {
             event.preventDefault();

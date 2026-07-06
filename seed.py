@@ -1111,14 +1111,28 @@ def seed():
         for u_data in SAMPLE_USERS:
             domain = extract_university_domain(u_data["email"])
 
-            # Determine created_at timestamp
+            # Determine created_at timestamp: must predate their oldest item activity
+            min_days = 0
+            for i_data in SAMPLE_ITEMS:
+                if i_data["seller_email"] == u_data["email"]:
+                    if i_data.get("is_sold"):
+                        item_age = i_data["days_ago_claimed"] + i_data["days_active_before_claim"]
+                    else:
+                        item_age = i_data["days_ago_listed"]
+                    min_days = max(min_days, item_age + 2)
+                if i_data.get("buyer_email") == u_data["email"] and i_data.get("is_sold"):
+                    claim_age = i_data["days_ago_claimed"]
+                    min_days = max(min_days, claim_age + 2)
+
             if u_data["role"] == "admin":
-                user_created_at = now - timedelta(days=90)
+                user_created_at = now - timedelta(days=max(90, min_days))
             elif u_data["role"] == "partner":
-                user_created_at = now - timedelta(days=80)
+                user_created_at = now - timedelta(days=max(80, min_days))
             else:
                 # Students: random spread across past 30 to 90 days
-                user_created_at = now - timedelta(days=random.randint(30, 90))
+                start_days = max(30, min_days)
+                end_days = max(90, start_days + 10)
+                user_created_at = now - timedelta(days=random.randint(start_days, end_days))
 
             user = User(
                 email=u_data["email"],

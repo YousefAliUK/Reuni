@@ -11,7 +11,7 @@
             <h1 class="admin-title">Partner Management</h1>
             <span class="admin-badge">Admin Panel</span>
         </div>
-        <button type="button" id="btn-toggle-invite" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;" onclick="toggleInviteForm()">
+        <button type="button" id="btn-toggle-invite" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;" data-action="toggle-invite-form">
             <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">add</span>
             <span>Invite partner university</span>
         </button>
@@ -45,7 +45,7 @@
                 
                 <div class="admin-invite-link-wrapper">
                     <code id="invite-link-code" class="admin-invite-link-code">{{ invite_url }}</code>
-                    <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" onclick="navigator.clipboard.writeText({{ invite_url|tojson }}); const icon = this.querySelector('.material-symbols-outlined'); icon.textContent = 'done'; setTimeout(() => { icon.textContent = 'content_copy' }, 1000);" title="Copy link">
+                    <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" data-action="copy-invite-link" data-invite-url="{{ invite_url }}" title="Copy link">
                         <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">content_copy</span>
                     </button>
                 </div>
@@ -95,7 +95,7 @@
                                 </td>
                                 <td class="normal-cell-{{ partner.id }}" style="text-align: center;">
                                     {% if partner.is_active %}
-                                        <button type="button" class="admin-deactivate-btn" onclick="toggleDeactivateConfirm('{{ partner.id }}', true)">Deactivate</button>
+                                        <button type="button" class="admin-deactivate-btn" data-action="toggle-deactivate-confirm" data-partner-id="{{ partner.id }}" data-show-confirm="true">Deactivate</button>
                                     {% else %}
                                         <span style="color: var(--color-ink-tertiary); font-size: 13px;">Disabled</span>
                                     {% endif %}
@@ -110,7 +110,7 @@
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn btn--danger btn--sm" style="padding: 4px 12px; font-size: 12px; height: auto;">Yes, deactivate</button>
                                             </form>
-                                            <button type="button" class="btn btn--outline btn--sm" onclick="toggleDeactivateConfirm('{{ partner.id }}', false)" style="padding: 4px 12px; font-size: 12px; height: auto;">Cancel</button>
+                                            <button type="button" class="btn btn--outline btn--sm" data-action="toggle-deactivate-confirm" data-partner-id="{{ partner.id }}" data-show-confirm="false" style="padding: 4px 12px; font-size: 12px; height: auto;">Cancel</button>
                                         </div>
                                     </div>
                                 </td>

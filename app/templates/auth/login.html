@@ -1,96 +1,212 @@
-{% extends "base.html" %}
-{% block title %}Login — Reuni{% endblock %}
-
-{% block content %}
-<div class="split-layout" style="display: grid; grid-template-columns: 1fr; min-height: calc(100dvh - 64px - 140px); margin: -24px calc(-1 * var(--container-pad-x)) -48px calc(-1 * var(--container-pad-x));">
+{% extends "base.html" %} {% block title %}Login — Reuni{% endblock %} {% block
+content %}
+<div class="split-layout" style="
+        display: grid;
+        grid-template-columns: 1fr;
+        min-height: calc(100dvh - 64px - 140px);
+        margin: -24px calc(-1 * var(--container-pad-x)) -48px
+            calc(-1 * var(--container-pad-x));
+    ">
     <style>
         @media (min-width: 1024px) {
             .split-layout {
                 grid-template-columns: 1fr 1fr !important;
             }
+
             .split-layout__right {
                 display: flex !important;
             }
         }
     </style>
-    
+
     <!-- Left column: Form -->
     <div class="split-layout__left">
-        <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: var(--space-6);">
+        <div style="
+                width: 100%;
+                max-width: 400px;
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-6);
+            ">
             <!-- Logo mark -->
-            <div style="display: flex; align-items: center; gap: var(--space-2);">
-                <div style="background: var(--color-primary); width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-outlined" style="color: #ffffff; font-size: 20px;" aria-hidden="true">recycling</span>
+            <div style="display: flex; align-items: center; gap: var(--space-2)">
+                <div style="
+                        background: var(--color-primary);
+                        width: 32px;
+                        height: 32px;
+                        border-radius: var(--radius-md);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                    <span class="material-symbols-outlined" style="color: #ffffff; font-size: 20px"
+                        aria-hidden="true">recycling</span>
                 </div>
-                <span style="font-family: var(--font-sans); font-weight: 700; font-size: 20px; color: var(--color-ink-primary);">Reuni</span>
+                <span style="
+                        font-family: var(--font-sans);
+                        font-weight: 700;
+                        font-size: 20px;
+                        color: var(--color-ink-primary);
+                    ">Reuni</span>
             </div>
 
             <div>
-                <h1 style="font-size: 26px; font-weight: 700; color: var(--color-ink-primary); margin: 0; margin-bottom: var(--space-1);">Welcome back</h1>
-                <p style="font-size: 14px; color: var(--color-ink-secondary); margin: 0;">Sign in to your Brookes account</p>
+                <h1 style="
+                        font-size: 26px;
+                        font-weight: 700;
+                        color: var(--color-ink-primary);
+                        margin: 0;
+                        margin-bottom: var(--space-1);
+                    ">
+                    Welcome back
+                </h1>
+                <p style="
+                        font-size: 14px;
+                        color: var(--color-ink-secondary);
+                        margin: 0;
+                    ">
+                    Sign in to your Brookes account
+                </p>
             </div>
 
             <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
                 <div class="auth-form-group">
                     <label for="email" class="auth-label">University Email</label>
-                    <div style="position: relative; width: 100%;">
-                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;" aria-hidden="true">mail</span>
-                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required class="auth-input" style="padding-left: 44px;" autocomplete="username" spellcheck="false">
+                    <div style="position: relative; width: 100%">
+                        <span class="material-symbols-outlined" style="
+                                position: absolute;
+                                left: 14px;
+                                top: 50%;
+                                transform: translateY(-50%);
+                                color: var(--color-ink-tertiary);
+                                font-size: 20px;
+                            " aria-hidden="true">mail</span>
+                        <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required
+                            class="auth-input" style="padding-left: 44px" autocomplete="username" spellcheck="false" />
                     </div>
                 </div>
 
                 <div class="auth-form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1);">
-                        <label for="password" class="auth-label" style="margin: 0;">Password</label>
-                        <a href="{{ url_for('auth.forgot_password') }}" style="font-size: 13px; color: var(--color-primary); text-decoration: none;">Forgot password?</a>
+                    <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: var(--space-1);
+                        ">
+                        <label for="password" class="auth-label" style="margin: 0">Password</label>
+                        <a href="{{ url_for('auth.forgot_password') }}" style="
+                                font-size: 13px;
+                                color: var(--color-primary);
+                                text-decoration: none;
+                            ">Forgot password?</a>
                     </div>
-                    <div style="position: relative; width: 100%;">
-                        <span class="material-symbols-outlined" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-ink-tertiary); font-size: 20px;" aria-hidden="true">lock</span>
-                        <input type="password" id="password" name="password" placeholder="••••••••" required class="auth-input" style="padding-left: 44px; padding-right: 44px;" autocomplete="current-password" spellcheck="false">
-                        <button type="button" onclick="togglePasswordVisibility('password')" aria-label="Show password" aria-pressed="false" class="password-toggle">
-                            <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">visibility</span>
+                    <div style="position: relative; width: 100%">
+                        <span class="material-symbols-outlined" style="
+                                position: absolute;
+                                left: 14px;
+                                top: 50%;
+                                transform: translateY(-50%);
+                                color: var(--color-ink-tertiary);
+                                font-size: 20px;
+                            " aria-hidden="true">lock</span>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required
+                            class="auth-input" style="padding-left: 44px; padding-right: 44px"
+                            autocomplete="current-password" spellcheck="false" />
+                        <button type="button" data-toggle-password="password" aria-label="Show password"
+                            aria-pressed="false" class="password-toggle">
+                            <span class="material-symbols-outlined" style="font-size: 20px"
+                                aria-hidden="true">visibility</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Turnstile Widget -->
-                <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" style="margin: var(--space-4) 0;"></div>
+                <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" style="margin: var(--space-4) 0"></div>
 
-                <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; width: 100%; margin-top: var(--space-2);">Log In</button>
+                <button type="submit" class="btn btn--primary" style="
+                        height: 48px;
+                        border-radius: var(--radius-md);
+                        font-weight: 600;
+                        width: 100%;
+                        margin-top: var(--space-2);
+                    ">
+                    Log In
+                </button>
             </form>
 
-            <div class="auth-footer-links" style="text-align: left; margin-top: var(--space-2);">
-                <span>New here? <a href="{{ url_for('auth.register') }}">Register</a></span>
+            <div class="auth-footer-links" style="text-align: left; margin-top: var(--space-2)">
+                <span>New here?
+                    <a href="{{ url_for('auth.register') }}">Register</a></span>
             </div>
         </div>
     </div>
 
     <!-- Right column: Brand Panel -->
     <div class="split-layout__right">
-        <div style="position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 60%); pointer-events: none;"></div>
-        
-        <div style="position: relative; z-index: 1; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4);">
-            <span class="material-symbols-outlined" style="font-size: 72px; color: rgba(255,255,255,0.9); margin-bottom: var(--space-2);" aria-hidden="true">eco</span>
-            
-            <div style="font-family: var(--font-mono); font-size: 56px; font-weight: 800; line-height: 1; color: #ffffff; letter-spacing: var(--track-tight);">
+        <div style="
+                position: absolute;
+                top: -10%;
+                left: -10%;
+                width: 120%;
+                height: 120%;
+                background: radial-gradient(
+                    circle at center,
+                    rgba(255, 255, 255, 0.08) 0%,
+                    transparent 60%
+                );
+                pointer-events: none;
+            "></div>
+
+        <div style="
+                position: relative;
+                z-index: 1;
+                max-width: 380px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: var(--space-4);
+            ">
+            <span class="material-symbols-outlined" style="
+                    font-size: 72px;
+                    color: rgba(255, 255, 255, 0.9);
+                    margin-bottom: var(--space-2);
+                " aria-hidden="true">eco</span>
+
+            <div style="
+                    font-family: var(--font-mono);
+                    font-size: 56px;
+                    font-weight: 800;
+                    line-height: 1;
+                    color: #ffffff;
+                    letter-spacing: var(--track-tight);
+                ">
                 {{ "%.1f"|format(campus_total_kg or 0) }}kg
             </div>
-            
-            <p style="font-size: 18px; font-weight: 500; color: rgba(255,255,255,0.95); margin: 0; line-height: var(--lead-title);">
+
+            <p style="
+                    font-size: 18px;
+                    font-weight: 500;
+                    color: rgba(255, 255, 255, 0.95);
+                    margin: 0;
+                    line-height: var(--lead-title);
+                ">
                 saved by {{ campus_total_users or 0 }} Brookes students
             </p>
-            
-            <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin: 0; line-height: var(--lead-body);">
+
+            <p style="
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.7);
+                    margin: 0;
+                    line-height: var(--lead-body);
+                ">
                 Every item exchanged is one less in landfill.
             </p>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% endblock %}

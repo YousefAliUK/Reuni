@@ -1,11 +1,40 @@
 import os
 import re
 import threading
+import socket
+import ipaddress
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from app import db
 from app.models import UniversityLogo
+
+def _is_safe_url(url: str) -> bool:
+    """Validate that the URL resolves to a public, global IP address to prevent SSRF."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False
+        
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        
+        # Resolve hostname to all associated IPs to handle multi-homing/DNS rebinding
+        addr_info = socket.getaddrinfo(hostname, None)
+        for info in addr_info:
+            ip_str = info[4][0]
+            ip = ipaddress.ip_address(ip_str)
+            if (ip.is_loopback or 
+                ip.is_link_local or 
+                ip.is_private or 
+                ip.is_reserved or 
+                ip.is_multicast or 
+                ip.is_unspecified):
+                return False
+        return True
+    except Exception:
+        return False
 
 def get_slug_from_domain(app, domain):
     mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
@@ -15,6 +44,8 @@ def get_slug_from_domain(app, domain):
 DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
 
 def _download_and_save(url: str, path: str, headers: dict = None, min_size: int = 0) -> bool:
+    if not _is_safe_url(url):
+        return False
     if not headers:
         headers = DEFAULT_HEADERS
     try:
@@ -103,10 +134,12 @@ def fetch_university_logo(domain: str, slug: str, save_path: str) -> bool:
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
     
     try:
+        if not _is_safe_url(base_url):
+            raise ValueError("Unsafe base URL")
         resp = requests.get(base_url, headers=headers, timeout=8)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception:
-        # If the main website is unreachable, fallback to Wikimedia search, then Google favicon
+        # If the main website is unreachable or unsafe, fallback to Wikimedia search, then Google favicon
         wiki_png_url = fetch_from_wikimedia_png(slug)
         if wiki_png_url and _download_and_save(wiki_png_url, save_path, {}, min_size=0):
             return True
@@ -125,6 +158,8 @@ def fetch_university_logo(domain: str, slug: str, save_path: str) -> bool:
     if manifest_tag and manifest_tag.get("href"):
         try:
             manifest_url = urljoin(base_url, manifest_tag["href"])
+            if not _is_safe_url(manifest_url):
+                raise ValueError("Unsafe manifest URL")
             manifest = requests.get(manifest_url, headers=headers, timeout=5).json()
             icons = sorted(
                 manifest.get("icons", []),

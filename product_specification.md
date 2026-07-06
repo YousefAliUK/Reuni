@@ -158,7 +158,7 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 | Section headers     | Plus Jakarta Sans | 700                | `--type-title` (clamp)    |
 | Body text           | Plus Jakarta Sans | 400                | `--type-body` (0.9375rem) |
 | Labels / metadata   | Plus Jakarta Sans | 500                | `--type-small` (0.8125rem)|
-| Timestamps / tags   | Plus Jakarta Sans | 400                | `--type-micro` (0.6875rem)`|
+| Timestamps / tags   | Plus Jakarta Sans | 400                | `--type-micro` (0.6875rem) |
 | kg_saved / PINs     | **JetBrains Mono**| 600–700 (Semibold) | Matches body size         |
 
 Loaded from Google Fonts: `Plus Jakarta Sans` (wght@400;500;600;700;800) + `JetBrains Mono` (wght@400;500;600;700;800)

@@ -724,6 +724,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Event delegation: Reload Page button
+    document.addEventListener('click', (e) => {
+        const reloadBtn = e.target.closest('[data-action="reload-page"]');
+        if (reloadBtn) {
+            e.preventDefault();
+            window.location.reload();
+        }
+    });
+
     // Event delegation: Mobile back button (replace inline onclick)
     document.addEventListener('click', (e) => {
         const backBtn = e.target.closest('[data-action="back"]');
