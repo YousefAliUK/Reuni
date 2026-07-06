@@ -18,9 +18,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const themeToggle = document.getElementById('theme-toggle');
     const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
     
+    function getThemeCookie() {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; theme=`);
+        return parts.length === 2 ? parts.pop().split(';').shift() : null;
+    }
+
     function updateThemeUI(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         lsSet('theme', theme);
+
+        // Set cookie shared across subdomains
+        const hostParts = window.location.hostname.split('.');
+        let domainAttr = "";
+        if (hostParts.length >= 2) {
+            const baseParts = hostParts.slice(-2);
+            domainAttr = `; domain=.${baseParts.join('.')}`;
+        }
+        document.cookie = `theme=${theme}; path=/; max-age=31536000; SameSite=Lax${domainAttr}`;
 
         const themeToggleIcon = document.getElementById('theme-toggle-icon');
         if (themeToggleIcon) {
@@ -33,12 +48,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    const currentTheme = lsGet('theme') || 'light';
+    const currentTheme = getThemeCookie() || lsGet('theme') || 'light';
     updateThemeUI(currentTheme);
 
     // Re-apply theme state on pageshow (ensures bfcache recoveries sync correctly)
     window.addEventListener('pageshow', () => {
-        const current = lsGet('theme') || 'light';
+        const current = getThemeCookie() || lsGet('theme') || 'light';
         updateThemeUI(current);
     });
     

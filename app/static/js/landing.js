@@ -64,6 +64,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const current = document.documentElement.getAttribute('data-theme') || 'light';
             const target = current === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', target);
+            
+            // Set cookie shared across subdomains
+            const hostParts = window.location.hostname.split('.');
+            let domainAttr = "";
+            if (hostParts.length >= 2) {
+                const baseParts = hostParts.slice(-2);
+                domainAttr = `; domain=.${baseParts.join('.')}`;
+            }
+            document.cookie = `theme=${target}; path=/; max-age=31536000; SameSite=Lax${domainAttr}`;
+
             try {
                 localStorage.setItem('theme', target);
             } catch (e) {
@@ -218,4 +228,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         revealElements.forEach(el => revealObserver.observe(el));
     }
+
+    // 10. Image fallbacks for missing cached university logos (replace inline onerror)
+    document.querySelectorAll('.uni-card-logo-img').forEach(img => {
+        img.addEventListener('error', function() {
+            this.style.display = 'none';
+            const fallback = this.nextElementSibling;
+            if (fallback && fallback.classList.contains('uni-card-monogram')) {
+                fallback.style.display = 'flex';
+            }
+        });
+    });
 });

@@ -34,9 +34,11 @@ class Config:
     # Session cookie domain to allow sharing session cookies across subdomains.
     _session_domain = os.environ.get("SESSION_COOKIE_DOMAIN")
     if not _session_domain:
-        _url = os.environ.get("BASE_URL") or "http://reuni.local:5000"
+        _url = os.environ.get("BASE_URL") or "http://localhost:5000"
         _base_host = _url.split("://")[-1].split(":")[0].lower()
-        if _base_host not in ["localhost", "127.0.0.1", ""]:
+        if _base_host == "localhost":
+            _session_domain = ".localhost"
+        elif _base_host not in ["127.0.0.1", ""]:
             _parts = _base_host.split(".")
             if len(_parts) >= 2:
                 _session_domain = f".{'.'.join(_parts[-2:])}"
@@ -88,7 +90,9 @@ class DevelopmentConfig(Config):
     # Allow a fallback secret key ONLY in development
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
     SESSION_COOKIE_SECURE = False
-    SERVER_NAME = "reuni.local:5000"
+    
+    _dev_url = os.environ.get("BASE_URL") or "http://localhost:5000"
+    SERVER_NAME = _dev_url.split("://")[-1].lower()
 
 
 class TestingConfig(Config):

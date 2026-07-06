@@ -45,8 +45,16 @@
                     <span class="material-symbols-outlined theme-icon-sun" aria-hidden="true">light_mode</span>
                     <span class="material-symbols-outlined theme-icon-moon" aria-hidden="true">dark_mode</span>
                 </button>
-                <a href="{{ url_for('auth.login') }}" class="login-link">Log in</a>
-                <a href="#campuses" class="btn btn--primary btn--pill get-started-btn">Find your campus</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard') }}" class="login-link">Dashboard</a>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--outline btn--pill" style="height: 38px; font-size: 13px; font-weight: 600; padding: 0 var(--space-4); margin-left: var(--space-2); cursor: pointer;">Log out</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="login-link">Log in</a>
+                    <a href="#campuses" class="btn btn--primary btn--pill get-started-btn">Find your campus</a>
+                {% endif %}
                 
                 <!-- Hamburger Trigger for Mobile Drawer -->
                 <button type="button" class="hamburger-btn" id="mobile-menu-toggle" aria-expanded="false" aria-label="Open navigation menu">
@@ -80,8 +88,16 @@
                 
                 <!-- Cohesive action button stack at the bottom -->
                 <div class="landing-drawer__actions">
-                    <a href="{{ url_for('auth.login') }}" class="btn btn--outline btn--pill landing-drawer__btn-login">Log in</a>
-                    <a href="#campuses" class="btn btn--primary btn--pill landing-drawer__btn-cta" id="drawer-link-cta">Find your campus &rarr;</a>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn--primary btn--pill landing-drawer__btn-cta" style="margin-bottom: var(--space-2); text-align: center; display: block; width: 100%;">Dashboard</a>
+                        <form action="{{ url_for('auth.logout') }}" method="POST" style="width: 100%; display: block;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn--outline btn--pill landing-drawer__btn-login" style="width: 100%; cursor: pointer;">Log out</button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn--outline btn--pill landing-drawer__btn-login">Log in</a>
+                        <a href="#campuses" class="btn btn--primary btn--pill landing-drawer__btn-cta" id="drawer-link-cta">Find your campus &rarr;</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -361,7 +377,7 @@
                 <a href="{{ request.scheme }}://{{ uni.slug }}.{{ base_domain }}/" class="uni-card" data-slug="{{ uni.slug }}" data-domain="{{ uni.domain }}">
                     <div class="uni-logo-wrap">
                         {% if get_logo_status(uni.domain) == 'fetched' %}
-                            <img src="{{ url_for('static', filename='img/logos/' + uni.slug + '.png') }}" alt="{{ uni.name }} logo" class="uni-card-logo-img" aria-hidden="true" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                            <img src="{{ url_for('static', filename='img/logos/' + uni.slug + '.png') }}" alt="{{ uni.name }} logo" class="uni-card-logo-img" aria-hidden="true">
                             <div class="uni-card-monogram" style="display:none; background-color: {{ get_brand_color(uni.domain) }}; color: {{ get_brand_text_color(uni.domain) }};">
                                 <span>{{ uni.initials }}</span>
                             </div>

@@ -74,8 +74,7 @@
                                 <!-- Normal State Cells -->
                                 <td class="normal-cell-{{ partner.id }}">
                                     <div style="display: flex; align-items: center; gap: var(--space-2);">
-                                        {% set logo_path = 'img/logos/' + partner.partner_university + '.png' %}
-                                        <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ partner.partner_university }}" class="admin-table-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                        <img src="{{ get_logo_url(partner.partner_university) }}" alt="{{ partner.partner_university }}" class="admin-table-logo">
                                         <span class="admin-table-initials">{{ partner.partner_university[:2].upper() }}</span>
                                         <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ partner.partner_university }}</span>
                                     </div>

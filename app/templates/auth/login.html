@@ -65,7 +65,11 @@ content %}
                         color: var(--color-ink-secondary);
                         margin: 0;
                     ">
-                    Sign in to your Brookes account
+                    {% if g.current_uni_domain %}
+                        Sign in to your {{ get_uni_name(g.current_uni_domain) }} account
+                    {% else %}
+                        Sign in to your Reuni account
+                    {% endif %}
                 </p>
             </div>
 
@@ -182,7 +186,11 @@ content %}
                     color: #ffffff;
                     letter-spacing: var(--track-tight);
                 ">
-                {{ "%.1f"|format(campus_total_kg or 0) }}kg
+                {% if g.current_uni_domain %}
+                    {{ "%.1f"|format(subdomain_total_kg or 0) }}kg
+                {% else %}
+                    {{ "%.1f"|format(campus_total_kg or 0) }}kg
+                {% endif %}
             </div>
 
             <p style="
@@ -192,7 +200,11 @@ content %}
                     margin: 0;
                     line-height: var(--lead-title);
                 ">
-                saved by {{ campus_total_users or 0 }} Brookes students
+                {% if g.current_uni_domain %}
+                    saved by {{ get_uni_name(g.current_uni_domain) }} students
+                {% else %}
+                    saved by {{ campus_total_users or 0 }} students across Reuni
+                {% endif %}
             </p>
 
             <p style="

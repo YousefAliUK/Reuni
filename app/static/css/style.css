@@ -7825,7 +7825,7 @@ body {
     display: none;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .remove-photo-badge {
@@ -9480,5 +9480,12 @@ body {
     }
 }
 
-
-
+.form-discard-link {
+    font-size: 13px;
+    color: var(--color-ink-tertiary);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
+}
+.form-discard-link:hover {
+    color: var(--color-primary);
+}

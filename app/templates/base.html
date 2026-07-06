@@ -62,6 +62,8 @@
                     </div>
                 </form>
             </div>
+            {% else %}
+            <div class="navbar__center-placeholder"></div>
             {% endif %}
 
             <!-- Zone 3: Controls -->
@@ -157,8 +159,10 @@
                         </div>
                     </div>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn--ghost-login">Log in</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn--primary-signup">Sign up</a>
+                    {% if request.blueprint != 'auth' %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn--ghost-login">Log in</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn--primary-signup">Sign up</a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

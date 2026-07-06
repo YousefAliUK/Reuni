@@ -701,6 +701,7 @@ def create_app(config_class=None):
 
     @app.context_processor
     def inject_logo_helpers():
+        from app.routes.partner import get_uni_name, get_uni_initials
         def get_logo_status(domain):
             # 1. Determine local file existence
             mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
@@ -736,10 +737,26 @@ def create_app(config_class=None):
                 return "#ffffff"
             return "var(--color-primary)"
             
+        def get_logo_url(domain):
+            if not domain:
+                return ""
+            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            reverse_map = {v: k for k, v in mapping.items()}
+            slug = reverse_map.get(domain, domain.split('.')[0])
+            
+            for ext in ['png', 'svg']:
+                filepath = os.path.join(app.static_folder, 'img', 'logos', f'{slug}.{ext}')
+                if os.path.exists(filepath):
+                    return url_for('static', filename=f'img/logos/{slug}.{ext}')
+            return url_for('static', filename=f'img/logos/{slug}.png')
+            
         return dict(
             get_logo_status=get_logo_status,
             get_brand_color=get_brand_color,
-            get_brand_text_color=get_brand_text_color
+            get_brand_text_color=get_brand_text_color,
+            get_logo_url=get_logo_url,
+            get_uni_name=get_uni_name,
+            get_uni_initials=get_uni_initials
         )
 
     # ── Request Entity Too Large error handler ──

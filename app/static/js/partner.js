@@ -118,4 +118,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    document.querySelectorAll('.admin-table-logo').forEach(img => {
+        img.addEventListener('error', function() {
+            this.style.display = 'none';
+            const initials = this.nextElementSibling;
+            if (initials && initials.classList.contains('admin-table-initials')) {
+                initials.style.display = 'inline-flex';
+            }
+        });
+    });
 });
