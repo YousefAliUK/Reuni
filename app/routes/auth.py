@@ -255,13 +255,38 @@ def login():
             session['logged_in_at'] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         flash(f"Welcome back, {user.name}.", "success")
 
+        correct_subdomain = None
+        if user.university_domain:
+            uni_map = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            rev_map = {v: k for k, v in uni_map.items()}
+            correct_subdomain = rev_map.get(user.university_domain)
+
         next_page = request.args.get("next")
         if next_page:
             from urllib.parse import urlparse
             parsed = urlparse(next_page)
             if parsed.netloc or parsed.scheme or next_page.startswith("//"):
                 next_page = None
-        return redirect(next_page or url_for("index"))
+                
+        if next_page:
+            return redirect(next_page)
+        elif correct_subdomain:
+            # Redirect directly to their university subdomain marketplace
+            host = request.host.split(':')[0].lower()
+            parts = host.split('.')
+            base_domain = '.'.join(parts[1:]) if len(parts) >= 3 else host
+            
+            # Fallback domain check for local environment subdomains
+            if len(parts) < 3 and ('localhost' in host or 'reuni.local' in host or '127.0.0.1' in host):
+                base_domain = host
+                
+            port = request.host.split(':')[1] if ':' in request.host else None
+            new_host = f"{correct_subdomain}.{base_domain}"
+            if port:
+                new_host = f"{new_host}:{port}"
+            return redirect(f"{request.scheme}://{new_host}/")
+        else:
+            return redirect(url_for("index"))
 
     return render_template("auth/login.html")
 
