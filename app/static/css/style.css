@@ -5532,14 +5532,20 @@ body {
     text-decoration: none;
 }
 .navbar__brand .material-symbols-outlined {
-    font-size: 20px;
+    font-size: 22px;
     color: var(--color-primary);
+    transition: transform var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+.navbar__brand:hover .material-symbols-outlined {
+    transform: rotate(20deg) scale(1.1);
+    color: var(--color-primary-hover);
 }
 .navbar__brand-wordmark {
     font-family: var(--font-sans);
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 19px;
+    font-weight: 800;
     color: var(--color-ink-primary);
+    letter-spacing: -0.02em;
 }
 .navbar__center {
     display: flex;
@@ -5874,9 +5880,10 @@ body {
 }
 .mobile-top-bar__wordmark {
     font-family: var(--font-sans);
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 19px;
+    font-weight: 800;
     color: var(--color-ink-primary);
+    letter-spacing: -0.02em;
 }
 
 @media (min-width: 1024px) {
