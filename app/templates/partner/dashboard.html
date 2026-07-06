@@ -9,7 +9,7 @@
         <div class="esg-title-block">
             <div class="esg-logo-wrapper">
                 {% if logo_url %}
-                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="partner-avatar-img">
+                    <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ uni_name }}" class="esg-logo-img">
                 {% endif %}
                 <div class="esg-initials-avatar partner-avatar-placeholder" style="display: {% if logo_url %}none{% else %}flex{% endif %};">
                     {{ uni_initials }}

@@ -45,6 +45,10 @@ def generate_invite():
         f"SECURITY: Partner invite generated for {university_domain} by admin id={current_user.id} at {datetime.now(timezone.utc).replace(tzinfo=None)}"
     )
     
+    # Trigger background logo download job
+    from app.utils.logo_downloader import start_logo_fetch_job
+    start_logo_fetch_job(current_app._get_current_object(), university_domain)
+    
     # Render with the generated URL (flashing it is easy, but we will pass it back to the template)
     partners = User.query.filter(User.role == "partner").all()
     return render_template("admin/partners.html", partners=partners, invite_url=invite_url, university_domain=university_domain)

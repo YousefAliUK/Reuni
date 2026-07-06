@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check if this is an item form page
-    const form = document.querySelector('.auth-card form, .list-item-container form, form[action*="list"], form[action*="edit"]');
+    const form = document.querySelector('form.listing-form, .auth-card form, .list-item-container form, form[action*="list"], form[action*="edit"]');
     if (!form) return;
 
     const categoryWeightsScript = document.getElementById('category-weights');
@@ -121,12 +121,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const removePhotoBtn = document.getElementById('remove-photo-btn');
 
         if (fileInput) {
-            uploadZone.addEventListener('click', (e) => {
-                if (e.target !== fileInput && e.target !== removePhotoBtn) {
-                    fileInput.click();
-                }
-            });
-
+            // We rely on native HTML label click redirection to open the file picker.
+            
             uploadZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadZone.classList.add('dragover');
@@ -153,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (removePhotoBtn) {
                 removePhotoBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     fileInput.value = '';
                     if (photoPreview) {
@@ -165,8 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             function previewFile(file) {
-                const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-                if (!allowed.includes(file.type)) {
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+                const fileName = (file.name || '').toLowerCase();
+                const hasValidExt = allowedExtensions.some(ext => fileName.endsWith(ext));
+                
+                if (!allowedTypes.includes(file.type) && !hasValidExt) {
                     fileInput.value = '';
                     if (photoPreview) {
                         photoPreview.src = '';
@@ -327,7 +328,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Reset segmented price switcher
                 setPriceMode(true);
-            }, 0);
+                }, 0);
+            }
         });
     }
 });

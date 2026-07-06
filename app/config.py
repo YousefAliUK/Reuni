@@ -27,10 +27,22 @@ class Config:
     LATE_THRESHOLD_HOURS = 24
     AUTO_EXPIRY_HOURS = 72
 
-    # Session cookie security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = 7 * 24 * 60 * 60  # 7 days in seconds
+
+    # Session cookie domain to allow sharing session cookies across subdomains.
+    _session_domain = os.environ.get("SESSION_COOKIE_DOMAIN")
+    if not _session_domain:
+        _url = os.environ.get("BASE_URL") or "http://localhost:5000"
+        _base_host = _url.split("://")[-1].split(":")[0].lower()
+        if _base_host == "localhost":
+            _session_domain = ".localhost"
+        elif _base_host not in ["127.0.0.1", ""]:
+            _parts = _base_host.split(".")
+            if len(_parts) >= 2:
+                _session_domain = f".{'.'.join(_parts[-2:])}"
+    SESSION_COOKIE_DOMAIN = _session_domain
 
     # Limit file uploads to 5MB
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
@@ -47,6 +59,12 @@ class Config:
     ALLOWED_UNIVERSITY_DOMAINS: set = set(
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
+
+    # Subdomain to University Domain mapping
+    SUBDOMAIN_UNIVERSITY_MAP = {
+        "brookes": "brookes.ac.uk",
+        "oxford": "oxford.ac.uk",
+    }
 
     # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
@@ -72,6 +90,9 @@ class DevelopmentConfig(Config):
     # Allow a fallback secret key ONLY in development
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
     SESSION_COOKIE_SECURE = False
+    
+    _dev_url = os.environ.get("BASE_URL") or "http://localhost:5000"
+    SERVER_NAME = _dev_url.split("://")[-1].lower()
 
 
 class TestingConfig(Config):
@@ -82,6 +103,7 @@ class TestingConfig(Config):
     SESSION_COOKIE_SECURE = False
     RATELIMIT_ENABLED = False
     STORAGE_PROVIDER = "local"
+    SESSION_COOKIE_DOMAIN = None
 
     
     # For testing, we also allow university.ac.uk so existing tests pass

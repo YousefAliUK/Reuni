@@ -18,9 +18,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const themeToggle = document.getElementById('theme-toggle');
     const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
     
+    function getThemeCookie() {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; theme=`);
+        return parts.length === 2 ? parts.pop().split(';').shift() : null;
+    }
+
     function updateThemeUI(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         lsSet('theme', theme);
+
+        // Set cookie shared across subdomains
+        const hostParts = window.location.hostname.split('.');
+        let domainAttr = "";
+        const isLocalhostSubdomain = hostParts.length >= 2 && hostParts[hostParts.length - 1] === "localhost";
+        if (isLocalhostSubdomain) domainAttr = "; domain=.localhost";
+        else if (hostParts.length >= 2) domainAttr = `; domain=.${hostParts.slice(-2).join('.')}`;
+        document.cookie = `theme=${theme}; path=/; max-age=31536000; SameSite=Lax${domainAttr}`;
 
         const themeToggleIcon = document.getElementById('theme-toggle-icon');
         if (themeToggleIcon) {
@@ -33,12 +47,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    const currentTheme = lsGet('theme') || 'light';
+    const currentTheme = getThemeCookie() || lsGet('theme') || 'light';
     updateThemeUI(currentTheme);
 
     // Re-apply theme state on pageshow (ensures bfcache recoveries sync correctly)
     window.addEventListener('pageshow', () => {
-        const current = lsGet('theme') || 'light';
+        const current = getThemeCookie() || lsGet('theme') || 'light';
         updateThemeUI(current);
     });
     
@@ -724,6 +738,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Event delegation: Reload Page button
+    document.addEventListener('click', (e) => {
+        const reloadBtn = e.target.closest('[data-action="reload-page"]');
+        if (reloadBtn) {
+            e.preventDefault();
+            window.location.reload();
+        }
+    });
+
     // Event delegation: Mobile back button (replace inline onclick)
     document.addEventListener('click', (e) => {
         const backBtn = e.target.closest('[data-action="back"]');
@@ -736,4 +759,46 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // ── 4. Change Campus Functionality ──
+    const changeCampusFooterLink = document.getElementById('change-campus-footer-link');
+    const changeCampusDropdownLink = document.getElementById('change-campus-dropdown-link');
+    
+    function handleChangeCampus(e) {
+        e.preventDefault();
+        
+        // Dynamically compute wildcard domain for clearing the cookie
+        const hostParts = window.location.hostname.split('.');
+        let domainAttr = "";
+        let mainHost = window.location.host;
+        
+        if (hostParts.length >= 2) {
+            const isLocalhostSubdomain = hostParts[hostParts.length - 1] === "localhost";
+            const parentDomain = isLocalhostSubdomain ? "localhost" : hostParts.slice(-2).join('.');
+            domainAttr = `; domain=.${parentDomain}`;
+            
+            // Calculate landing URL host (removing subdomain)
+            mainHost = parentDomain;
+            const port = window.location.port;
+            if (port) {
+                mainHost = `${mainHost}:${port}`;
+            }
+        }
+        
+        // Clear selected_uni cookie by expiring it in the past on wildcard domain
+        document.cookie = `selected_uni=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC${domainAttr};`;
+        
+        // Double-check: clear exact host cookie just in case it was written there
+        document.cookie = `selected_uni=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+        
+        // Redirect back to main domain landing page with noredirect=true parameter
+        window.location.href = `${window.location.protocol}//${mainHost}/?noredirect=true`;
+    }
+    
+    if (changeCampusFooterLink) {
+        changeCampusFooterLink.addEventListener('click', handleChangeCampus);
+    }
+    if (changeCampusDropdownLink) {
+        changeCampusDropdownLink.addEventListener('click', handleChangeCampus);
+    }
 });

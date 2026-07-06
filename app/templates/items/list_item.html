@@ -25,11 +25,11 @@
                 <div id="photo-upload-zone">
                     <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" required class="image-upload__input">
                     
-                    <div id="upload-placeholder" class="upload-placeholder">
+                    <label for="image" id="upload-placeholder" class="upload-placeholder" style="cursor: pointer; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1);">
                         <span class="material-symbols-outlined">upload_file</span>
                         <span class="upload-placeholder__text">Click to upload or drag here</span>
                         <span class="upload-placeholder__hint">JPG, PNG, WEBP &middot; Max 5MB</span>
-                    </div>
+                    </label>
 
                     <img id="photo-preview" src="" alt="Upload preview" class="photo-preview-img">
                     
@@ -132,7 +132,7 @@
                     List this item
                 </button>
                 <div style="text-align: center; margin-top: var(--space-2);">
-                    <a href="{{ url_for('index') }}" style="font-size: 13px; color: var(--color-ink-tertiary); text-decoration: none;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-ink-tertiary)'">Discard</a>
+                    <a href="{{ url_for('index') }}" class="form-discard-link">Discard</a>
                 </div>
             </div>
 
@@ -164,5 +164,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/item-forms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/item-forms.js') }}?v=1.0.1"></script>
 {% endblock %}

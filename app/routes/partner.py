@@ -89,54 +89,6 @@ def get_relative_time(dt):
 
 PUBLIC_DOMAINS = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "reuni.app", "example.com", "localhost"}
 
-def ensure_uni_logo(domain):
-    """Check if university logo is cached, if not fetch and cache it keylessly."""
-    if not domain or domain in PUBLIC_DOMAINS:
-        return None
-        
-    import os
-    from flask import current_app
-    import urllib.request
-    
-    logo_dir = os.path.join(current_app.static_folder, "img", "logos")
-    os.makedirs(logo_dir, exist_ok=True)
-    
-    # Sanitize domain to prevent path traversal
-    safe_domain = re.sub(r'[^a-zA-Z0-9.-]', '', domain)
-    if not safe_domain or safe_domain != domain:
-        return None
-    
-    logo_filename = f"{safe_domain}.png"
-    logo_path = os.path.join(logo_dir, logo_filename)
-    failed_filename = f"{safe_domain}.failed"
-    failed_path = os.path.join(logo_dir, failed_filename)
-    
-    if os.path.exists(failed_path):
-        return None
-        
-    if os.path.exists(logo_path):
-        return f"img/logos/{logo_filename}"
-        
-    # Fetch from Google's high-res favicon service (128x128)
-    url = f"https://www.google.com/s2/favicons?sz=128&domain={domain}"
-    try:
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        )
-        with urllib.request.urlopen(req, timeout=5) as response:
-            with open(logo_path, "wb") as f:
-                f.write(response.read())
-        return f"img/logos/{logo_filename}"
-    except Exception as e:
-        # Silently fall back to initials avatar if download fails, and cache the failure
-        try:
-            with open(failed_path, "w") as f:
-                f.write("")
-        except Exception:
-            pass
-        return None
-
 
 @partner_bp.route("/dashboard")
 @login_required
@@ -152,7 +104,25 @@ def partner_dashboard():
     
     uni_name = get_uni_name(uni_domain) if uni_domain else "Global Sustainability"
     uni_initials = get_uni_initials(uni_name)
-    logo_url = ensure_uni_logo(uni_domain)
+    
+    # Single source of truth: Load logo dynamically from SVG cache
+    logo_url = None
+    if uni_domain and uni_domain not in PUBLIC_DOMAINS:
+        from flask import current_app
+        import os
+        mapping = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        reverse_map = {v: k for k, v in mapping.items()}
+        slug = reverse_map.get(uni_domain, uni_domain.split('.')[0])
+        
+        filepath = os.path.join(current_app.static_folder, 'img', 'logos', f'{slug}.png')
+        if os.path.exists(filepath):
+            logo_url = f"img/logos/{slug}.png"
+        else:
+            from app.models import UniversityLogo
+            logo_rec = UniversityLogo.query.filter_by(domain=uni_domain).first()
+            if not logo_rec or logo_rec.logo_status == 'pending':
+                from app.utils.logo_downloader import start_logo_fetch_job
+                start_logo_fetch_job(current_app._get_current_object(), uni_domain)
 
     # 1. Total Items Exchanged
     query_items = db.session.query(func.count(Item.id)).filter(Item.is_sold == True)
