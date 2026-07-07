@@ -18,16 +18,19 @@
                     <h1 class="marketplace-hero__title">Campus items. Real kg saved.</h1>
                     <p class="marketplace-hero__subtitle" style="margin-bottom: var(--space-4);">Student-to-student in-person campus marketplace. No fees, no shipping. Prevent waste and give items a second life.</p>
                     
-                    {% if campus_total_kg and campus_total_kg > 0 %}
+                    {% set active_kg = subdomain_total_kg if g.current_uni_domain else campus_total_kg %}
+                    {% set active_users = subdomain_total_users if g.current_uni_domain else campus_total_users %}
+                    
+                    {% if active_kg and active_kg > 0 %}
                     <div class="marketplace-hero__stats" style="margin-bottom: var(--space-6);">
                         <div class="marketplace-hero__stat-chip">
                             <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-success); font-size: 16px;">eco</span>
-                            <span class="marketplace-hero__stat-value marketplace-hero__stat-value--primary" data-target="{{ campus_total_kg }}">{{ "%.1f"|format(campus_total_kg) }}</span>
+                            <span class="marketplace-hero__stat-value marketplace-hero__stat-value--primary" data-target="{{ active_kg }}">{{ "%.1f"|format(active_kg) }}</span>
                             <span class="marketplace-hero__stat-text">kg CO₂e saved</span>
                         </div>
                         <div class="marketplace-hero__stat-chip">
                             <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-ink-primary); font-size: 16px;">group</span>
-                            <span class="marketplace-hero__stat-value" data-target="{{ campus_total_users }}">{{ campus_total_users }}</span>
+                            <span class="marketplace-hero__stat-value" data-target="{{ active_users }}">{{ active_users }}</span>
                             <span class="marketplace-hero__stat-text">students active</span>
                         </div>
                     </div>

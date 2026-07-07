@@ -413,13 +413,23 @@ def create_app(config_class=None):
                 sub_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(
                     Item.is_sold == True, Item.university_domain == g.current_uni_domain
                 ).scalar() or 0.0
+                sub_users = db.session.query(db.func.count(User.id)).filter(
+                    User.is_verified == True, User.university_domain == g.current_uni_domain
+                ).scalar() or 0
             else:
                 sub_kg = 0.0
+                sub_users = 0
         except Exception:
             total_kg = 0.0
             total_users = 0
             sub_kg = 0.0
-        return dict(campus_total_kg=total_kg, campus_total_users=total_users, subdomain_total_kg=sub_kg)
+            sub_users = 0
+        return dict(
+            campus_total_kg=total_kg,
+            campus_total_users=total_users,
+            subdomain_total_kg=sub_kg,
+            subdomain_total_users=sub_users
+        )
 
     # ── Dashboard ──
     @app.route("/dashboard")
