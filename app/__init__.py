@@ -31,6 +31,12 @@ limiter = Limiter(
     storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
 )
 
+# Thread-safe in-memory cache for aggregate database stats (TTL: 5 mins)
+import threading
+import time
+_stats_cache = {}
+_stats_cache_lock = threading.Lock()
+
 
 def create_app(config_class=None):
     """Application factory — creates and configures the Flask app."""
@@ -406,15 +412,28 @@ def create_app(config_class=None):
         from app.models import Item, User
         from app import db
         from flask import g
+
+        current_uni_domain = getattr(g, "current_uni_domain", None)
+        domain_key = current_uni_domain or "global"
+        global _stats_cache, _stats_cache_lock
+        now = time.time()
+
+        # Check cache under lock
+        with _stats_cache_lock:
+            cached_item = _stats_cache.get(domain_key)
+            if cached_item and cached_item['expires_at'] > now:
+                return cached_item['data']
+
+        # Cache miss, fetch database
         try:
             total_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
             total_users = db.session.query(db.func.count(User.id)).filter(User.is_verified == True).scalar() or 0
-            if g.current_uni_domain:
+            if current_uni_domain:
                 sub_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(
-                    Item.is_sold == True, Item.university_domain == g.current_uni_domain
+                    Item.is_sold == True, Item.university_domain == current_uni_domain
                 ).scalar() or 0.0
                 sub_users = db.session.query(db.func.count(User.id)).filter(
-                    User.is_verified == True, User.university_domain == g.current_uni_domain
+                    User.is_verified == True, User.university_domain == current_uni_domain
                 ).scalar() or 0
             else:
                 sub_kg = 0.0
@@ -424,12 +443,22 @@ def create_app(config_class=None):
             total_users = 0
             sub_kg = 0.0
             sub_users = 0
-        return dict(
+
+        stats_data = dict(
             campus_total_kg=total_kg,
             campus_total_users=total_users,
             subdomain_total_kg=sub_kg,
             subdomain_total_users=sub_users
         )
+
+        # Update cache under lock
+        with _stats_cache_lock:
+            _stats_cache[domain_key] = {
+                'data': stats_data,
+                'expires_at': now + 300  # Expires in 5 minutes (300 seconds)
+            }
+
+        return stats_data
 
     # ── Dashboard ──
     @app.route("/dashboard")
