@@ -286,10 +286,12 @@ input[type="search"]::-webkit-search-cancel-button {
         transform: translateY(0);
     }
 }
-.listing-card, .claim-card, .purchase-row {
-    animation: float-up-fade 250ms var(--ease-out) forwards;
-    animation-delay: calc(var(--card-index, 0) * 35ms);
-    opacity: 0;
+@media (prefers-reduced-motion: no-preference) {
+    .listing-card, .claim-card, .purchase-row {
+        animation: float-up-fade 250ms var(--ease-out) forwards;
+        animation-delay: calc(var(--card-index, 0) * 35ms);
+        opacity: 0;
+    }
 }
 
 /* Migrated classes for settings and forms */
@@ -395,6 +397,14 @@ a {
 
 a:hover {
     color: var(--clr-primary-dark);
+}
+
+h1, h2, h3, h4, h5, h6,
+.marketplace-hero__title,
+.section-title,
+.card-title,
+.listing-card__title {
+    text-wrap: pretty;
 }
 
 img {
@@ -564,7 +574,7 @@ textarea:focus-visible {
     font-family: var(--font-family);
     font-size: var(--fs-sm);
     color: var(--clr-text);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 
 .navbar__search-input:focus {
@@ -638,7 +648,7 @@ textarea:focus-visible {
     color: var(--clr-text-muted);
     cursor: pointer;
     flex-shrink: 0;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 
 .navbar__search-expand-close:hover {
@@ -664,7 +674,7 @@ textarea:focus-visible {
     border-radius: var(--radius);
     font-size: var(--fs-sm);
     font-weight: 600;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     text-decoration: none;
 }
 
@@ -701,7 +711,7 @@ textarea:focus-visible {
     border-radius: var(--radius);
     font-size: var(--fs-sm);
     font-weight: 600;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     text-decoration: none;
 }
 
@@ -729,7 +739,7 @@ textarea:focus-visible {
     border: 2px solid transparent;
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     padding: 0.5rem 1.25rem;
     font-size: var(--fs-base);
     text-decoration: none;
@@ -962,7 +972,7 @@ textarea:focus-visible {
     cursor: pointer;
     flex-shrink: 0;
     position: relative;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     font-family: var(--font-family);
 }
 
@@ -1022,7 +1032,7 @@ textarea:focus-visible {
     color: var(--clr-text-muted);
     background: var(--clr-surface);
     border: 1px solid var(--clr-border);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     text-decoration: none;
     white-space: nowrap;
 }
@@ -2154,7 +2164,7 @@ textarea:focus-visible {
     border: 1px solid var(--clr-border);
     text-decoration: none;
     color: inherit;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 .dash-item:hover {
     border-color: var(--clr-primary);
@@ -2398,7 +2408,7 @@ form + .profile-link {
     width: 2rem;
     height: 2rem;
     border-radius: var(--radius);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 .navbar__dash-link:hover {
     background: var(--clr-primary-bg);
@@ -2421,7 +2431,7 @@ form + .profile-link {
 }
 /* Pills animation */
 .pill {
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 .pill:hover:not(.pill--active) {
     background: var(--clr-primary-bg);
@@ -2629,7 +2639,7 @@ form + .profile-link {
     font-size: var(--fs-2xl);
     font-weight: 800;
     box-shadow: var(--shadow-sm);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 
 .passcode-boxes:not(.passcode-boxes--readonly) .passcode-box {
@@ -2703,7 +2713,7 @@ form + .profile-link {
     border: 1px solid #bdf7eb;
     border-radius: 12px;
     text-decoration: none;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 .whatsapp-bypass-card:hover {
     border-color: #99f3e0;
@@ -2791,7 +2801,7 @@ form + .profile-link {
     border: 1px solid var(--clr-border);
     border-radius: 12px;
     overflow: hidden;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 
 .handshake-guide__summary {
@@ -3039,7 +3049,7 @@ form + .profile-link {
     font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--clr-text-muted);
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     flex: 1;
     text-align: center;
     user-select: none;
@@ -3081,7 +3091,7 @@ form + .profile-link {
     font-size: var(--fs-sm);
     color: var(--clr-text);
     background: var(--color-surface-raised);
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .price-input:focus {
@@ -3112,7 +3122,7 @@ form + .profile-link {
     font-weight: 500;
     color: var(--clr-text-muted);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     flex: 1;
     text-align: center;
 }
@@ -3198,7 +3208,7 @@ form + .profile-link {
     font-weight: 500;
     text-decoration: none;
     font-size: var(--fs-sm);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 }
 
 .pagination__link:hover:not(.pagination__link--active) {
@@ -3212,12 +3222,64 @@ form + .profile-link {
     color: #ffffff;
     border-color: var(--clr-primary);
     cursor: default;
+    font-weight: 700;
 }
 
 .pagination__item--ellipsis {
-    color: var(--clr-text-muted);
-    padding: 0 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--color-ink-tertiary);
     user-select: none;
+}
+
+.pagination__mobile {
+    display: none;
+    width: 100%;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+}
+
+.pagination__mobile-btn {
+    flex: 1;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+@media (max-width: 767px) {
+    .pagination__list--desktop {
+        display: none !important;
+    }
+    .pagination__mobile {
+        display: flex !important;
+    }
+}
+
+/* Empty State Card layout modifier */
+.empty-state--card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    margin-top: var(--space-10);
+    padding: var(--space-20) var(--space-6);
+}
+.empty-state__icon--large {
+    font-size: 48px !important;
+    color: var(--color-ink-tertiary) !important;
+    margin-bottom: var(--space-4);
+    display: block;
+}
+.empty-state__title {
+    font-size: var(--type-title);
+    font-weight: 700;
+    color: var(--color-ink-primary);
+    margin: 0;
+    margin-bottom: var(--space-2);
 }
 
 
@@ -3884,7 +3946,7 @@ form + .profile-link {
     justify-content: center;
     box-shadow: var(--shadow-sm);
     color: var(--clr-text-muted);
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     cursor: help;
 }
 
@@ -3921,7 +3983,7 @@ form + .profile-link {
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     box-shadow: var(--shadow-md);
 }
 
@@ -4060,7 +4122,7 @@ form + .profile-link {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: all var(--transition) !important;
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition) !important;
 }
 
 .creative-btn:hover {
@@ -4204,7 +4266,7 @@ form + .profile-link {
     font-weight: 500;
     border-radius: var(--radius-md);
     text-decoration: none;
-    transition: all var(--duration-fast) var(--ease-out-expo);
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), transform var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo), opacity var(--duration-fast) var(--ease-out-expo);
     height: 40px;
     box-sizing: border-box;
 }
@@ -4424,7 +4486,7 @@ form + .profile-link {
     border: 1px solid var(--color-border);
     white-space: nowrap;
     text-decoration: none;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 .category-chip:hover {
     background: var(--color-primary-muted);
@@ -4482,7 +4544,7 @@ form + .profile-link {
     font-size: var(--type-small);
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 .mobile-filters-trigger:hover {
     background: var(--color-primary-muted);
@@ -4533,7 +4595,7 @@ form + .profile-link {
     background-position: right 12px center;
     background-size: 16px;
     padding-right: 32px !important;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 [data-theme="dark"] .filter-select {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d6d3d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
@@ -4583,7 +4645,7 @@ form + .profile-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
     box-sizing: border-box;
 }
 .price-toggle-btn:hover {
@@ -4732,6 +4794,10 @@ form + .profile-link {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform var(--duration-mid) var(--ease-out);
+}
+.listing-card:hover .listing-card__img {
+    transform: scale(1.04);
 }
 .listing-card__img-fallback {
     display: flex;
@@ -4889,7 +4955,7 @@ form + .profile-link {
     color: var(--color-ink-secondary);
     cursor: pointer;
     border-radius: calc(var(--radius-md) - var(--space-1));
-    transition: all var(--duration-fast);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
     text-align: center;
 }
 .segmented-control__btn--active {
@@ -4925,7 +4991,7 @@ form + .profile-link {
     font-weight: 600;
     color: var(--color-ink-secondary);
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
 }
 .pill-toggle__segment--active-free {
     background: var(--color-success);
@@ -4985,7 +5051,7 @@ form + .profile-link {
     border-radius: var(--radius-md);
     background: var(--color-surface);
     color: var(--color-ink-primary);
-    transition: all var(--duration-fast);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
 }
 .otp-input:focus {
     outline: none;
@@ -5229,7 +5295,7 @@ form + .profile-link {
     font-size: var(--type-small);
     font-weight: 500;
     text-decoration: none;
-    transition: all var(--transition);
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition), opacity var(--transition);
     background: var(--color-surface-raised);
     color: var(--color-ink-secondary);
     border: 1px solid transparent;
@@ -5580,7 +5646,7 @@ body {
     font-size: var(--type-small);
     color: var(--color-ink-primary);
     box-sizing: border-box;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 .navbar__search-input:focus {
     border-color: var(--color-primary);
@@ -5811,7 +5877,7 @@ body {
     border-radius: var(--radius-md);
     cursor: pointer;
     text-decoration: none;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 .btn--ghost-login:hover {
     border-color: var(--color-primary);
@@ -6048,6 +6114,24 @@ body {
     color: var(--color-ink-tertiary);
     text-align: center;
 }
+.mobile-drawer__footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+.mobile-drawer__footer-link {
+    color: var(--color-ink-tertiary);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.mobile-drawer__footer-link:hover {
+    color: var(--color-primary);
+}
+.mobile-drawer__footer-dot {
+    color: var(--color-border);
+}
 
 /* --- Mobile Bottom Tab Bar (§2.4) --- */
 .mobile-tabs {
@@ -6266,7 +6350,7 @@ body {
     font-size: var(--type-small);
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 .recent-search-chip:hover {
     background: var(--color-surface);
@@ -6426,6 +6510,11 @@ body {
     width: 100%;
     box-sizing: border-box;
     margin-top: auto;
+}
+@media (max-width: 1023px) {
+    .footer {
+        padding-bottom: calc(var(--space-2) + 60px + env(safe-area-inset-bottom));
+    }
 }
 .footer__inner {
     display: flex;
@@ -6825,7 +6914,7 @@ body {
     font-weight: 600;
     color: var(--color-ink-secondary);
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
     text-align: center;
     white-space: nowrap;
     display: inline-flex;
@@ -7561,7 +7650,7 @@ body {
     font-weight: 700;
     background: var(--color-surface);
     color: var(--color-ink-primary);
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
 
 .otp-digit-box:focus {
@@ -7778,7 +7867,7 @@ body {
     position: relative;
     overflow: hidden;
     background: var(--color-surface-raised);
-    transition: all var(--duration-normal) var(--ease-out);
+    transition: color var(--duration-normal) var(--ease-out), background-color var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out), opacity var(--duration-normal) var(--ease-out);
 }
 
 @media (max-width: 1023px) {
@@ -7872,7 +7961,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     border-right: 1.5px solid var(--color-border);
-    transition: all var(--duration-fast);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
 }
 
 .condition-btn:last-child {
@@ -7908,7 +7997,7 @@ body {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
 }
 
 .price-toggle-btn:hover {
@@ -8689,6 +8778,15 @@ body {
     min-height: 400px;
     box-sizing: border-box;
 }
+
+/* Compact hero for returning users — gets them to listings faster */
+.auth-shell-layout .marketplace-hero {
+    min-height: 260px;
+}
+.auth-shell-layout .marketplace-hero__inner {
+    min-height: 260px;
+}
+
 .marketplace-hero__content {
     max-width: 580px;
     display: flex;
@@ -9488,4 +9586,4 @@ body {
 }
 .form-discard-link:hover {
     color: var(--color-primary);
-}
+}

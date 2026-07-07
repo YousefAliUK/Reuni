@@ -85,7 +85,7 @@
                                     <span class="notification-dropdown__title">Notifications</span>
                                     <button type="button" class="notification-dropdown__clear" id="notification-clear-all">Mark all as read</button>
                                 </div>
-                                <div class="notification-dropdown__list" id="notification-list">
+                                <div class="notification-dropdown__list" id="notification-list" aria-live="polite" aria-atomic="false">
                                     <!-- Populated dynamically by JS -->
                                 </div>
                             </div>
@@ -277,7 +277,17 @@
         </nav>
 
         <div class="mobile-drawer__footer">
-            <span>Reuni v3.0</span>
+            {% if g.current_uni_domain %}
+                <div class="mobile-drawer__footer-links">
+                    <a href="#" id="change-campus-drawer-link" class="mobile-drawer__footer-link">Change Campus</a>
+                    <span class="mobile-drawer__footer-dot" aria-hidden="true">&middot;</span>
+                    <a href="{{ url_for('privacy') }}" class="mobile-drawer__footer-link">Privacy Policy</a>
+                </div>
+            {% else %}
+                <div class="mobile-drawer__footer-links">
+                    <a href="{{ url_for('privacy') }}" class="mobile-drawer__footer-link">Privacy Policy</a>
+                </div>
+            {% endif %}
         </div>
     </aside>
 
