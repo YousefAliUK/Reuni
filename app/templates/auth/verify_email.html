@@ -21,7 +21,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="code" id="full-code-input" required>
 
-            <label for="otp-input-0" class="auth-label" style="text-align: center; margin-bottom: var(--space-2);">
+            <label for="otp-input-0" class="auth-label auth-label--center">
                 6-Digit Verification Code
             </label>
 
@@ -35,14 +35,14 @@
                 <input type="text" class="otp-digit otp-digit-box" maxlength="1" pattern="[0-9]" inputmode="numeric" required data-index="5" autocomplete="one-time-code">
             </div>
 
-            <button type="submit" class="btn btn--primary" id="confirm-btn" style="height: 48px; border-radius: var(--radius-md); font-weight: 600;" disabled>
+            <button type="submit" class="btn btn--primary auth-form__submit-btn" id="confirm-btn" disabled>
                 Verify Email
             </button>
         </form>
 
         <div class="auth-footer-links">
             <span>Didn't receive the code? <a href="{{ url_for('auth.resend_verification') }}">Resend code</a></span>
-            <span style="font-size: 11px; color: var(--color-ink-tertiary);">Limit 10 per hour</span>
+            <span class="auth-hint">Limit 10 per hour</span>
         </div>
     </div>
 </div>

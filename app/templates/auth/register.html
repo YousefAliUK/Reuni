@@ -1,71 +1,22 @@
 {% extends "base.html" %} {% block title %}Sign Up — Reuni{% endblock %} {%
 block content %}
-<div class="split-layout" style="
-        display: grid;
-        grid-template-columns: 1fr;
-        min-height: calc(100dvh - 64px - 140px);
-        margin: -24px calc(-1 * var(--container-pad-x)) -48px
-            calc(-1 * var(--container-pad-x));
-    ">
-    <style>
-        @media (min-width: 1024px) {
-            .split-layout {
-                grid-template-columns: 1fr 1fr !important;
-            }
-
-            .split-layout__right {
-                display: flex !important;
-            }
-        }
-    </style>
-
+<div class="split-layout">
     <!-- Left column: Form -->
     <div class="split-layout__left">
-        <div style="
-                width: 100%;
-                max-width: 420px;
-                display: flex;
-                flex-direction: column;
-                gap: var(--space-4);
-                padding: var(--space-6) 0;
-            ">
+        <div class="auth-content-wrap auth-content-wrap--register">
             <!-- Logo mark -->
-            <div style="display: flex; align-items: center; gap: var(--space-2)">
-                <div style="
-                        background: var(--color-primary);
-                        width: 32px;
-                        height: 32px;
-                        border-radius: var(--radius-md);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">
-                    <span class="material-symbols-outlined" style="color: #ffffff; font-size: 20px"
-                        aria-hidden="true">recycling</span>
+            <div class="auth-brand">
+                <div class="auth-brand__logo">
+                    <span class="material-symbols-outlined" aria-hidden="true">recycling</span>
                 </div>
-                <span style="
-                        font-family: var(--font-sans);
-                        font-weight: 700;
-                        font-size: 20px;
-                        color: var(--color-ink-primary);
-                    ">Reuni</span>
+                <span class="auth-brand__name">Reuni</span>
             </div>
 
-            <div>
-                <h1 style="
-                        font-size: 26px;
-                        font-weight: 700;
-                        color: var(--color-ink-primary);
-                        margin: 0;
-                        margin-bottom: var(--space-1);
-                    ">
+            <div class="auth-title-group">
+                <h1 class="auth-title-group__title">
                     Join Reuni <span style="display: none">Create Account</span>
                 </h1>
-                <p style="
-                        font-size: 14px;
-                        color: var(--color-ink-secondary);
-                        margin: 0;
-                    ">
+                <p class="auth-title-group__subtitle">
                     {% if g.current_uni_domain %}
                         {{ get_uni_name(g.current_uni_domain) }} students only. Free forever.
                     {% else %}
@@ -79,126 +30,74 @@ block content %}
 
                 <div class="auth-form-group">
                     <label for="name" class="auth-label">Full Name</label>
-                    <div style="position: relative; width: 100%">
-                        <span class="material-symbols-outlined" style="
-                                position: absolute;
-                                left: 14px;
-                                top: 50%;
-                                transform: translateY(-50%);
-                                color: var(--color-ink-tertiary);
-                                font-size: 20px;
-                            " aria-hidden="true">person</span>
-                        <input type="text" id="name" name="name" placeholder="Jane Doe" required class="auth-input"
-                            style="padding-left: 44px" autocomplete="name" spellcheck="false" />
+                    <div class="auth-input-wrapper">
+                        <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                        <input type="text" id="name" name="name" placeholder="Jane Doe" required class="auth-input auth-input--with-icon"
+                            autocomplete="name" spellcheck="false" />
                     </div>
                 </div>
 
                 <div class="auth-form-group">
                     <label for="email" class="auth-label">University Email</label>
-                    <div style="position: relative; width: 100%">
-                        <span class="material-symbols-outlined" style="
-                                position: absolute;
-                                left: 14px;
-                                top: 50%;
-                                transform: translateY(-50%);
-                                color: var(--color-ink-tertiary);
-                                font-size: 20px;
-                            " aria-hidden="true">mail</span>
+                    <div class="auth-input-wrapper">
+                        <span class="material-symbols-outlined" aria-hidden="true">mail</span>
                         <input type="email" id="email" name="email" placeholder="you@university.ac.uk" required
-                            class="auth-input" style="padding-left: 44px" autocomplete="username" spellcheck="false" />
+                            class="auth-input auth-input--with-icon" autocomplete="username" spellcheck="false" />
                     </div>
                     <!-- Email hint/validation -->
-                    <span id="email-validation-hint" style="
-                            font-size: 12px;
-                            display: none;
-                            margin-top: 4px;
-                            font-weight: 600;
-                        "></span>
+                    <span id="email-validation-hint" class="auth-email-validation-hint" style="display: none;"></span>
                 </div>
 
                 <div class="auth-form-group">
                     <label for="password" class="auth-label">Password</label>
-                    <div style="position: relative; width: 100%">
-                        <span class="material-symbols-outlined" style="
-                                position: absolute;
-                                left: 14px;
-                                top: 50%;
-                                transform: translateY(-50%);
-                                color: var(--color-ink-tertiary);
-                                font-size: 20px;
-                            " aria-hidden="true">lock</span>
+                    <div class="auth-input-wrapper">
+                        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
                         <input type="password" id="password" name="password" placeholder="••••••••" required
-                            minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px"
+                            minlength="8" class="auth-input auth-input--with-double-icon"
                             autocomplete="new-password" spellcheck="false" />
                         <button type="button" data-toggle-password="password" aria-label="Show password"
                             aria-pressed="false" class="password-toggle">
-                            <span class="material-symbols-outlined" style="font-size: 20px"
-                                aria-hidden="true">visibility</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                         </button>
                     </div>
                     <!-- Strength bar -->
-                    <div style="margin-top: 6px">
+                    <div class="password-strength-container">
                         <div class="password-strength-grid">
                             <div id="strength-bar-1" class="password-strength-bar"></div>
                             <div id="strength-bar-2" class="password-strength-bar"></div>
                             <div id="strength-bar-3" class="password-strength-bar"></div>
                         </div>
-                        <span id="strength-label" style="
-                                font-size: 11px;
-                                color: var(--color-ink-tertiary);
-                                display: block;
-                                margin-top: 4px;
-                            ">Strength: too short</span>
+                        <span id="strength-label" class="auth-hint password-strength-label">Strength: too short</span>
                     </div>
                 </div>
 
                 <div class="auth-form-group">
                     <label for="confirm_password" class="auth-label">Confirm Password</label>
-                    <div style="position: relative; width: 100%">
-                        <span class="material-symbols-outlined" style="
-                                position: absolute;
-                                left: 14px;
-                                top: 50%;
-                                transform: translateY(-50%);
-                                color: var(--color-ink-tertiary);
-                                font-size: 20px;
-                            " aria-hidden="true">lock</span>
+                    <div class="auth-input-wrapper">
+                        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
                         <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••"
-                            required minlength="8" class="auth-input" style="padding-left: 44px; padding-right: 44px"
+                            required minlength="8" class="auth-input auth-input--with-double-icon"
                             autocomplete="new-password" spellcheck="false" />
                         <button type="button" data-toggle-password="confirm_password" aria-label="Show password" aria-pressed="false" class="password-toggle">
-                            <span class="material-symbols-outlined" style="font-size: 20px"
-                                aria-hidden="true">visibility</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                         </button>
                     </div>
                 </div>
 
-                <p style="
-                        font-size: 12px;
-                        color: var(--color-ink-tertiary);
-                        margin: var(--space-2) 0 0 0;
-                    ">
+                <p class="auth-privacy-notice">
                     By registering you agree to our
-                    <a href="{{ url_for('privacy') }}" style="
-                            color: var(--color-primary);
-                            text-decoration: underline;
-                        ">Privacy Policy</a>.
+                    <a href="{{ url_for('privacy') }}" class="auth-privacy-notice__link">Privacy Policy</a>.
                 </p>
 
                 <!-- Turnstile Widget -->
-                <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}" style="margin: var(--space-4) 0"></div>
+                <div class="cf-turnstile" data-sitekey="{{ turnstile_sitekey }}"></div>
 
-                <button type="submit" class="btn btn--primary" style="
-                        height: 48px;
-                        border-radius: var(--radius-md);
-                        font-weight: 600;
-                        width: 100%;
-                    ">
+                <button type="submit" class="btn btn--primary auth-form__submit-btn auth-form__submit-btn--register">
                     Create account
                 </button>
             </form>
 
-            <div class="auth-footer-links" style="text-align: center; margin-top: var(--space-1)">
+            <div class="auth-footer-links">
                 <span>Already have an account?
                     <a href="{{ url_for('auth.login') }}">Sign in</a></span>
             </div>
@@ -207,43 +106,12 @@ block content %}
 
     <!-- Right column: Brand Panel -->
     <div class="split-layout__right">
-        <div style="
-                position: absolute;
-                top: -10%;
-                left: -10%;
-                width: 120%;
-                height: 120%;
-                background: radial-gradient(
-                    circle at center,
-                    rgba(255, 255, 255, 0.08) 0%,
-                    transparent 60%
-                );
-                pointer-events: none;
-            "></div>
+        <div class="split-layout__right-glow"></div>
 
-        <div style="
-                position: relative;
-                z-index: 1;
-                max-width: 380px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: var(--space-4);
-            ">
-            <span class="material-symbols-outlined" style="
-                    font-size: 72px;
-                    color: rgba(255, 255, 255, 0.9);
-                    margin-bottom: var(--space-2);
-                " aria-hidden="true">eco</span>
+        <div class="split-layout__right-content">
+            <span class="material-symbols-outlined split-layout__right-icon" aria-hidden="true">eco</span>
 
-            <div style="
-                    font-family: var(--font-mono);
-                    font-size: 56px;
-                    font-weight: 800;
-                    line-height: 1;
-                    color: #ffffff;
-                    letter-spacing: var(--track-tight);
-                ">
+            <div class="split-layout__right-stat">
                 {% if g.current_uni_domain %}
                     {{ "%.1f"|format(subdomain_total_kg or 0) }}kg
                 {% else %}
@@ -251,13 +119,7 @@ block content %}
                 {% endif %}
             </div>
 
-            <p style="
-                    font-size: 18px;
-                    font-weight: 500;
-                    color: rgba(255, 255, 255, 0.95);
-                    margin: 0;
-                    line-height: var(--lead-title);
-                ">
+            <p class="split-layout__right-title">
                 {% if g.current_uni_domain %}
                     saved by {{ get_uni_name(g.current_uni_domain) }} students
                 {% else %}
@@ -265,12 +127,7 @@ block content %}
                 {% endif %}
             </p>
 
-            <p style="
-                    font-size: 14px;
-                    color: rgba(255, 255, 255, 0.7);
-                    margin: 0;
-                    line-height: var(--lead-body);
-                ">
+            <p class="split-layout__right-subtitle">
                 Every item exchanged is one less in landfill.
             </p>
         </div>
