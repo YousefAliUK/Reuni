@@ -7777,7 +7777,7 @@ body {
     position: relative;
     width: 100%;
 }
-.auth-input-wrapper .material-symbols-outlined {
+.auth-input-wrapper > .material-symbols-outlined {
     position: absolute;
     left: 14px;
     top: 50%;
@@ -7870,18 +7870,6 @@ body {
 }
 
 /* Extra resend/reset verification dialog classes */
-.auth-container--card {
-    max-width: 440px;
-    margin: var(--space-12) auto;
-    background: var(--color-surface);
-    padding: var(--space-8);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
 .auth-message-block {
     margin: var(--space-4) 0 var(--space-6);
     text-align: center;
