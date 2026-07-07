@@ -744,6 +744,16 @@ textarea:focus-visible {
     font-size: var(--fs-base);
     text-decoration: none;
 }
+.btn:disabled,
+.btn[disabled] {
+    background: var(--color-surface-raised) !important;
+    color: var(--color-ink-tertiary) !important;
+    cursor: not-allowed !important;
+    border-color: transparent !important;
+    opacity: 0.5 !important;
+    transform: none !important;
+    pointer-events: none !important;
+}
 
 .btn__icon {
     font-size: 1.15rem;
@@ -3280,6 +3290,12 @@ form + .profile-link {
     color: var(--color-ink-primary);
     margin: 0;
     margin-bottom: var(--space-2);
+}
+.empty-state__text {
+    font-size: var(--type-body);
+    color: var(--color-ink-secondary);
+    margin: 0;
+    margin-bottom: var(--space-6);
 }
 
 

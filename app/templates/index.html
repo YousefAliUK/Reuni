@@ -245,7 +245,7 @@
             <ul class="pagination__list pagination__list--desktop">
                 {% if pagination.has_prev %}
                 <li class="pagination__item">
-                    <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link">
+                    <a href="{{ url_for('index', page=pagination.prev_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link" aria-label="Previous page" rel="prev">
                         <span class="material-symbols-outlined">chevron_left</span>
                     </a>
                 </li>
@@ -255,7 +255,7 @@
                     {% if page_num %}
                         {% if page_num == pagination.page %}
                         <li class="pagination__item">
-                            <span class="pagination__link pagination__link--active">{{ page_num }}</span>
+                            <span class="pagination__link pagination__link--active" aria-current="page">{{ page_num }}</span>
                         </li>
                         {% else %}
                         <li class="pagination__item">
@@ -263,13 +263,13 @@
                         </li>
                         {% endif %}
                     {% else %}
-                    <li class="pagination__item pagination__item--ellipsis">…</li>
+                    <li class="pagination__item pagination__item--ellipsis" aria-hidden="true">…</li>
                     {% endif %}
                 {% endfor %}
 
                 {% if pagination.has_next %}
                 <li class="pagination__item">
-                    <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link">
+                    <a href="{{ url_for('index', page=pagination.next_num, category=active_category, q=search_query, price_type=price_type, min_price=min_price, max_price=max_price, condition=condition, sort=sort) }}" class="pagination__link" aria-label="Next page" rel="next">
                         <span class="material-symbols-outlined">chevron_right</span>
                     </a>
                 </li>
@@ -298,7 +298,7 @@
         <section class="empty-state empty-state--card" aria-label="No items found">
             <span class="material-symbols-outlined empty-state__icon--large" aria-hidden="true">shopping_bag</span>
             <h3 class="empty-state__title">Nothing here yet</h3>
-            <p style="font-size: var(--type-body); color: var(--color-ink-secondary); margin: 0; margin-bottom: var(--space-6);">Be the first to list something on campus.</p>
+            <p class="empty-state__text">Be the first to list something on campus.</p>
             <a href="{{ url_for('items.list_item') }}" class="btn btn--primary">List an item</a>
         </section>
         {% endif %}
