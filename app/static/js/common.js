@@ -794,11 +794,15 @@ document.addEventListener('DOMContentLoaded', function () {
         // Redirect back to main domain landing page with noredirect=true parameter
         window.location.href = `${window.location.protocol}//${mainHost}/?noredirect=true`;
     }
+    const changeCampusDrawerLink = document.getElementById('change-campus-drawer-link');
     
     if (changeCampusFooterLink) {
         changeCampusFooterLink.addEventListener('click', handleChangeCampus);
     }
     if (changeCampusDropdownLink) {
         changeCampusDropdownLink.addEventListener('click', handleChangeCampus);
+    }
+    if (changeCampusDrawerLink) {
+        changeCampusDrawerLink.addEventListener('click', handleChangeCampus);
     }
 });
