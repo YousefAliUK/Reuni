@@ -173,7 +173,7 @@ def partner_dashboard():
     query_recent = db.session.query(Item).filter(Item.is_sold == True)
     if not is_global:
         query_recent = query_recent.filter(Item.university_domain == uni_domain)
-    recent_items = query_recent.order_by(Item.claimed_at.desc()).limit(5).all()
+    recent_items = query_recent.order_by(Item.sold_at.desc()).limit(5).all()
 
     recent_exchanges = []
     for item in recent_items:
@@ -181,7 +181,7 @@ def partner_dashboard():
             "title": item.title,
             "category": item.category,
             "kg_saved": float(item.kg_saved),
-            "time_ago": get_relative_time(item.claimed_at),
+            "time_ago": get_relative_time(item.sold_at),
             "icon": CATEGORY_ICONS.get(item.category, "extension")
         })
 

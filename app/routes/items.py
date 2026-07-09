@@ -635,11 +635,13 @@ def confirm_pin(item_id):
 
     # PIN is correct — complete the transaction
     try:
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         item.is_sold = True
+        item.sold_at = now_utc          # ← NEW: permanent completion timestamp
         seller = item.seller
         seller.kg_saved_total += item.kg_saved
 
-        # Clear PIN fields
+        # Clear PIN fields (claimed_at tracks active claim state — clear it after sale)
         item.pin_code = None
         item.pin_expires_at = None
         item.claimed_at = None
