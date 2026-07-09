@@ -31,11 +31,8 @@ limiter = Limiter(
     storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
 )
 
-# Thread-safe in-memory cache for aggregate database stats (TTL: 5 mins)
-import threading
-import time
-_stats_cache = {}
-_stats_cache_lock = threading.Lock()
+from flask_caching import Cache
+cache = Cache()
 
 
 def create_app(config_class=None):
@@ -106,6 +103,16 @@ def create_app(config_class=None):
 
     # Initialize rate limiter
     limiter.init_app(app)
+
+    # Configure Flask-Caching (SimpleCache for single-process; swap to RedisCache via CACHE_TYPE env var)
+    cache_config = {
+        "CACHE_TYPE": os.environ.get("CACHE_TYPE", "SimpleCache"),
+        "CACHE_DEFAULT_TIMEOUT": 300,  # 5 minutes
+    }
+    if os.environ.get("CACHE_TYPE") == "RedisCache":
+        cache_config["CACHE_REDIS_URL"] = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    app.config.from_mapping(cache_config)
+    cache.init_app(app)
 
     # User loader for Flask-Login
     from app.models import User, Item, CancellationRecord, Message, Notification, UniversityLogo
@@ -415,14 +422,10 @@ def create_app(config_class=None):
 
         current_uni_domain = getattr(g, "current_uni_domain", None)
         domain_key = current_uni_domain or "global"
-        global _stats_cache, _stats_cache_lock
-        now = time.time()
-
-        # Check cache under lock
-        with _stats_cache_lock:
-            cached_item = _stats_cache.get(domain_key)
-            if cached_item and cached_item['expires_at'] > now:
-                return cached_item['data']
+        cache_key = f"global_stats_{domain_key}"
+        stats_data = cache.get(cache_key)
+        if stats_data is not None:
+            return stats_data
 
         # Cache miss, fetch database
         try:
@@ -451,13 +454,7 @@ def create_app(config_class=None):
             subdomain_total_users=sub_users
         )
 
-        # Update cache under lock
-        with _stats_cache_lock:
-            _stats_cache[domain_key] = {
-                'data': stats_data,
-                'expires_at': now + 300  # Expires in 5 minutes (300 seconds)
-            }
-
+        cache.set(cache_key, stats_data, timeout=300)
         return stats_data
 
     # ── Dashboard ──

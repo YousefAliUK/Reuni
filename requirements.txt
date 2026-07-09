@@ -12,6 +12,7 @@ brevo-python>=4.0.0
 apscheduler==3.10.*
 beautifulsoup4==4.12.*
 requests>=2.31.0
+Flask-Caching==2.3.0
 
 
 # postgresql
