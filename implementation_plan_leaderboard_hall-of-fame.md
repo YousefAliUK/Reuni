@@ -201,7 +201,18 @@ class UniversityConfig(db.Model):
     )
 
     # Relationships
+    # WeeklySnapshot is a DIRECT child of UniversityConfig (not of Season).
+    # Weeks are calendar weeks (Mon–Sun) and are independent of term boundaries —
+    # a week can straddle two seasons, so it cannot belong to one Season.
+    # SeasonalSnapshot IS a child of Season (via season_id FK).
     seasons = db.relationship("Season", backref="university", lazy=True)
+    weekly_snapshots = db.relationship(
+        "WeeklySnapshot",
+        foreign_keys="WeeklySnapshot.university_domain",
+        primaryjoin="UniversityConfig.domain == WeeklySnapshot.university_domain",
+        backref="university_config",
+        lazy=True,
+    )
 
     def __repr__(self):
         return f"<UniversityConfig domain={self.domain}>"
@@ -617,24 +628,33 @@ import zoneinfo
 from app import db
 from app.models import Item, User, Season, WeeklySnapshot, SeasonalSnapshot
 
-LONDON_TZ = zoneinfo.ZoneInfo("Europe/London")
+# Do NOT hardcode a timezone here. Week boundaries are always computed
+# using the individual university's timezone from UniversityConfig.timezone.
 SNAPSHOT_TOP_N = 10
 HOF_TOP_N = 3
 WEEKLY_HOF_HISTORY = 4  # How many past weeks to show in Weekly Hall of Fame
 
 
-def get_current_week_boundaries():
+def get_current_week_boundaries(university_timezone="Europe/London"):
     """
     Returns (week_start, week_end) as naive UTC datetimes for the current
-    calendar week (Monday 00:00 → Sunday 23:59:59.999999 London time).
-    """
-    now_london = datetime.now(LONDON_TZ)
-    monday = now_london - timedelta(days=now_london.weekday())
-    week_start_london = monday.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end_london = week_start_london + timedelta(days=7) - timedelta(microseconds=1)
+    calendar week (Monday 00:00 → Sunday 23:59:59.999999) in the given
+    university's LOCAL timezone.
 
-    week_start_utc = week_start_london.astimezone(timezone.utc).replace(tzinfo=None)
-    week_end_utc = week_end_london.astimezone(timezone.utc).replace(tzinfo=None)
+    university_timezone: IANA timezone string from UniversityConfig.timezone
+    e.g. "Europe/London", "Asia/Dubai", "Africa/Cairo"
+
+    Always pass uni_config.timezone explicitly. Never call with no arguments
+    unless you genuinely mean London time (e.g. in tests).
+    """
+    uni_tz = zoneinfo.ZoneInfo(university_timezone)
+    now_local = datetime.now(uni_tz)
+    monday = now_local - timedelta(days=now_local.weekday())
+    week_start_local = monday.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end_local = week_start_local + timedelta(days=7) - timedelta(microseconds=1)
+
+    week_start_utc = week_start_local.astimezone(timezone.utc).replace(tzinfo=None)
+    week_end_utc = week_end_local.astimezone(timezone.utc).replace(tzinfo=None)
     return week_start_utc, week_end_utc
 
 
@@ -862,8 +882,14 @@ def leaderboard():
     """Live leaderboard — Weekly and Seasonal tabs."""
     uni_domain = g.current_uni_domain
 
+    # Fetch university config to get the correct local timezone for week boundaries.
+    # Do NOT hardcode Europe/London here — the university may be in any country.
+    from app.models import UniversityConfig
+    uni_config = UniversityConfig.query.filter_by(domain=uni_domain).first()
+    uni_timezone = uni_config.timezone if uni_config else "Europe/London"
+
     # ── Weekly (cache.get/set pattern — lambda key_prefix is NOT supported) ──
-    week_start, week_end = get_current_week_boundaries()
+    week_start, week_end = get_current_week_boundaries(uni_timezone)
     weekly_cache_key = f"leaderboard_weekly_{uni_domain}_{week_start.date()}"
     weekly_rankings = cache.get(weekly_cache_key)
     if weekly_rankings is None:
@@ -1164,32 +1190,64 @@ def _notify_winners(app, winners, period_label):
 ```
 
 **Weekly reset job:**
+
+> [!IMPORTANT]
+> The weekly cron must **not** be pinned to a single timezone (e.g. `Europe/London`).
+> If a UAE university's week ends at Sunday 23:59 Asia/Dubai (= 19:59 UTC), a London-pinned
+> Sunday 23:59 job fires 4 hours too late and archives the wrong data.
+>
+> Instead: run once daily at 01:00 UTC. Inside the job, loop per-university and check
+> whether "yesterday in their local timezone" was Sunday. If yes, their week just ended.
+> The idempotency check prevents double-archival.
+
 ```python
 def run_weekly_leaderboard_reset(app):
     """
-    Fires every Sunday at 23:59 (Europe/London).
-    Archives the completed week's top 10 for all active universities.
-    Invalidates the leaderboard cache so the next page load reflects final standings.
+    Fires daily at 01:00 UTC.
+    For each university, checks whether the week just ended in THEIR local timezone.
+    If so, archives the completed week's top 10 and notifies winners.
+    Idempotency: _archive_weekly_snapshot skips if snapshot already exists.
     """
     with app.app_context():
         from app import db, cache
         from app.models import UniversityConfig
-        from app.utils.leaderboard import get_current_week_boundaries
+        import zoneinfo
+        from datetime import datetime, timezone, timedelta
 
-        week_start, week_end = get_current_week_boundaries()
-        # At Sunday 23:59 London, get_current_week_boundaries() returns
-        # the Mon-Sun of the CURRENT week (the one ending now). This is correct.
+        now_utc = datetime.now(timezone.utc)
+
         try:
             configs = UniversityConfig.query.all()
             for cfg in configs:
-                winners = _archive_weekly_snapshot(app, cfg.domain, week_start, week_end)
-                period_label = f"week of {week_start.strftime('%-d %b %Y')}"
+                uni_tz = zoneinfo.ZoneInfo(cfg.timezone)
+
+                # What time is it right now in this university's local timezone?
+                now_local = now_utc.astimezone(uni_tz)
+
+                # "Yesterday" in their local timezone
+                yesterday_local = now_local - timedelta(days=1)
+
+                # If yesterday was NOT Sunday (weekday 6), their week hasn't ended yet.
+                if yesterday_local.weekday() != 6:
+                    continue
+
+                # Compute the boundaries of the week that just ended.
+                # yesterday_local is Sunday. The week ran Mon (6 days prior) → Sun (yesterday).
+                monday_local = yesterday_local - timedelta(days=yesterday_local.weekday())
+                week_start_local = monday_local.replace(hour=0, minute=0, second=0, microsecond=0)
+                week_end_local = week_start_local + timedelta(days=7) - timedelta(microseconds=1)
+
+                week_start_utc = week_start_local.astimezone(timezone.utc).replace(tzinfo=None)
+                week_end_utc = week_end_local.astimezone(timezone.utc).replace(tzinfo=None)
+
+                winners = _archive_weekly_snapshot(app, cfg.domain, week_start_utc, week_end_utc)
+                period_label = f"week of {week_start_utc.strftime('%-d %b %Y')}"
                 _notify_winners(app, winners, period_label)
-                # Invalidate cache for this university's weekly leaderboard
-                cache.delete(f"leaderboard_weekly_{cfg.domain}_{week_start.date()}")
+                # Invalidate cache so next page load reflects final standings
+                cache.delete(f"leaderboard_weekly_{cfg.domain}_{week_start_utc.date()}")
 
             db.session.commit()
-            app.logger.info(f"Weekly leaderboard reset completed for {len(configs)} university/ies.")
+            app.logger.info("Weekly leaderboard check completed.")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Weekly leaderboard reset error: {e}", exc_info=True)
@@ -1237,32 +1295,36 @@ def run_seasonal_leaderboard_reset(app):
             db.session.remove()
 ```
 
-**Update `init_scheduler()`** — add the two new jobs with London timezone:
+**Update `init_scheduler()`** — add the two new jobs:
 
 ```python
-# Weekly leaderboard reset — Sunday 23:59 London time
+# Weekly leaderboard check — runs daily at 01:00 UTC.
+# Timezone logic is per-university INSIDE the job. Do not pin this to London time.
+# 01:00 UTC safely covers all universities in UTC-0 and later (UK, Europe, Middle East).
 scheduler.add_job(
     run_weekly_leaderboard_reset,
     'cron',
-    day_of_week='sun',
-    hour=23,
-    minute=59,
-    timezone='Europe/London',
+    hour=1,
+    minute=0,
+    timezone='UTC',
     args=[app]
 )
 
-# Seasonal reset check — daily at 23:59 London time
+# Seasonal reset check — daily at 01:05 UTC.
+# Season end_date is stored as naive UTC in the DB, so the comparison works
+# correctly regardless of timezone. Runs 5 minutes after the weekly job to
+# avoid any session/lock contention.
 scheduler.add_job(
     run_seasonal_leaderboard_reset,
     'cron',
-    hour=23,
-    minute=59,
-    timezone='Europe/London',
+    hour=1,
+    minute=5,
+    timezone='UTC',
     args=[app]
 )
 ```
 
-Also add `tzlocal` and `pytz` (or `zoneinfo` — Python 3.9+ has it built in) to handle timezone-aware cron in APScheduler. Verify `requirements.txt` has `apscheduler>=3.10.0`.
+Verify `requirements.txt` has `apscheduler>=3.10.0`. Python 3.9+ has `zoneinfo` built in — no additional `pytz` dependency needed.
 
 ---
 
