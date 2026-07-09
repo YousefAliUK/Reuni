@@ -1,7 +1,351 @@
 {% extends "base.html" %}
 {% block title %}Leaderboard — Reuni{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h1>Leaderboard</h1>
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: var(--space-6) var(--space-4);">
+
+    <!-- Eyebrow + Page Title -->
+    <div style="margin-bottom: var(--space-8);">
+        <div class="eyebrow-badge">Standings</div>
+        <h1 style="font-family: var(--font-sans); font-size: var(--type-display); font-weight: 800; color: var(--color-ink-primary); margin: 0; line-height: var(--lead-display); letter-spacing: var(--track-display);">
+            Campus Eco Leaderboard
+        </h1>
+        <p style="font-size: var(--type-body-lg); color: var(--color-ink-secondary); margin-top: var(--space-2); margin-bottom: 0;">
+            See who is leading sustainability efforts on campus.
+        </p>
+    </div>
+
+    <!-- Leaderboard Tabs Navigation -->
+    <div class="leaderboard-tabs-wrapper">
+        <nav class="leaderboard-tabs" aria-label="Leaderboard tabs">
+            <button type="button" class="leaderboard-tab active-tab" data-tab-target="weekly" id="tab-btn-weekly">
+                <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+                <span>This Week</span>
+            </button>
+            <button type="button" class="leaderboard-tab" data-tab-target="seasonal" id="tab-btn-seasonal">
+                <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+                <span>This Term</span>
+            </button>
+            {% if multi_uni_enabled %}
+                <button type="button" class="leaderboard-tab" data-tab-target="universities" id="tab-btn-universities">
+                    <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+                    <span>All Universities</span>
+                </button>
+            {% endif %}
+        </nav>
+    </div>
+
+    <!-- Layout Grid -->
+    <div class="leaderboard-layout">
+        
+        <!-- LEFT: Rankings Content -->
+        <main id="main-content">
+            
+            <!-- ─── 1. Weekly Tab Content ─── -->
+            <div id="tab-content-weekly" class="leaderboard-tab-content">
+                <div class="bezel-outer">
+                    <div class="bezel-inner">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-2);">
+                            <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
+                                Weekly Standings
+                            </h2>
+                            <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
+                                {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b %Y') }}
+                            </span>
+                        </div>
+
+                        <div class="rankings-table-container">
+                            <table class="rankings-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: var(--space-12); text-align: center;">Rank</th>
+                                        <th>Student</th>
+                                        <th style="text-align: right;">Impact Saved</th>
+                                        <th style="text-align: right; width: 140px;">Completed Trades</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if weekly_rankings %}
+                                        {% for entry in weekly_rankings %}
+                                            <tr class="rank-row {% if entry.user_id == current_user.id %}user-row{% endif %}" id="weekly-row-{{ loop.index }}">
+                                                <td style="text-align: center;">
+                                                    <div class="rank-badge-wrapper {% if entry.rank <= 3 %}rank-{{ entry.rank }}{% else %}rank-other{% endif %}">
+                                                        {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}{{ entry.rank }}{% endif %}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                                                        <span style="font-weight: 600; color: var(--color-ink-primary);">{{ entry.display_name }}</span>
+                                                        {% if entry.user_id == current_user.id %}
+                                                            <span style="font-size: 10px; background-color: var(--color-primary-muted); color: var(--color-primary); padding: 2px 6px; border-radius: var(--radius-sm); font-weight: 700; text-transform: uppercase;">You</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td style="text-align: right;">
+                                                    <span class="impact-badge">
+                                                        <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">eco</span>
+                                                        <span class="tabular-number">{{ "%.1f"|format(entry.kg_saved) }} kg</span>
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: right;" class="tabular-number">
+                                                    {{ entry.transaction_count }}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="4">
+                                                <div class="leaderboard-empty-state">
+                                                    <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">recycling</span>
+                                                    <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No trades completed yet</p>
+                                                    <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Be the first in your university to complete a trade this week!</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── 2. Seasonal Tab Content ─── -->
+            <div id="tab-content-seasonal" class="leaderboard-tab-content" style="display: none;">
+                <div class="bezel-outer">
+                    <div class="bezel-inner">
+                        {% if active_season %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-2);">
+                                <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
+                                    {{ active_season.name }}
+                                </h2>
+                                <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
+                                    Active Term
+                                </span>
+                            </div>
+
+                            <div class="rankings-table-container">
+                                <table class="rankings-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: var(--space-12); text-align: center;">Rank</th>
+                                            <th>Student</th>
+                                            <th style="text-align: right;">Impact Saved</th>
+                                            <th style="text-align: right; width: 140px;">Completed Trades</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if seasonal_rankings %}
+                                            {% for entry in seasonal_rankings %}
+                                                <tr class="rank-row {% if entry.user_id == current_user.id %}user-row{% endif %}" id="seasonal-row-{{ loop.index }}">
+                                                    <td style="text-align: center;">
+                                                        <div class="rank-badge-wrapper {% if entry.rank <= 3 %}rank-{{ entry.rank }}{% else %}rank-other{% endif %}">
+                                                            {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}{{ entry.rank }}{% endif %}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div style="display: flex; align-items: center; gap: var(--space-2);">
+                                                            <span style="font-weight: 600; color: var(--color-ink-primary);">{{ entry.display_name }}</span>
+                                                            {% if entry.user_id == current_user.id %}
+                                                                <span style="font-size: 10px; background-color: var(--color-primary-muted); color: var(--color-primary); padding: 2px 6px; border-radius: var(--radius-sm); font-weight: 700; text-transform: uppercase;">You</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                    <td style="text-align: right;">
+                                                        <span class="impact-badge">
+                                                            <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">eco</span>
+                                                            <span class="tabular-number">{{ "%.1f"|format(entry.kg_saved) }} kg</span>
+                                                        </span>
+                                                    </td>
+                                                    <td style="text-align: right;" class="tabular-number">
+                                                        {{ entry.transaction_count }}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4">
+                                                    <div class="leaderboard-empty-state">
+                                                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">nature_people</span>
+                                                        <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No trades this term yet</p>
+                                                        <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Complete exchanges to kick off the term leaderboard standings!</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <!-- Off-Season Card -->
+                            <div class="leaderboard-empty-state" style="padding: var(--space-12) var(--space-4);">
+                                <span class="material-symbols-outlined" style="font-size: 56px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4); opacity: 0.6;" aria-hidden="true">hotel_class</span>
+                                <h3 style="font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0 0 var(--space-2) 0;">Off-Season</h3>
+                                <p style="font-size: var(--type-body); color: var(--color-ink-secondary); max-width: 480px; margin: 0 auto;">
+                                    There is no active term season running at the moment. Keep trading to build your weekly rank, and check back soon for the next seasonal competition!
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── 3. Cross-University Tab Content ─── -->
+            {% if multi_uni_enabled %}
+                <div id="tab-content-universities" class="leaderboard-tab-content" style="display: none;">
+                    <div class="bezel-outer">
+                        <div class="bezel-inner">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+                                <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
+                                    Cross-University Standing
+                                </h2>
+                                <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
+                                    Active Term
+                                </span>
+                            </div>
+
+                            <div class="rankings-table-container">
+                                <table class="rankings-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: var(--space-12); text-align: center;">Rank</th>
+                                            <th>University</th>
+                                            <th style="text-align: right;">Total Impact Saved</th>
+                                            <th style="text-align: right; width: 140px;">Completed Trades</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if cross_uni_standings %}
+                                            {% for entry in cross_uni_standings %}
+                                                <tr class="rank-row" id="crossuni-row-{{ loop.index }}">
+                                                    <td style="text-align: center;">
+                                                        <div class="rank-badge-wrapper {% if entry.rank <= 3 %}rank-{{ entry.rank }}{% else %}rank-other{% endif %}">
+                                                            {% if entry.rank == 1 %}🥇{% elif entry.rank == 2 %}🥈{% elif entry.rank == 3 %}🥉{% else %}{{ entry.rank }}{% endif %}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span style="font-weight: 600; color: var(--color-ink-primary);">{{ entry.display_name }}</span>
+                                                    </td>
+                                                    <td style="text-align: right;">
+                                                        <span class="impact-badge">
+                                                            <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">eco</span>
+                                                            <span class="tabular-number">{{ "%.1f"|format(entry.kg_saved) }} kg</span>
+                                                        </span>
+                                                    </td>
+                                                    <td style="text-align: right;" class="tabular-number">
+                                                        {{ entry.transaction_count }}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4">
+                                                    <div class="leaderboard-empty-state">
+                                                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">explore</span>
+                                                        <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No inter-university data</p>
+                                                        <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Standings will be compiled as soon as seasonal rankings compute.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </main>
+
+        <!-- RIGHT: Bento Sidebar -->
+        <aside class="user-status-card">
+            
+            <!-- User Rank Card -->
+            <div class="bezel-outer">
+                <div class="bezel-inner">
+                    <div class="user-status-header">
+                        <div class="user-status-avatar">
+                            {{ current_user.name[:2].upper() }}
+                        </div>
+                        <div>
+                            <h3 style="font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary); margin: 0;">{{ current_user.name }}</h3>
+                            <span style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{{ current_user.university_domain }}</span>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--color-border); margin: var(--space-4) 0; padding-top: var(--space-4);">
+                        <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin: 0 0 var(--space-3) 0; font-weight: 500;">Your Standings:</p>
+                        
+                        <div class="status-metric-grid">
+                            <div class="status-metric">
+                                <span class="status-metric__value">
+                                    {% if user_weekly_rank %}
+                                        #{{ user_weekly_rank.rank }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                                <span class="status-metric__label">Weekly Rank</span>
+                            </div>
+                            <div class="status-metric">
+                                <span class="status-metric__value">
+                                    {% if user_weekly_rank %}
+                                        {{ "%.1f"|format(user_weekly_rank.kg_saved) }}
+                                    {% else %}
+                                        0.0
+                                    {% endif %}
+                                </span>
+                                <span class="status-metric__label">Weekly kg</span>
+                            </div>
+                            <div class="status-metric">
+                                <span class="status-metric__value">
+                                    {% if user_seasonal_rank %}
+                                        #{{ user_seasonal_rank.rank }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                                <span class="status-metric__label">Seasonal Rank</span>
+                            </div>
+                            <div class="status-metric">
+                                <span class="status-metric__value">
+                                    {% if user_seasonal_rank %}
+                                        {{ "%.1f"|format(user_seasonal_rank.kg_saved) }}
+                                    {% else %}
+                                        0.0
+                                    {% endif %}
+                                </span>
+                                <span class="status-metric__label">Seasonal kg</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Card -->
+            <div class="bezel-outer">
+                <div class="bezel-inner">
+                    <h3 style="font-family: var(--font-sans); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary); margin: 0 0 var(--space-3) 0; display: flex; align-items: center; gap: var(--space-2);">
+                        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">info</span>
+                        <span>How it works</span>
+                    </h3>
+                    <ul style="font-size: var(--type-small); color: var(--color-ink-secondary); padding-left: var(--space-4); margin: 0; display: flex; flex-direction: column; gap: var(--space-2); line-height: 1.5;">
+                        <li>Rankings are updated dynamically whenever you complete a trade via handshake PIN verification.</li>
+                        <li>Opt-out or opt-in anytime under your account <a href="{{ url_for('settings') }}" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Settings</a>.</li>
+                        <li>Weekly leaderboards reset every Sunday night at 23:59 in your university's local timezone.</li>
+                        <li>Tiebreakers are determined by total kg saved, then by total trade counts, and finally by whichever milestone was reached first.</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
 {% endblock %}

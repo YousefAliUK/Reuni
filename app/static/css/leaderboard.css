@@ -1,0 +1,362 @@
+/* Reuni — Leaderboard & Hall of Fame Premium Stylesheet */
+
+/* ─── Layout & Page Grid ─── */
+.leaderboard-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+    margin-top: var(--space-6);
+}
+
+@media (min-width: 1024px) {
+    .leaderboard-layout {
+        grid-template-columns: 8fr 4fr; /* Main rankings table left, user status & details right */
+        align-items: start;
+    }
+}
+
+/* ─── Double-Bezel (Concentric Nested Architecture) ─── */
+.bezel-outer {
+    background-color: rgba(28, 25, 23, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: 28px;
+    padding: var(--space-2);
+    transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+
+[data-theme="dark"] .bezel-outer {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.bezel-inner {
+    background-color: var(--color-surface);
+    border-radius: 20px;
+    padding: var(--space-6);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .bezel-inner {
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Premium Tabs Navigation ─── */
+.leaderboard-tabs-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--space-8);
+}
+
+.leaderboard-tabs {
+    display: flex;
+    background-color: rgba(28, 25, 23, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: var(--space-1);
+    gap: var(--space-1);
+    width: 100%;
+    max-width: 600px;
+}
+
+[data-theme="dark"] .leaderboard-tabs {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: var(--radius-full);
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--type-small);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-ink-secondary);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    text-align: center;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.leaderboard-tab:hover {
+    color: var(--color-primary);
+}
+
+.leaderboard-tab.active-tab {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .leaderboard-tab.active-tab {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Table Design ─── */
+.rankings-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.rankings-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.rankings-table th {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--type-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: var(--color-ink-tertiary);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.rankings-table td {
+    padding: var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--type-body);
+    vertical-align: middle;
+    transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.rank-row {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.6s cubic-bezier(0.32, 0.72, 0, 1), transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.rank-row.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.rankings-table tr:hover td {
+    background-color: rgba(15, 118, 110, 0.02);
+}
+
+/* Highlights for current user row */
+.rankings-table tr.user-row td {
+    background-color: rgba(15, 118, 110, 0.05);
+}
+
+.rankings-table tr.user-row:hover td {
+    background-color: rgba(15, 118, 110, 0.08);
+}
+
+/* ─── Rank Medals & Tabular Numbers ─── */
+.rank-badge-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-8);
+    height: var(--space-8);
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: var(--type-body);
+    border-radius: var(--radius-full);
+}
+
+.rank-1 { background-color: #FEF08A; color: #854D0E; } /* Gold */
+.rank-2 { background-color: #E2E8F0; color: #475569; } /* Silver */
+.rank-3 { background-color: #FED7AA; color: #9A3412; } /* Bronze */
+.rank-other { background-color: transparent; color: var(--color-ink-secondary); }
+
+.tabular-number {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.impact-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    background-color: var(--color-primary-muted);
+    color: var(--color-primary);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+}
+
+/* ─── Podiums (Hall of Fame) ─── */
+.podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: var(--space-3);
+    margin: var(--space-8) 0;
+    padding-top: var(--space-12);
+}
+
+.podium-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 160px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s cubic-bezier(0.32, 0.72, 0, 1), transform 0.8s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.podium-column.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.podium-pedestal {
+    width: 100%;
+    background-color: rgba(28, 25, 23, 0.05);
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-4) 0;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .podium-pedestal {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Specific pedestal heights for podium 3-2-1 hierarchy */
+.col-gold .podium-pedestal { height: 160px; border-top: 3px solid #EAB308; }
+.col-silver .podium-pedestal { height: 120px; border-top: 3px solid #94A3B8; }
+.col-bronze .podium-pedestal { height: 90px; border-top: 3px solid #EA580C; }
+
+.podium-medal {
+    font-size: 32px;
+    margin-bottom: var(--space-1);
+}
+
+.podium-display-name {
+    font-size: var(--type-small);
+    font-weight: 700;
+    color: var(--color-ink-primary);
+    text-align: center;
+    margin-bottom: var(--space-1);
+    word-break: break-all;
+}
+
+.podium-stats {
+    font-size: var(--type-micro);
+    color: var(--color-ink-secondary);
+    text-align: center;
+}
+
+.podium-user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary-muted);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: var(--type-body-lg);
+    margin-bottom: var(--space-2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ─── Profile Card / Bento Grid Sidebar ─── */
+.user-status-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.user-status-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.user-status-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary);
+    color: var(--color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: var(--type-title);
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+}
+
+.status-metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.status-metric {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+}
+
+.status-metric__value {
+    font-family: var(--font-mono);
+    font-size: var(--type-title);
+    font-weight: 800;
+    color: var(--color-primary);
+    display: block;
+}
+
+.status-metric__label {
+    font-size: var(--type-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--color-ink-tertiary);
+    margin-top: 2px;
+    display: block;
+}
+
+/* ─── Empty & Off-Season States ─── */
+.leaderboard-empty-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    color: var(--color-ink-tertiary);
+}
+
+.leaderboard-empty-icon {
+    font-size: 48px;
+    color: var(--color-ink-tertiary);
+    margin-bottom: var(--space-4);
+    opacity: 0.7;
+}
+
+/* ─── Eyebrows & General Helpers ─── */
+.eyebrow-badge {
+    display: inline-flex;
+    background-color: rgba(28, 25, 23, 0.05);
+    border-radius: var(--radius-full);
+    padding: var(--space-1) var(--space-3);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--color-ink-secondary);
+    margin-bottom: var(--space-3);
+}
+
+[data-theme="dark"] .eyebrow-badge {
+    background-color: rgba(255, 255, 255, 0.05);
+}

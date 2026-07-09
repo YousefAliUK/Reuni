@@ -1,7 +1,220 @@
 {% extends "base.html" %}
 {% block title %}Hall of Fame — Reuni{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h1>Hall of Fame</h1>
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: var(--space-6) var(--space-4);">
+
+    <!-- Eyebrow + Page Title -->
+    <div style="margin-bottom: var(--space-8); text-align: center;">
+        <div class="eyebrow-badge">Achievements</div>
+        <h1 style="font-family: var(--font-sans); font-size: var(--type-display); font-weight: 800; color: var(--color-ink-primary); margin: 0; line-height: var(--lead-display); letter-spacing: var(--track-display);">
+            The Hall of Fame
+        </h1>
+        <p style="font-size: var(--type-body-lg); color: var(--color-ink-secondary); margin-top: var(--space-2); margin-bottom: 0; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Celebrating the champions of campus circular economy and environmental sustainability.
+        </p>
+    </div>
+
+    <!-- ─── SECTION 1: Seasonal / Grand Hall of Fame ─── -->
+    <section style="margin-bottom: var(--space-12);" aria-labelledby="seasonal-hof-title">
+        <h2 id="seasonal-hof-title" style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 800; color: var(--color-ink-primary); margin-bottom: var(--space-6); text-align: center; border-bottom: 2px solid var(--color-border); padding-bottom: var(--space-2);">
+            🏆 Seasonal Champions
+        </h2>
+
+        {% if seasonal_hof %}
+            {% for item in seasonal_hof %}
+                <div class="bezel-outer" style="margin-bottom: var(--space-8);">
+                    <div class="bezel-inner">
+                        <!-- Season Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4);">
+                            <div>
+                                <h3 style="font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
+                                    {{ item.season.name }}
+                                </h3>
+                                <span style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">
+                                    {{ item.season.start_date.strftime('%b %Y') }} – {{ item.season.end_date.strftime('%b %Y') }}
+                                </span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500;">University Total:</span>
+                                <span class="impact-badge" style="margin-left: var(--space-1);">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">eco</span>
+                                    <span class="tabular-number" style="font-weight: 700;">{{ "%.1f"|format(item.total_kg) }} kg</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Podium Layout -->
+                        {% set rank1 = None %}
+                        {% set rank2 = None %}
+                        {% set rank3 = None %}
+                        {% for entry in item.entries %}
+                            {% if entry.rank == 1 %}{% set rank1 = entry %}
+                            {% elif entry.rank == 2 %}{% set rank2 = entry %}
+                            {% elif entry.rank == 3 %}{% set rank3 = entry %}{% endif %}
+                        {% endfor %}
+
+                        <div class="podium-container" id="season-podium-{{ item.season.id }}">
+                            <!-- Rank 2 -->
+                            <div class="podium-column col-silver" id="season-podium-{{ item.season.id }}-rank2">
+                                {% if rank2 %}
+                                    <div class="podium-user-avatar">{{ rank2.display_name[:2].upper() }}</div>
+                                    <div class="podium-display-name">{{ rank2.display_name }}</div>
+                                    <div class="podium-stats">
+                                        <span class="tabular-number">{{ "%.1f"|format(rank2.kg_saved) }} kg</span>
+                                    </div>
+                                    <div class="podium-pedestal">
+                                        <span class="podium-medal">🥈</span>
+                                        <span style="font-size: var(--type-micro); font-weight: 700; color: var(--color-ink-secondary); text-transform: uppercase; letter-spacing: 0.1em;">2nd Place</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Rank 1 -->
+                            <div class="podium-column col-gold" id="season-podium-{{ item.season.id }}-rank1">
+                                {% if rank1 %}
+                                    <div class="podium-user-avatar" style="background-color: #FEF08A; color: #854D0E;">{{ rank1.display_name[:2].upper() }}</div>
+                                    <div class="podium-display-name" style="font-size: var(--type-body-lg); font-weight: 800;">{{ rank1.display_name }}</div>
+                                    <div class="podium-stats">
+                                        <span class="tabular-number" style="font-weight: 700; color: var(--color-primary);">{{ "%.1f"|format(rank1.kg_saved) }} kg</span>
+                                    </div>
+                                    <div class="podium-pedestal">
+                                        <span class="podium-medal">🥇</span>
+                                        <span style="font-size: var(--type-micro); font-weight: 700; color: var(--color-ink-secondary); text-transform: uppercase; letter-spacing: 0.1em;">Champion</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Rank 3 -->
+                            <div class="podium-column col-bronze" id="season-podium-{{ item.season.id }}-rank3">
+                                {% if rank3 %}
+                                    <div class="podium-user-avatar">{{ rank3.display_name[:2].upper() }}</div>
+                                    <div class="podium-display-name">{{ rank3.display_name }}</div>
+                                    <div class="podium-stats">
+                                        <span class="tabular-number">{{ "%.1f"|format(rank3.kg_saved) }} kg</span>
+                                    </div>
+                                    <div class="podium-pedestal">
+                                        <span class="podium-medal">🥉</span>
+                                        <span style="font-size: var(--type-micro); font-weight: 700; color: var(--color-ink-secondary); text-transform: uppercase; letter-spacing: 0.1em;">3rd Place</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="bezel-outer">
+                <div class="bezel-inner">
+                    <div class="leaderboard-empty-state">
+                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">emoji_events</span>
+                        <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No completed terms yet</p>
+                        <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Check back here after the active seasonal term concludes!</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- ─── SECTION 2: Weekly Hall of Fame ─── -->
+    <section aria-labelledby="weekly-hof-title">
+        <h2 id="weekly-hof-title" style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 800; color: var(--color-ink-primary); margin-bottom: var(--space-6); text-align: center; border-bottom: 2px solid var(--color-border); padding-bottom: var(--space-2);">
+            📅 Weekly History
+        </h2>
+
+        {% if weekly_hof %}
+            <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-6);">
+                {% for item in weekly_hof %}
+                    <div class="bezel-outer">
+                        <div class="bezel-inner" style="padding: var(--space-4) var(--space-6);">
+                            <!-- Week Header -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                                <span style="font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary);">
+                                    Week of {{ item.week_start.strftime('%d %b %Y') }}
+                                </span>
+                                <span style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">
+                                    Completed
+                                </span>
+                            </div>
+
+                            <!-- Podiums (Horizontal/compact design for past weeks) -->
+                            {% set w_rank1 = None %}
+                            {% set w_rank2 = None %}
+                            {% set w_rank3 = None %}
+                            {% for entry in item.entries %}
+                                {% if entry.rank == 1 %}{% set w_rank1 = entry %}
+                                {% elif entry.rank == 2 %}{% set w_rank2 = entry %}
+                                {% elif entry.rank == 3 %}{% set w_rank3 = entry %}{% endif %}
+                            {% endfor %}
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3);">
+                                <!-- 1st -->
+                                <div style="display: flex; align-items: center; gap: var(--space-3); background-color: rgba(28, 25, 23, 0.02); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                                    <span style="font-size: 24px;">🥇</span>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: var(--type-small); color: var(--color-ink-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ w_rank1.display_name if w_rank1 else '—' }}
+                                        </div>
+                                        <div style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">Champion</div>
+                                    </div>
+                                    <span class="tabular-number" style="font-weight: 700; font-size: var(--type-small); color: var(--color-primary);">
+                                        {{ "%.1f"|format(w_rank1.kg_saved) if w_rank1 else '0.0' }} kg
+                                    </span>
+                                </div>
+
+                                <!-- 2nd -->
+                                <div style="display: flex; align-items: center; gap: var(--space-3); background-color: rgba(28, 25, 23, 0.02); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                                    <span style="font-size: 24px;">🥈</span>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: var(--type-small); color: var(--color-ink-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ w_rank2.display_name if w_rank2 else '—' }}
+                                        </div>
+                                        <div style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">2nd Place</div>
+                                    </div>
+                                    <span class="tabular-number" style="font-weight: 700; font-size: var(--type-small); color: var(--color-ink-secondary);">
+                                        {{ "%.1f"|format(w_rank2.kg_saved) if w_rank2 else '0.0' }} kg
+                                    </span>
+                                </div>
+
+                                <!-- 3rd -->
+                                <div style="display: flex; align-items: center; gap: var(--space-3); background-color: rgba(28, 25, 23, 0.02); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                                    <span style="font-size: 24px;">🥉</span>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: var(--type-small); color: var(--color-ink-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ w_rank3.display_name if w_rank3 else '—' }}
+                                        </div>
+                                        <div style="font-size: var(--type-micro); color: var(--color-ink-tertiary);">3rd Place</div>
+                                    </div>
+                                    <span class="tabular-number" style="font-weight: 700; font-size: var(--type-small); color: var(--color-ink-secondary);">
+                                        {{ "%.1f"|format(w_rank3.kg_saved) if w_rank3 else '0.0' }} kg
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bezel-outer">
+                <div class="bezel-inner">
+                    <div class="leaderboard-empty-state">
+                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">history</span>
+                        <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No completed weeks yet</p>
+                        <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Standings will populate here at the end of the active week.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
 {% endblock %}
