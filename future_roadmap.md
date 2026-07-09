@@ -49,3 +49,76 @@ Email alerts to close the loop on marketplace interactions.
 
 - [ ] Implement rate limiting on general API endpoints.
 - [ ] Add session expiry checks and audit trails for admin events.
+
+---
+
+## Role Hierarchy Expansion — Partner Lead (University Admin)
+
+### Background
+
+The current role model (`admin`, `partner`, `student`) requires the Reuni admin to personally
+invite every individual sustainability team member at every university. At scale across multiple
+universities this is unworkable.
+
+### Target Role Hierarchy
+
+```
+Reuni Admin (platform owner)
+├── Onboards universities (creates UniversityConfig records)
+├── Promotes one partner → Partner Lead per university
+├── Emergency account actions (deactivate a Partner Lead who leaves)
+├── Platform-wide feature flag control and maintenance mode
+└── Cross-university visibility — the only role that sees all universities' data
+
+Partner Lead (Head of Sustainability at each university)
+├── Invites additional partners scoped to their own university email domain
+├── Sets and edits Season dates (term start/end) for their university
+├── Views their university's aggregated ESG stats and leaderboard data
+└── Cannot read or modify any other university's data (enforced at query level)
+
+Partner (sustainability team member)
+└── Views partner dashboard, manages items, downloads reports
+
+Student
+└── Trades items, appears on leaderboard (if opted in)
+```
+
+### Implementation Approach
+
+**Do not create a new `role` value.** Instead, add a boolean flag to `User`:
+
+```python
+is_university_manager = db.Column(db.Boolean, default=False, nullable=False)
+```
+
+A `partner` with `is_university_manager=True` IS the Partner Lead. This avoids adding a
+fourth role string and scattering new role checks across every `current_user.role == ...`
+guard in the codebase.
+
+A new `@partner_lead_required` decorator would combine the existing `@partner_required`
+check with `current_user.is_university_manager == True`.
+
+### Partner Invite Scoping
+
+When a Partner Lead generates an invite token, the token must be scoped to their own
+`university_domain` (already stored on the User model). The invite registration route
+validates that the registering email matches the token's domain. This prevents a Partner
+Lead from Brookes from inviting someone from Oxford.
+
+The existing `generate_partner_invite_token()` in `app/utils/tokens.py` already includes
+`university_domain` in the payload — the change is gating token generation behind
+`is_university_manager` rather than `role == 'admin'`.
+
+### What the Reuni Admin Retains
+
+- Only the Reuni admin can create `UniversityConfig` records (onboard new universities)
+- Only the Reuni admin can promote a partner to Partner Lead (`is_university_manager=True`)
+- Only the Reuni admin has cross-university query access (no `university_domain` filter)
+- Only the Reuni admin can deactivate a Partner Lead
+
+### When to Implement
+
+Not needed until the platform expands to a second university with its own sustainability
+team. For single-university operation (Brookes), the current `admin` + `partner` model is
+sufficient — the admin invites partners directly. This item is relevant when a second
+university is onboarded and their sustainability lead needs to self-manage their team.

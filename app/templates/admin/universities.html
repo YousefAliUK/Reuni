@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}University Configurations — Reuni{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+
+    <!-- Header Row -->
+    <div class="admin-header">
+        <div class="admin-title-block">
+            <h1 class="admin-title">University Configurations</h1>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <a href="{{ url_for('admin.new_university') }}" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none;">
+            <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">add</span>
+            <span>Add University</span>
+        </a>
+    </div>
+
+    <!-- Configurations Table -->
+    <div class="admin-card" style="padding: 0; overflow: hidden;">
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Display Name</th>
+                        <th>Domain</th>
+                        <th>Subdomain Slug</th>
+                        <th>Email Domain</th>
+                        <th>Timezone</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if configs %}
+                        {% for config in configs %}
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                                        <span class="admin-table-initials">{{ config.display_name[:2].upper() }}</span>
+                                        <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ config.display_name }}</span>
+                                    </div>
+                                </td>
+                                <td style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                    {{ config.domain }}
+                                </td>
+                                <td style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                    {{ config.subdomain_slug }}
+                                </td>
+                                <td style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                    {{ config.email_domain }}
+                                </td>
+                                <td style="font-size: 13px; color: var(--color-ink-secondary);">
+                                    {{ config.timezone }}
+                                </td>
+                                <td style="text-align: center;">
+                                    <a href="{{ url_for('admin.edit_university', domain=config.domain) }}" class="btn btn--outline btn--sm" style="padding: 4px 12px; font-size: 12px; height: auto; text-decoration: none;">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr style="height: 120px;">
+                            <td colspan="6" style="text-align: center; vertical-align: middle; color: var(--color-ink-tertiary); font-size: var(--type-body);">
+                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);" aria-hidden="true">school</span>
+                                <span>No university configurations seeded yet.</span>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
