@@ -22,7 +22,7 @@ from datetime import datetime, timezone, timedelta
 from PIL import Image as PILImage, ImageDraw, ImageFont
 
 from app import create_app, db
-from app.models import User, Item, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES
+from app.models import User, Item, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES, UniversityConfig, Season, WeeklySnapshot, SeasonalSnapshot
 from app.utils.email_validation import extract_university_domain
 
 app = create_app()
@@ -302,39 +302,39 @@ SAMPLE_USERS = [
     },
     # ── Oxford Demo Users ──
     {
-        "email": "w.churchill@oxford.ac.uk",
+        "email": "w.churchill@ox.ac.uk",
         "name": "Winston Churchill",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "m.thatcher@oxford.ac.uk",
+        "email": "m.thatcher@ox.ac.uk",
         "name": "Margaret Thatcher",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "a.turing@oxford.ac.uk",
+        "email": "a.turing@ox.ac.uk",
         "name": "Alan Turing",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "admin@oxford.ac.uk",
+        "email": "admin@ox.ac.uk",
         "name": "Oxford Admin",
         "password": "OxfordDemo1",
         "role": "admin",
         "partner_university": None,
     },
     {
-        "email": "sustainability@oxford.ac.uk",
+        "email": "sustainability@ox.ac.uk",
         "name": "Oxford Sustainability Office",
         "password": "OxfordDemo1",
         "role": "partner",
-        "partner_university": "oxford.ac.uk",
+        "partner_university": "ox.ac.uk",
     },
 ]
 
@@ -967,7 +967,7 @@ SAMPLE_ITEMS = [
         "condition": "Good",
         "price": 20.00,
         "is_free": False,
-        "seller_email": "w.churchill@oxford.ac.uk",
+        "seller_email": "w.churchill@ox.ac.uk",
         "image_file": "oxford_chair.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -985,7 +985,7 @@ SAMPLE_ITEMS = [
         "condition": "New",
         "price": 15.00,
         "is_free": False,
-        "seller_email": "a.turing@oxford.ac.uk",
+        "seller_email": "a.turing@ox.ac.uk",
         "image_file": "clrs_book.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -1003,10 +1003,10 @@ SAMPLE_ITEMS = [
         "condition": "Like New",
         "price": 30.00,
         "is_free": False,
-        "seller_email": "a.turing@oxford.ac.uk",
+        "seller_email": "a.turing@ox.ac.uk",
         "image_file": "keychron_keyboard.jpg",
         "is_sold": True,
-        "buyer_email": "m.thatcher@oxford.ac.uk",
+        "buyer_email": "m.thatcher@ox.ac.uk",
         "days_ago_claimed": 3,
         "days_active_before_claim": 5,
         "days_ago_listed": 8,
@@ -1022,7 +1022,7 @@ SAMPLE_ITEMS = [
         "condition": "Like New",
         "price": 0.00,
         "is_free": True,
-        "seller_email": "m.thatcher@oxford.ac.uk",
+        "seller_email": "m.thatcher@ox.ac.uk",
         "image_file": "gown_bundle.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -1040,7 +1040,7 @@ SAMPLE_ITEMS = [
         "condition": "Good",
         "price": 10.00,
         "is_free": False,
-        "seller_email": "w.churchill@oxford.ac.uk",
+        "seller_email": "w.churchill@ox.ac.uk",
         "image_file": "tea_set.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -1104,6 +1104,44 @@ def seed():
                     print(f"  [WARN] Failed to delete {file_path}: {e}")
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Create default university configs
+        print("Seeding university configs...")
+        brookes_cfg = UniversityConfig(
+            domain="brookes.ac.uk",
+            subdomain_slug="brookes",
+            display_name="Oxford Brookes University",
+            email_domain="brookes.ac.uk",
+            timezone="Europe/London"
+        )
+        oxford_cfg = UniversityConfig(
+            domain="ox.ac.uk",
+            subdomain_slug="oxford",
+            display_name="Oxford University",
+            email_domain="ox.ac.uk",
+            timezone="Europe/London"
+        )
+        db.session.add_all([brookes_cfg,oxford_cfg])
+
+        # Create active seasons
+        print("Seeding active seasons...")
+        brookes_season = Season(
+            university_domain="brookes.ac.uk",
+            name="Autumn Term 2026",
+            start_date=now - timedelta(days=30),
+            end_date=now + timedelta(days=60),
+            is_active=True,
+            is_complete=False
+        )
+        oxford_season = Season(
+            university_domain="ox.ac.uk",
+            name="Autumn Term 2026",
+            start_date=now - timedelta(days=30),
+            end_date=now + timedelta(days=60),
+            is_active=True,
+            is_complete=False
+        )
+        db.session.add_all([brookes_season, oxford_season])
 
         # Create users
         users = {}  # dict mapping email -> User object
@@ -1194,6 +1232,7 @@ def seed():
                 is_sold=i_data["is_sold"],
                 buyer_id=buyer_id,
                 claimed_at=claimed_at,
+                sold_at=claimed_at if i_data["is_sold"] else None,
                 created_at=item_created_at,
             )
             db.session.add(item)
@@ -1235,6 +1274,87 @@ def seed():
         for email, total_kg in seller_kg_totals.items():
             users[email].kg_saved_total = round(total_kg, 2)
             print(f"  Updated kg_saved_total for {email}: {round(total_kg, 2)} kg")
+
+        # Seed completed season & historical snapshots for Hall of Fame demonstration
+        print("Seeding completed seasons and snapshots for Hall of Fame...")
+        past_season = Season(
+            university_domain="brookes.ac.uk",
+            name="Spring Term 2026",
+            start_date=now - timedelta(days=120),
+            end_date=now - timedelta(days=31),
+            is_active=False,
+            is_complete=True
+        )
+        db.session.add(past_season)
+        db.session.flush() # assign ID to past_season
+
+        # Seed seasonal snapshots
+        s_snap1 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=84.5,
+            transaction_count=12,
+            rank=1
+        )
+        s_snap2 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=62.0,
+            transaction_count=8,
+            rank=2
+        )
+        s_snap3 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["a.rahman@brookes.ac.uk"].id,
+            display_name=users["a.rahman@brookes.ac.uk"].name,
+            kg_saved=48.2,
+            transaction_count=6,
+            rank=3
+        )
+        db.session.add_all([s_snap1, s_snap2, s_snap3])
+
+        # Seed weekly snapshots for Oxford Brookes
+        w_date = now - timedelta(days=7)
+        w_start = w_date - timedelta(days=w_date.weekday())
+        w_start = w_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        w_end = w_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        w_snap1 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=18.4,
+            transaction_count=3,
+            rank=1
+        )
+        w_snap2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=12.2,
+            transaction_count=2,
+            rank=2
+        )
+        w_snap3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["c.fraser@brookes.ac.uk"].id,
+            display_name=users["c.fraser@brookes.ac.uk"].name,
+            kg_saved=8.5,
+            transaction_count=1,
+            rank=3
+        )
+        db.session.add_all([w_snap1, w_snap2, w_snap3])
 
         db.session.commit()
         print("\n[SUCCESS] Database committed successfully.")

@@ -181,7 +181,7 @@ def get_cross_university_standings(season):
     """
     Returns live cross-university kg rankings for the given season.
     Aggregated from items table — no personal data.
-    Returns list of dicts: [{university_domain, display_name, total_kg, rank}]
+    Returns list of dicts: [{university_domain, display_name, total_kg, transaction_count, rank}]
     Only used when FEATURE_MULTI_UNIVERSITY=True.
     """
     from app.models import UniversityConfig
@@ -191,6 +191,7 @@ def get_cross_university_standings(season):
         db.session.query(
             Item.university_domain,
             func.sum(Item.kg_saved).label("total_kg"),
+            func.count(Item.id).label("transaction_count"),
         )
         .filter(
             Item.is_sold == True,
@@ -215,5 +216,6 @@ def get_cross_university_standings(season):
             "university_domain": row.university_domain,
             "display_name": domain_names.get(row.university_domain, row.university_domain),
             "total_kg": float(row.total_kg),
+            "transaction_count": row.transaction_count,
         })
     return results
