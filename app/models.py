@@ -422,7 +422,3 @@ class SeasonalSnapshot(db.Model):
     def __repr__(self):
         return f"<SeasonalSnapshot season_id={self.season_id} rank={self.rank}>"
 
-
-# Temporary compatibility alias (to be removed in Phase 5)
-UniversityLogo = UniversityConfig
-

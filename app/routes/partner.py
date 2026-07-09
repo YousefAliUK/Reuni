@@ -110,7 +110,18 @@ def partner_dashboard():
     if uni_domain and uni_domain not in PUBLIC_DOMAINS:
         from flask import current_app
         import os
-        mapping = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        # Get subdomain map from process cache or DB
+        mapping = current_app.extensions.get("_subdomain_map")
+        if mapping is None:
+            try:
+                from app.models import UniversityConfig
+                rows = UniversityConfig.query.with_entities(
+                    UniversityConfig.subdomain_slug, UniversityConfig.domain
+                ).all()
+                mapping = {row.subdomain_slug: row.domain for row in rows}
+                current_app.extensions["_subdomain_map"] = mapping
+            except Exception:
+                mapping = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
         reverse_map = {v: k for k, v in mapping.items()}
         slug = reverse_map.get(uni_domain, uni_domain.split('.')[0])
         
@@ -118,8 +129,8 @@ def partner_dashboard():
         if os.path.exists(filepath):
             logo_url = f"img/logos/{slug}.png"
         else:
-            from app.models import UniversityLogo
-            logo_rec = UniversityLogo.query.filter_by(domain=uni_domain).first()
+            from app.models import UniversityConfig
+            logo_rec = UniversityConfig.query.filter_by(domain=uni_domain).first()
             if not logo_rec or logo_rec.logo_status == 'pending':
                 from app.utils.logo_downloader import start_logo_fetch_job
                 start_logo_fetch_job(current_app._get_current_object(), uni_domain)

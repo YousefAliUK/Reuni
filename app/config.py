@@ -60,11 +60,14 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
-    # Subdomain to University Domain mapping
+    # FALLBACK ONLY — runtime routing reads from UniversityConfig DB table.
+    # This is used only if the DB is unavailable (e.g., during initial migration).
     SUBDOMAIN_UNIVERSITY_MAP = {
         "brookes": "brookes.ac.uk",
         "oxford": "oxford.ac.uk",
     }
+
+    FEATURE_MULTI_UNIVERSITY = os.environ.get("FEATURE_MULTI_UNIVERSITY", "false").lower() == "true"
 
     # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
