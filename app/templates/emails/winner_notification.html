@@ -1,0 +1,6 @@
+<p>Hi {{ user_name }},</p>
+<p>Congratulations! You finished <strong>{{ rank_label }}</strong> on the Reuni leaderboard for the {{ period_label }}!</p>
+<p>During this period, you saved <strong>{{ "%.1f"|format(kg_saved) }} kg</strong> of carbon/waste across <strong>{{ transaction_count }}</strong> completed transactions.</p>
+<p>To celebrate your amazing contribution to our campus circular economy, your achievement has been permanently frozen in the <a href="{{ url_for('leaderboard.hall_of_fame', _external=True) }}">Hall of Fame</a>. Check it out to see your name alongside the top sustainable students on campus!</p>
+<p>Keep up the great work of reusing, circulating, and reducing waste!</p>
+<p>Best regards,<br>The Reuni Team</p>
