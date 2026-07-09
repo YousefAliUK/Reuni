@@ -107,6 +107,27 @@
             </form>
         </div>
 
+        <!-- SECTION 3.5 — Privacy Settings -->
+        <div class="settings-card">
+            <h2 class="settings-card__title">Privacy</h2>
+            
+            <form method="POST" action="{{ url_for('settings') }}" style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="settings-toggle" style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="show_on_leaderboard" style="cursor: pointer; flex-grow: 1; padding-right: var(--space-4);">
+                        <strong style="display: block; font-size: 14px; color: var(--color-ink-primary);">Appear on the Leaderboard</strong>
+                        <span style="display: block; font-size: 12px; color: var(--color-ink-tertiary); margin-top: 2px;">Show my name and eco-impact on the campus leaderboard ranking.</span>
+                    </label>
+                    <input type="checkbox" id="show_on_leaderboard" name="show_on_leaderboard"
+                           {% if current_user.show_on_leaderboard %}checked{% endif %}
+                           style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
+                
+                <button type="submit" class="btn btn--primary" style="height: 44px; border-radius: var(--radius-md); width: 100%; margin-top: var(--space-2);">Update Privacy Settings</button>
+            </form>
+        </div>
+
         <!-- SECTION 4 — Danger Zone (DELETE ACCOUNT) -->
         <div class="settings-card settings-card--danger">
             <h2 class="settings-card__title settings-card__title--danger">Danger Zone</h2>

@@ -115,3 +115,31 @@ def test_settings_password_complexity(auth_client):
         follow_redirects=True
     )
     assert b"characters long" in resp.data or b"contain at least one" in resp.data
+
+
+def test_settings_privacy_toggle(auth_client, sample_user, db_session):
+    """POST /settings successfully toggles show_on_leaderboard preference."""
+    # Ensure default is True
+    assert sample_user.show_on_leaderboard is True
+
+    # Toggle off (by omitting or sending other value since checkbox form data is only 'on' if checked)
+    resp = auth_client.post(
+        "/settings",
+        data={},
+        follow_redirects=True
+    )
+    assert b"Privacy settings updated successfully." in resp.data
+    db_session.session.refresh(sample_user)
+    assert sample_user.show_on_leaderboard is False
+
+    # Toggle on
+    resp_on = auth_client.post(
+        "/settings",
+        data={
+            "show_on_leaderboard": "on"
+        },
+        follow_redirects=True
+    )
+    assert b"Privacy settings updated successfully." in resp_on.data
+    db_session.session.refresh(sample_user)
+    assert sample_user.show_on_leaderboard is True

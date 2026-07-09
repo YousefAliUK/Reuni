@@ -559,10 +559,16 @@ def create_app(config_class=None):
         )
     
     # ── Settings Routes ──
-    @app.route("/settings", methods=["GET"])
+    @app.route("/settings", methods=["GET", "POST"])
     @login_required
     @verified_required
     def settings():
+        if request.method == "POST":
+            show_on_leaderboard = request.form.get("show_on_leaderboard") == "on"
+            current_user.show_on_leaderboard = show_on_leaderboard
+            db.session.commit()
+            flash("Privacy settings updated successfully.", "success")
+            return redirect(url_for("settings"))
         return render_template("settings.html")
 
 
