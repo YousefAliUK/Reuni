@@ -6,368 +6,450 @@
 {% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 1200px; margin: 0 auto; padding: var(--space-6) var(--space-4);">
+<div class="reuni-leaderboard-container" id="leaderboard-main-container">
 
     <!-- Eyebrow + Page Title -->
-    <div style="margin-bottom: var(--space-8);">
-        <div class="eyebrow-badge">Standings</div>
-        <h1 style="font-family: var(--font-sans); font-size: var(--type-display); font-weight: 800; color: var(--color-ink-primary); margin: 0; line-height: var(--lead-display); letter-spacing: var(--track-display);">
-            Campus Eco Leaderboard
-        </h1>
-        <p style="font-size: var(--type-body-lg); color: var(--color-ink-secondary); margin-top: var(--space-2); margin-bottom: 0;">
-            See who is leading sustainability efforts on campus.
-        </p>
+    <div class="reuni-page-header">
+        <div>
+            <div class="reuni-eyebrow" id="leaderboard-eyebrow">
+                {{ uni_display_name | upper }} · THIS WEEK
+            </div>
+            <h1 class="reuni-heading">
+                Leaderboard
+            </h1>
+        </div>
+        <div>
+            <a href="{{ url_for('leaderboard.hall_of_fame') }}" class="reuni-cross-link-pill">
+                <span>View Hall of Fame</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </a>
+        </div>
     </div>
 
-    <!-- Leaderboard Tabs Navigation -->
-    <div class="leaderboard-tabs-wrapper">
-        <nav class="leaderboard-tabs" aria-label="Leaderboard tabs">
-            <div class="tab-indicator"></div>
-            <button type="button" class="leaderboard-tab active-tab" data-tab-target="weekly" id="tab-btn-weekly">
+    <!-- Segmented Tab Control Navigation -->
+    <div class="reuni-segmented-control-wrapper">
+        <nav class="reuni-segmented-control" aria-label="Leaderboard tabs">
+            <div class="reuni-tab-indicator"></div>
+            <button type="button" class="reuni-tab-btn active-tab" data-tab-target="weekly" id="tab-btn-weekly">
                 <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
-                <span>This Week</span>
+                <span>Weekly</span>
             </button>
-            <button type="button" class="leaderboard-tab" data-tab-target="seasonal" id="tab-btn-seasonal">
+            <button type="button" class="reuni-tab-btn" data-tab-target="seasonal" id="tab-btn-seasonal">
                 <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
-                <span>This Term</span>
+                <span>Seasonal</span>
             </button>
             {% if multi_uni_enabled %}
-                <button type="button" class="leaderboard-tab" data-tab-target="universities" id="tab-btn-universities">
+                <button type="button" class="reuni-tab-btn" data-tab-target="universities" id="tab-btn-universities">
                     <span class="material-symbols-outlined" aria-hidden="true">hub</span>
-                    <span>All Universities</span>
+                    <span>Universities</span>
                 </button>
             {% endif %}
         </nav>
     </div>
 
     <!-- Layout Grid -->
-    <div class="leaderboard-layout">
+    <div style="width: 100%;">
         
-        <!-- LEFT: Rankings Content -->
-        <main id="main-content">
+        <!-- ─── 1. Weekly Tab Content ─── -->
+        <div id="tab-content-weekly" class="leaderboard-tab-content" data-eyebrow="{{ uni_display_name | upper }} · THIS WEEK" data-layout-class="reuni-leaderboard-container">
             
-            <!-- ─── 1. Weekly Tab Content ─── -->
-            <div id="tab-content-weekly" class="leaderboard-tab-content">
-                <div class="premium-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-2);">
-                        <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
-                            Weekly Standings
-                        </h2>
-                        <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
-                            {{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b %Y') }}
-                        </span>
-                    </div>
+            <!-- Countdown chip -->
+            <div class="reuni-countdown-chip-wrapper">
+                <div class="reuni-countdown-chip">
+                    <span class="material-symbols-outlined">schedule</span>
+                    <span>{{ weekly_countdown }}</span>
+                </div>
+            </div>
 
-                    <!-- Weekly Podium Layout (Top 3) -->
-                    {% set ns_w = namespace(w_rank1=None, w_rank2=None, w_rank3=None) %}
-                    {% for entry in weekly_rankings %}
-                        {% if entry.rank == 1 %}{% set ns_w.w_rank1 = entry %}
-                        {% elif entry.rank == 2 %}{% set ns_w.w_rank2 = entry %}
-                        {% elif entry.rank == 3 %}{% set ns_w.w_rank3 = entry %}{% endif %}
-                    {% endfor %}
-                    {% if ns_w.w_rank1 or ns_w.w_rank2 or ns_w.w_rank3 %}
-                        <div class="hero-podium">
-                            <!-- Rank 2 -->
-                            <div class="podium-member podium-member--2">
-                                {% if ns_w.w_rank2 %}
-                                    <div class="podium-member__avatar-wrapper">
-                                        <div class="podium-member__avatar">{{ ns_w.w_rank2.display_name[:2].upper() }}</div>
-                                        <span class="podium-rank-badge">2</span>
-                                    </div>
-                                    <div class="podium-member__name">{{ ns_w.w_rank2.display_name }}</div>
-                                    <div class="podium-member__value">{{ "%.1f"|format(ns_w.w_rank2.kg_saved) }} kg</div>
-                                {% endif %}
+            <div class="reuni-premium-card">
+                <!-- Podium Layout (Top 3) — Render only if >=3 participants -->
+                {% if weekly_rankings|length >= 3 %}
+                    <div class="reuni-podium">
+                        <!-- Rank 2 -->
+                        <div class="reuni-podium-step reuni-podium-step--2">
+                            <div class="reuni-podium-avatar-wrapper">
+                                <div class="reuni-podium-avatar">{{ weekly_rankings[1].display_name[:2].upper() }}</div>
+                                <span class="reuni-podium-badge">2</span>
                             </div>
-                            <!-- Rank 1 -->
-                            <div class="podium-member podium-member--1">
-                                {% if ns_w.w_rank1 %}
-                                    <div class="podium-member__avatar-wrapper">
-                                        <span class="material-symbols-outlined crown-icon">workspace_premium</span>
-                                        <div class="podium-member__avatar">{{ ns_w.w_rank1.display_name[:2].upper() }}</div>
-                                        <span class="podium-rank-badge">1</span>
-                                    </div>
-                                    <div class="podium-member__name">{{ ns_w.w_rank1.display_name }}</div>
-                                    <div class="podium-member__value">{{ "%.1f"|format(ns_w.w_rank1.kg_saved) }} kg</div>
-                                {% endif %}
-                            </div>
-                            <!-- Rank 3 -->
-                            <div class="podium-member podium-member--3">
-                                {% if ns_w.w_rank3 %}
-                                    <div class="podium-member__avatar-wrapper">
-                                        <div class="podium-member__avatar">{{ ns_w.w_rank3.display_name[:2].upper() }}</div>
-                                        <span class="podium-rank-badge">3</span>
-                                    </div>
-                                    <div class="podium-member__name">{{ ns_w.w_rank3.display_name }}</div>
-                                    <div class="podium-member__value">{{ "%.1f"|format(ns_w.w_rank3.kg_saved) }} kg</div>
-                                {% endif %}
-                            </div>
+                            <div class="reuni-podium-name">{{ weekly_rankings[1].display_name }}</div>
+                            <div class="reuni-podium-value">{{ "%.1f"|format(weekly_rankings[1].kg_saved) }} kg</div>
+                            <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
                         </div>
-                    {% endif %}
+                        <!-- Rank 1 -->
+                        <div class="reuni-podium-step reuni-podium-step--1">
+                            <div class="reuni-podium-avatar-wrapper">
+                                <div class="reuni-podium-avatar">{{ weekly_rankings[0].display_name[:2].upper() }}</div>
+                                <span class="reuni-podium-badge">
+                                    <span class="material-symbols-outlined" style="font-size: 14px; line-height: 20px;">workspace_premium</span>
+                                </span>
+                            </div>
+                            <div class="reuni-podium-name">{{ weekly_rankings[0].display_name }}</div>
+                            <div class="reuni-podium-value">{{ "%.1f"|format(weekly_rankings[0].kg_saved) }} kg</div>
+                            <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
+                        </div>
+                        <!-- Rank 3 -->
+                        <div class="reuni-podium-step reuni-podium-step--3">
+                            <div class="reuni-podium-avatar-wrapper">
+                                <div class="reuni-podium-avatar">{{ weekly_rankings[2].display_name[:2].upper() }}</div>
+                                <span class="reuni-podium-badge">3</span>
+                            </div>
+                            <div class="reuni-podium-name">{{ weekly_rankings[2].display_name }}</div>
+                            <div class="reuni-podium-value">{{ "%.1f"|format(weekly_rankings[2].kg_saved) }} kg</div>
+                            <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
+                        </div>
+                    </div>
+                {% endif %}
 
-                    <!-- Stacked Card List -->
-                    <div class="leaderboard-list">
+                <!-- Semantic accessible table -->
+                <table class="reuni-table" id="table-weekly">
+                    <caption class="sr-only">Weekly leaderboard for {{ uni_display_name }}</caption>
+                    <thead>
+                        <tr class="sr-only">
+                            <th scope="col">Rank</th>
+                            <th scope="col">Avatar</th>
+                            <th scope="col">Student</th>
+                            <th scope="col">Kg saved</th>
+                            <th scope="col">Items</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {% if weekly_rankings %}
-                            {% set leader_kg = weekly_rankings[0].kg_saved if (weekly_rankings and weekly_rankings[0].kg_saved > 0) else 1.0 %}
+                            {% set start_idx = 3 if weekly_rankings|length >= 3 else 0 %}
                             {% for entry in weekly_rankings %}
-                                <div class="leaderboard-row {% if entry.user_id == current_user.id %}leaderboard-row--user{% endif %} rank-row" id="weekly-row-{{ loop.index }}">
-                                    <span class="rank-badge rank-badge--{{ entry.rank if entry.rank <= 3 else 'other' }}">
-                                        {{ entry.rank }}
-                                    </span>
-                                    <div class="leaderboard-row__avatar">
-                                        {{ entry.display_name[:2].upper() }}
-                                    </div>
-                                    <div class="leaderboard-row__name-container">
-                                        <span class="leaderboard-row__name">{{ entry.display_name }}</span>
-                                        {% if entry.user_id == current_user.id %}
-                                            <span class="user-pill">You</span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="leaderboard-row__stats">
-                                        <span class="leaderboard-row__impact">{{ "%.1f"|format(entry.kg_saved) }} kg</span>
-                                        <span class="leaderboard-row__trades">{{ entry.transaction_count }} trades</span>
-                                    </div>
-                                    <div class="row-progress-bar" data-width="{{ (entry.kg_saved / leader_kg) * 100 }}"></div>
-                                </div>
+                                <tr class="reuni-row-tr {% if entry.user_id == current_user.id %}reuni-row-tr--user{% endif %} rank-row {% if loop.index0 < start_idx %}sr-only{% endif %}" 
+                                    data-rank="{{ entry.rank }}" 
+                                    {% if entry.user_id == current_user.id %}id="current-user-row-weekly"{% endif %}>
+                                    <td class="reuni-row-rank">{{ entry.rank }}</td>
+                                    <td>
+                                        <div class="reuni-row-avatar">
+                                            {{ entry.display_name[:2].upper() }}
+                                        </div>
+                                    </td>
+                                    <td class="reuni-row-name-stack">
+                                        <span class="reuni-row-name">
+                                            {{ entry.display_name }}
+                                            {% if entry.user_id == current_user.id %}
+                                                <span class="reuni-row-user-tag">You</span>
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="reuni-row-kg">{{ "%.1f"|format(entry.kg_saved) }} kg</td>
+                                    <td class="reuni-row-items">{{ entry.transaction_count }} items</td>
+                                </tr>
                             {% endfor %}
                         {% else %}
-                            <div class="leaderboard-empty-state">
-                                <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">recycling</span>
-                                <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No trades completed yet</p>
-                                <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Be the first in your university to complete a trade this week!</p>
-                            </div>
+                            <tr>
+                                <td colspan="5">
+                                    <div class="leaderboard-empty-state">
+                                        <span class="material-symbols-outlined leaderboard-empty-icon">eco</span>
+                                        <h3 class="leaderboard-empty-title">No activity yet this week</h3>
+                                        <p class="leaderboard-empty-body">Be the first to save a kg and claim the top spot.</p>
+                                        <a href="{{ url_for('items.list_item') }}" class="btn-primary" style="text-decoration: none;">List an item</a>
+                                    </div>
+                                </td>
+                            </tr>
                         {% endif %}
+                    </tbody>
+                </table>
+
+                {% if weekly_rankings|length > 50 %}
+                    <div class="reuni-pagination-wrapper" id="pagination-wrapper-weekly">
+                        <button type="button" class="reuni-pagination-btn" id="show-more-btn-weekly">Show more</button>
                     </div>
-                </div>
+                {% endif %}
             </div>
 
-            <!-- ─── 2. Seasonal Tab Content ─── -->
-            <div id="tab-content-seasonal" class="leaderboard-tab-content" style="display: none;">
-                <div class="premium-card">
-                    {% if active_season %}
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-2);">
-                            <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
-                                {{ active_season.name }}
-                            </h2>
-                            <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
-                                Active Term
-                            </span>
-                        </div>
-
-                        <!-- Seasonal Podium Layout (Top 3) -->
-                        {% set ns_s = namespace(s_rank1=None, s_rank2=None, s_rank3=None) %}
-                        {% for entry in seasonal_rankings %}
-                            {% if entry.rank == 1 %}{% set ns_s.s_rank1 = entry %}
-                            {% elif entry.rank == 2 %}{% set ns_s.s_rank2 = entry %}
-                            {% elif entry.rank == 3 %}{% set ns_s.s_rank3 = entry %}{% endif %}
-                        {% endfor %}
-                        {% if ns_s.s_rank1 or ns_s.s_rank2 or ns_s.s_rank3 %}
-                            <div class="hero-podium">
-                                <!-- Rank 2 -->
-                                <div class="podium-member podium-member--2">
-                                    {% if ns_s.s_rank2 %}
-                                        <div class="podium-member__avatar-wrapper">
-                                            <div class="podium-member__avatar">{{ ns_s.s_rank2.display_name[:2].upper() }}</div>
-                                            <span class="podium-rank-badge">2</span>
-                                        </div>
-                                        <div class="podium-member__name">{{ ns_s.s_rank2.display_name }}</div>
-                                        <div class="podium-member__value">{{ "%.1f"|format(ns_s.s_rank2.kg_saved) }} kg</div>
-                                    {% endif %}
-                                </div>
-                                <!-- Rank 1 -->
-                                <div class="podium-member podium-member--1">
-                                    {% if ns_s.s_rank1 %}
-                                        <div class="podium-member__avatar-wrapper">
-                                            <span class="material-symbols-outlined crown-icon">workspace_premium</span>
-                                            <div class="podium-member__avatar">{{ ns_s.s_rank1.display_name[:2].upper() }}</div>
-                                            <span class="podium-rank-badge">1</span>
-                                        </div>
-                                        <div class="podium-member__name">{{ ns_s.s_rank1.display_name }}</div>
-                                        <div class="podium-member__value">{{ "%.1f"|format(ns_s.s_rank1.kg_saved) }} kg</div>
-                                    {% endif %}
-                                </div>
-                                <!-- Rank 3 -->
-                                <div class="podium-member podium-member--3">
-                                    {% if ns_s.s_rank3 %}
-                                        <div class="podium-member__avatar-wrapper">
-                                            <div class="podium-member__avatar">{{ ns_s.s_rank3.display_name[:2].upper() }}</div>
-                                            <span class="podium-rank-badge">3</span>
-                                        </div>
-                                        <div class="podium-member__name">{{ ns_s.s_rank3.display_name }}</div>
-                                        <div class="podium-member__value">{{ "%.1f"|format(ns_s.s_rank3.kg_saved) }} kg</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Seasonal List -->
-                        <div class="leaderboard-list">
-                            {% if seasonal_rankings %}
-                                {% set s_leader_kg = seasonal_rankings[0].kg_saved if (seasonal_rankings and seasonal_rankings[0].kg_saved > 0) else 1.0 %}
-                                {% for entry in seasonal_rankings %}
-                                    <div class="leaderboard-row {% if entry.user_id == current_user.id %}leaderboard-row--user{% endif %} rank-row" id="seasonal-row-{{ loop.index }}">
-                                        <span class="rank-badge rank-badge--{{ entry.rank if entry.rank <= 3 else 'other' }}">
-                                            {{ entry.rank }}
-                                        </span>
-                                        <div class="leaderboard-row__avatar">
-                                            {{ entry.display_name[:2].upper() }}
-                                        </div>
-                                        <div class="leaderboard-row__name-container">
-                                            <span class="leaderboard-row__name">{{ entry.display_name }}</span>
-                                            {% if entry.user_id == current_user.id %}
-                                                <span class="user-pill">You</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="leaderboard-row__stats">
-                                            <span class="leaderboard-row__impact">{{ "%.1f"|format(entry.kg_saved) }} kg</span>
-                                            <span class="leaderboard-row__trades">{{ entry.transaction_count }} trades</span>
-                                        </div>
-                                        <div class="row-progress-bar" data-width="{{ (entry.kg_saved / s_leader_kg) * 100 }}"></div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="leaderboard-empty-state">
-                                    <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">nature_people</span>
-                                    <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No trades this term yet</p>
-                                    <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Complete exchanges to kick off the term leaderboard standings!</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <!-- Off-Season Card -->
-                        <div class="leaderboard-empty-state" style="padding: var(--space-12) var(--space-4);">
-                            <span class="material-symbols-outlined" style="font-size: 56px; color: var(--color-ink-tertiary); margin-bottom: var(--space-4); opacity: 0.6;" aria-hidden="true">hotel_class</span>
-                            <h3 style="font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0 0 var(--space-2) 0;">Off-Season</h3>
-                            <p style="font-size: var(--type-body); color: var(--color-ink-secondary); max-width: 480px; margin: 0 auto;">
-                                There is no active term season running at the moment. Keep trading to build your weekly rank, and check back soon for the next seasonal competition!
-                            </p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- ─── 3. Cross-University Tab Content ─── -->
-            {% if multi_uni_enabled %}
-                <div id="tab-content-universities" class="leaderboard-tab-content" style="display: none;">
-                    <div class="premium-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
-                            <h2 style="font-family: var(--font-sans); font-size: var(--type-title); font-weight: 700; color: var(--color-ink-primary); margin: 0;">
-                                Cross-University Standing
-                            </h2>
-                            <span style="font-size: var(--type-small); color: var(--color-ink-secondary); font-weight: 500; font-family: var(--font-mono);">
-                                Active Term
-                            </span>
-                        </div>
-
-                        <!-- Cross-Uni List -->
-                        <div class="leaderboard-list">
-                            {% if cross_uni_standings %}
-                                {% set c_leader_kg = cross_uni_standings[0].total_kg if (cross_uni_standings and cross_uni_standings[0].total_kg > 0) else 1.0 %}
-                                {% for entry in cross_uni_standings %}
-                                    <div class="leaderboard-row rank-row" id="crossuni-row-{{ loop.index }}">
-                                        <span class="rank-badge rank-badge--{{ entry.rank if entry.rank <= 3 else 'other' }}">
-                                            {{ entry.rank }}
-                                        </span>
-                                        <div class="leaderboard-row__avatar" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
-                                            {{ entry.display_name[:2].upper() }}
-                                        </div>
-                                        <div class="leaderboard-row__name-container">
-                                            <span class="leaderboard-row__name" style="font-weight: 700;">{{ entry.display_name }}</span>
-                                        </div>
-                                        <div class="leaderboard-row__stats">
-                                            <span class="leaderboard-row__impact">{{ "%.1f"|format(entry.total_kg) }} kg</span>
-                                            <span class="leaderboard-row__trades">{{ entry.transaction_count }} trades</span>
-                                        </div>
-                                        <div class="row-progress-bar" data-width="{{ (entry.total_kg / c_leader_kg) * 100 }}"></div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="leaderboard-empty-state">
-                                    <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">explore</span>
-                                    <p style="font-size: var(--type-body); font-weight: 600; margin: 0; color: var(--color-ink-primary);">No inter-university data</p>
-                                    <p style="font-size: var(--type-small); margin: var(--space-1) 0 0 0;">Standings will be compiled as soon as seasonal rankings compute.</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+            <!-- Sticky Rank Bar -->
+            {% if user_weekly_rank %}
+                <div class="reuni-sticky-bar-wrapper" id="my-rank-sticky-weekly">
+                    <button type="button" class="reuni-sticky-bar" id="sticky-bar-btn-weekly" data-target-id="current-user-row-weekly">
+                        <span class="reuni-sticky-bar-label">Your rank</span>
+                        <span class="reuni-sticky-bar-value">#{{ user_weekly_rank.rank }} · {{ "%.1f"|format(user_weekly_rank.kg_saved) }} kg saved</span>
+                    </button>
                 </div>
             {% endif %}
-        </main>
+        </div>
 
-        <!-- RIGHT: Bento Sidebar -->
-        <aside class="user-status-card">
+        <!-- ─── 2. Seasonal Tab Content ─── -->
+        <div id="tab-content-seasonal" class="leaderboard-tab-content" style="display: none;" 
+             data-eyebrow="{{ uni_display_name | upper }} · {{ active_season.name | upper if (active_season and not is_paused) else 'THIS TERM' }}" data-layout-class="reuni-leaderboard-container">
             
-            <!-- User Rank Card -->
-            <div class="premium-card" style="padding: var(--space-6) var(--space-5);">
-                <div class="profile-hero">
-                    <div class="profile-hero__avatar">
-                        {{ current_user.name[:2].upper() }}
+            <!-- Countdown or Paused chip -->
+            <div class="reuni-countdown-chip-wrapper">
+                {% if active_season %}
+                    <div class="reuni-countdown-chip {% if is_paused %}reuni-countdown-chip--paused{% endif %}">
+                        <span class="material-symbols-outlined">schedule</span>
+                        <span>{{ seasonal_countdown }}</span>
                     </div>
-                    <h3 style="font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary); margin: 0;">{{ current_user.name }}</h3>
-                    <span style="font-size: var(--type-micro); color: var(--color-ink-tertiary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-top: 2px;">{{ current_user.university_domain }}</span>
+                {% endif %}
+            </div>
+
+            {% if is_paused %}
+                <div class="reuni-premium-card" style="padding: var(--space-4) var(--space-6); margin-bottom: var(--space-6); text-align: center; background-color: var(--color-surface-raised); border-color: var(--color-border);">
+                    <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin: 0; font-weight: 500;">
+                        This term has ended. Rankings are frozen until the next term begins.
+                    </p>
+                </div>
+            {% endif %}
+
+            <div class="reuni-premium-card">
+                {% if active_season or seasonal_rankings %}
+                    <!-- Seasonal Podium Layout (Top 3) — Render only if >=3 participants -->
+                    {% if seasonal_rankings|length >= 3 %}
+                        <div class="reuni-podium">
+                            <!-- Rank 2 -->
+                            <div class="reuni-podium-step reuni-podium-step--2">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-avatar">{{ seasonal_rankings[1].display_name[:2].upper() }}</div>
+                                    <span class="reuni-podium-badge">2</span>
+                                </div>
+                                <div class="reuni-podium-name">{{ seasonal_rankings[1].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(seasonal_rankings[1].kg_saved) }} kg</div>
+                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
+                            </div>
+                            <!-- Rank 1 -->
+                            <div class="reuni-podium-step reuni-podium-step--1">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-avatar">{{ seasonal_rankings[0].display_name[:2].upper() }}</div>
+                                    <span class="reuni-podium-badge">
+                                        <span class="material-symbols-outlined" style="font-size: 14px; line-height: 20px;">workspace_premium</span>
+                                    </span>
+                                </div>
+                                <div class="reuni-podium-name">{{ seasonal_rankings[0].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(seasonal_rankings[0].kg_saved) }} kg</div>
+                                <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
+                            </div>
+                            <!-- Rank 3 -->
+                            <div class="reuni-podium-step reuni-podium-step--3">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-avatar">{{ seasonal_rankings[2].display_name[:2].upper() }}</div>
+                                    <span class="reuni-podium-badge">3</span>
+                                </div>
+                                <div class="reuni-podium-name">{{ seasonal_rankings[2].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(seasonal_rankings[2].kg_saved) }} kg</div>
+                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Semantic accessible table -->
+                    <table class="reuni-table" id="table-seasonal">
+                        <caption class="sr-only">Seasonal leaderboard for {{ uni_display_name }}</caption>
+                        <thead>
+                            <tr class="sr-only">
+                                <th scope="col">Rank</th>
+                                <th scope="col">Avatar</th>
+                                <th scope="col">Student</th>
+                                <th scope="col">Kg saved</th>
+                                <th scope="col">Items</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if seasonal_rankings %}
+                                {% set start_idx = 3 if seasonal_rankings|length >= 3 else 0 %}
+                                {% for entry in seasonal_rankings %}
+                                    <tr class="reuni-row-tr {% if entry.user_id == current_user.id %}reuni-row-tr--user{% endif %} rank-row {% if loop.index0 < start_idx %}sr-only{% endif %}" 
+                                        data-rank="{{ entry.rank }}" 
+                                        {% if entry.user_id == current_user.id %}id="current-user-row-seasonal"{% endif %}>
+                                        <td class="reuni-row-rank">{{ entry.rank }}</td>
+                                        <td>
+                                            <div class="reuni-row-avatar">
+                                                {{ entry.display_name[:2].upper() }}
+                                            </div>
+                                        </td>
+                                        <td class="reuni-row-name-stack">
+                                            <span class="reuni-row-name">
+                                                {{ entry.display_name }}
+                                                {% if entry.user_id == current_user.id %}
+                                                    <span class="reuni-row-user-tag">You</span>
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="reuni-row-kg">{{ "%.1f"|format(entry.kg_saved) }} kg</td>
+                                        <td class="reuni-row-items">{{ entry.transaction_count }} items</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="leaderboard-empty-state">
+                                            <span class="material-symbols-outlined leaderboard-empty-icon">eco</span>
+                                            <h3 class="leaderboard-empty-title">No activity yet this term</h3>
+                                            <p class="leaderboard-empty-body">Be the first to save a kg and claim the top spot.</p>
+                                            <a href="{{ url_for('items.list_item') }}" class="btn-primary" style="text-decoration: none;">List an item</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+
+                    {% if seasonal_rankings|length > 50 %}
+                        <div class="reuni-pagination-wrapper" id="pagination-wrapper-seasonal">
+                            <button type="button" class="reuni-pagination-btn" id="show-more-btn-seasonal">Show more</button>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <!-- Off-Season Card -->
+                    <div class="leaderboard-empty-state" style="padding: var(--space-8) var(--space-4);">
+                        <span class="material-symbols-outlined leaderboard-empty-icon">hotel_class</span>
+                        <h3 class="leaderboard-empty-title">Off-Season</h3>
+                        <p class="leaderboard-empty-body" style="margin-bottom: 0;">
+                            There is no active term season running at the moment. Keep trading to build your weekly rank, and check back soon for the next seasonal competition!
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Sticky Rank Bar -->
+            {% if user_seasonal_rank %}
+                <div class="reuni-sticky-bar-wrapper" id="my-rank-sticky-seasonal">
+                    <button type="button" class="reuni-sticky-bar" id="sticky-bar-btn-seasonal" data-target-id="current-user-row-seasonal">
+                        <span class="reuni-sticky-bar-label">Your rank</span>
+                        <span class="reuni-sticky-bar-value">#{{ user_seasonal_rank.rank }} · {{ "%.1f"|format(user_seasonal_rank.kg_saved) }} kg saved</span>
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ─── 3. Cross-University Tab Content ─── -->
+        {% if multi_uni_enabled %}
+            <div id="tab-content-universities" class="leaderboard-tab-content" style="display: none;" 
+                 data-eyebrow="ALL UNIVERSITIES · {{ active_season.name | upper if active_season else 'THIS TERM' }}" data-layout-class="reuni-leaderboard-container reuni-leaderboard-container--wide">
+                
+                <!-- Term selector replaces countdown chip -->
+                <div class="reuni-countdown-chip-wrapper">
+                    <div class="reuni-term-select-container">
+                        <select id="university-term-select" aria-label="Select term">
+                            {% for s in all_seasons %}
+                                <option value="{{ s.id }}" {% if s.id == active_season.id %}selected{% endif %}>
+                                    {{ s.name }}{% if s.is_complete %} (Final){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <span class="material-symbols-outlined select-chevron">expand_more</span>
+                    </div>
                 </div>
 
-                <div style="margin-top: var(--space-5);">
-                    <p style="font-size: var(--type-small); color: var(--color-ink-secondary); margin: 0 0 var(--space-3) 0; font-weight: 700; text-align: center;">Your Standings</p>
+                <div class="reuni-premium-card">
+                    <!-- University Podium — Suppress if < 3 active universities -->
+                    {% if cross_uni_standings|length >= 3 %}
+                        <div class="reuni-podium">
+                            <!-- Rank 2 -->
+                            <div class="reuni-podium-step reuni-podium-step--2">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-logo">
+                                        {% if cross_uni_standings[1].logo_status == 'fetched' %}
+                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[1].slug + '.png') }}" alt="{{ cross_uni_standings[1].display_name }}">
+                                        {% else %}
+                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                {{ cross_uni_standings[1].initials }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="reuni-podium-name">{{ cross_uni_standings[1].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[1].total_kg) }} kg</div>
+                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
+                            </div>
+                            <!-- Rank 1 -->
+                            <div class="reuni-podium-step reuni-podium-step--1">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-logo">
+                                        {% if cross_uni_standings[0].logo_status == 'fetched' %}
+                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[0].slug + '.png') }}" alt="{{ cross_uni_standings[0].display_name }}">
+                                        {% else %}
+                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                {{ cross_uni_standings[0].initials }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="reuni-podium-name">{{ cross_uni_standings[0].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[0].total_kg) }} kg</div>
+                                <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
+                            </div>
+                            <!-- Rank 3 -->
+                            <div class="reuni-podium-step reuni-podium-step--3">
+                                <div class="reuni-podium-avatar-wrapper">
+                                    <div class="reuni-podium-logo">
+                                        {% if cross_uni_standings[2].logo_status == 'fetched' %}
+                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[2].slug + '.png') }}" alt="{{ cross_uni_standings[2].display_name }}">
+                                        {% else %}
+                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                {{ cross_uni_standings[2].initials }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="reuni-podium-name">{{ cross_uni_standings[2].display_name }}</div>
+                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[2].total_kg) }} kg</div>
+                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Semantic table for cross-university list -->
+                    <table class="reuni-table">
+                        <caption class="sr-only">Cross-university standings</caption>
+                        <thead>
+                            <tr class="sr-only">
+                                <th scope="col">Rank</th>
+                                <th scope="col">Logo</th>
+                                <th scope="col">University</th>
+                                <th scope="col">Active students</th>
+                                <th scope="col">Items</th>
+                                <th scope="col">Total Kg saved</th>
+                            </tr>
+                        </thead>
+                        <tbody id="universities-list-tbody">
+                            {% if cross_uni_standings %}
+                                {% set start_idx = 3 if cross_uni_standings|length >= 3 else 0 %}
+                                {% for entry in cross_uni_standings %}
+                                    <tr class="reuni-university-row-tr {% if loop.index0 < start_idx %}sr-only{% endif %}">
+                                        <td class="reuni-row-rank">{{ entry.rank }}</td>
+                                        <td>
+                                            <div class="reuni-university-logo-wrap">
+                                                {% if get_logo_status(entry.university_domain) == 'fetched' %}
+                                                    <img src="{{ url_for('static', filename='img/logos/' + entry.slug + '.png') }}" alt="{{ entry.display_name }}">
+                                                {% else %}
+                                                    <div class="reuni-university-logo-monogram" style="background-color: {{ get_brand_color(entry.university_domain) }}; color: {{ get_brand_text_color(entry.university_domain) }};">
+                                                        {{ entry.initials }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="reuni-row-name-stack">
+                                            <span class="reuni-university-name">{{ entry.display_name }}</span>
+                                            <span class="reuni-university-meta" style="display: none;">{{ entry.active_students }} active students</span>
+                                        </td>
+                                        <td class="reuni-university-students">{{ entry.active_students }} students</td>
+                                        <td class="reuni-university-items">{{ entry.transaction_count }} items</td>
+                                        <td class="reuni-university-kg">{{ "%.1f"|format(entry.total_kg) }} kg</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="leaderboard-empty-state">
+                                            <span class="material-symbols-outlined leaderboard-empty-icon">explore</span>
+                                            <h3 class="leaderboard-empty-title">No inter-university data</h3>
+                                            <p class="leaderboard-empty-body">Standings will be compiled as soon as seasonal rankings compute.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                     
-                    <div class="stat-grid">
-                        <div class="stat-block">
-                            <span class="stat-block__value">
-                                {% if user_weekly_rank %}
-                                    #{{ user_weekly_rank.rank }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                            <span class="stat-block__label">Weekly Rank</span>
-                        </div>
-                        <div class="stat-block">
-                            <span class="stat-block__value">
-                                {% if user_weekly_rank %}
-                                    {{ "%.1f"|format(user_weekly_rank.kg_saved) }}
-                                {% else %}
-                                    0.0
-                                {% endif %}
-                            </span>
-                            <span class="stat-block__label">Weekly kg</span>
-                        </div>
-                        <div class="stat-block">
-                            <span class="stat-block__value">
-                                {% if user_seasonal_rank %}
-                                    #{{ user_seasonal_rank.rank }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                            <span class="stat-block__label">Term Rank</span>
-                        </div>
-                        <div class="stat-block">
-                            <span class="stat-block__value">
-                                {% if user_seasonal_rank %}
-                                    {{ "%.1f"|format(user_seasonal_rank.kg_saved) }}
-                                {% else %}
-                                    0.0
-                                {% endif %}
-                            </span>
-                            <span class="stat-block__label">Term kg</span>
-                        </div>
+                    <div style="text-align: center; margin-top: var(--space-6);">
+                        <span style="font-size: var(--type-small); color: var(--color-ink-tertiary);">
+                            More universities join Reuni every term.
+                        </span>
                     </div>
                 </div>
             </div>
-
-            <!-- Rules Card -->
-            <div class="premium-card">
-                <h3 style="font-family: var(--font-sans); font-size: var(--type-body-lg); font-weight: 700; color: var(--color-ink-primary); margin: 0 0 var(--space-3) 0; display: flex; align-items: center; gap: var(--space-2);">
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">info</span>
-                    <span>How it works</span>
-                </h3>
-                <ul style="font-size: var(--type-small); color: var(--color-ink-secondary); padding-left: var(--space-4); margin: 0; display: flex; flex-direction: column; gap: var(--space-2); line-height: 1.5;">
-                    <li>Rankings are updated dynamically whenever you complete a trade via handshake PIN verification.</li>
-                    <li>Opt-out or opt-in anytime under your account <a href="{{ url_for('settings') }}" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Settings</a>.</li>
-                    <li>Weekly leaderboards reset every Sunday night at 23:59 in your university's local timezone.</li>
-                    <li>Tiebreakers are determined by total kg saved, then by total trade counts, and finally by whichever milestone was reached first.</li>
-                </ul>
-            </div>
-        </aside>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

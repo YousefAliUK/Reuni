@@ -1,7 +1,5 @@
 # REUNI — Unified Design System
-
-### Master Specification · Supersedes: REUNI_DESIGN_SYSTEM.md v1.0
-
+### Master Specification · Supersedes: REUNI_DESIGN_BLUEPRINT_v3.md, REUNI_DESIGN_BLUEPRINT_ADDENDUM.md, REUNI_DESIGN_SYSTEM.md v1.0
 ### Version 1.0 · July 2026
 
 > **This is the single source of truth for all Reuni design decisions.** On any conflict between this document and any prior blueprint or addendum, this document wins.
@@ -12,9 +10,9 @@
 
 ### The Core Tension Reuni Must Resolve
 
-The same product must feel like a native Vinted/Depop app to an 18-year-old student _and_ feel like credible ESG infrastructure to a sustainability officer writing a board report. Generic SaaS would alienate students. Generic marketplace loses the institutional pitch.
+The same product must feel like a native Vinted/Depop app to an 18-year-old student *and* feel like credible ESG infrastructure to a sustainability officer writing a board report. Generic SaaS would alienate students. Generic marketplace loses the institutional pitch.
 
-**The resolution:** Make sustainability the _aesthetic_, not a badge on top of it. Teal is not a brand color — it is the ideology of the platform made visible. Every surface reads as "circular economy data infrastructure" regardless of whether it is showing a £5 lamp or a kg_saved trend chart.
+**The resolution:** Make sustainability the *aesthetic*, not a badge on top of it. Teal is not a brand color — it is the ideology of the platform made visible. Every surface reads as "circular economy data infrastructure" regardless of whether it is showing a £5 lamp or a kg_saved trend chart.
 
 ### Design Read (Formal)
 
@@ -36,26 +34,26 @@ Register:  PRODUCT (design serves the platform, never decorates it)
 
 ### Multi-Skill Activation
 
-| Skill                 | Where Activated                                                   | Purpose                                       |
-| --------------------- | ----------------------------------------------------------------- | --------------------------------------------- |
-| `soft-skill`          | Landing page, Marketplace, Item Detail, PIN Handshake             | Consumer warmth, tactile cards, fluid physics |
-| `stitch-skill`        | User Dashboard, ESG Partner Dashboard, Admin Panel                | Data density, modular composition             |
-| `impeccable-skill`    | Auth pages, all surfaces (quality gate)                           | Pixel-perfect execution, contrast enforcement |
-| `emil-kowalski-skill` | PIN Handshake digit input, ESG metric count-ups, CTA hover states | Spring physics, ceremony moments              |
+| Skill | Where Activated | Purpose |
+|-------|----------------|---------|
+| `soft-skill` | Landing page, Marketplace, Item Detail, PIN Handshake | Consumer warmth, tactile cards, fluid physics |
+| `stitch-skill` | User Dashboard, ESG Partner Dashboard, Admin Panel | Data density, modular composition |
+| `impeccable-skill` | Auth pages, all surfaces (quality gate) | Pixel-perfect execution, contrast enforcement |
+| `emil-kowalski-skill` | PIN Handshake digit input, ESG metric count-ups, CTA hover states | Spring physics, ceremony moments |
 
 ### Per-Surface Override Table
 
-| Surface               | Variance | Motion | Density | Dominant Skill                        |
-| --------------------- | -------- | ------ | ------- | ------------------------------------- |
-| Landing Page          | 8        | 7      | 3       | `soft-skill` + `impeccable-skill`     |
-| Marketplace Index     | 6        | 5      | 5       | `soft-skill`                          |
-| Item Detail           | 5        | 5      | 5       | `soft-skill`                          |
-| PIN Handshake         | 3        | 7      | 4       | `impeccable-skill` + motion injection |
-| Listing Form          | 4        | 3      | 5       | `impeccable-skill`                    |
-| User Dashboard        | 5        | 5      | 6       | `stitch-skill`                        |
-| ESG Partner Dashboard | 4        | 4      | 8       | `stitch-skill`                        |
-| Admin Panel           | 3        | 3      | 9       | `stitch-skill`                        |
-| Auth Pages            | 3        | 4      | 3       | `impeccable-skill`                    |
+| Surface | Variance | Motion | Density | Dominant Skill |
+|---------|----------|--------|---------|----------------|
+| Landing Page | 8 | 7 | 3 | `soft-skill` + `impeccable-skill` |
+| Marketplace Index | 6 | 5 | 5 | `soft-skill` |
+| Item Detail | 5 | 5 | 5 | `soft-skill` |
+| PIN Handshake | 3 | 7 | 4 | `impeccable-skill` + motion injection |
+| Listing Form | 4 | 3 | 5 | `impeccable-skill` |
+| User Dashboard | 5 | 5 | 6 | `stitch-skill` |
+| ESG Partner Dashboard | 4 | 4 | 8 | `stitch-skill` |
+| Admin Panel | 3 | 3 | 9 | `stitch-skill` |
+| Auth Pages | 3 | 4 | 3 | `impeccable-skill` |
 
 ---
 
@@ -71,65 +69,65 @@ All colors declared as CSS custom properties on `:root` and `[data-theme="dark"]
 ════════════════════════════════════ */
 :root {
   /* Backgrounds */
-  --color-bg: #faf7f2; /* Warm Canvas — paper-like, tactile */
-  --color-surface: #ffffff; /* Cards, navbar, modal fills */
-  --color-surface-raised: #f4f0e8; /* Warm Stone-100 — inputs, nested panels */
+  --color-bg:              #FAF7F2;  /* Warm Canvas — paper-like, tactile */
+  --color-surface:         #FFFFFF;  /* Cards, navbar, modal fills */
+  --color-surface-raised:  #F4F0E8;  /* Warm Stone-100 — inputs, nested panels */
 
   /* Borders */
-  --color-border: rgba(28, 25, 23, 0.12);
+  --color-border:          rgba(28, 25, 23, 0.12);
 
   /* Ink */
-  --color-ink-primary: #1c1917; /* Stone-950 — headlines, active labels */
-  --color-ink-secondary: #44403c; /* Stone-700 — body copy */
-  --color-ink-tertiary: #706a64; /* Stone-600 — timestamps, placeholders (4.5:1 on canvas) */
+  --color-ink-primary:     #1C1917;  /* Stone-950 — headlines, active labels */
+  --color-ink-secondary:   #44403C;  /* Stone-700 — body copy */
+  --color-ink-tertiary:    #706A64;  /* Stone-600 — timestamps, placeholders (4.5:1 on canvas) */
 
   /* Brand — Teal (Sustainability Identity) */
-  --color-primary: #0f766e; /* Teal-700 — brand, active, kg_saved */
-  --color-primary-hover: #115e59; /* Teal-800 */
-  --color-primary-muted: #ccfbf1; /* Teal-100 — chips, success zones */
+  --color-primary:         #0F766E;  /* Teal-700 — brand, active, kg_saved */
+  --color-primary-hover:   #115E59;  /* Teal-800 */
+  --color-primary-muted:   #CCFBF1;  /* Teal-100 — chips, success zones */
 
   /* Brand — Terracotta (Action/Urgency — CTAs only) */
-  --color-accent: #b44018; /* Burnt Terracotta — claim/buy CTAs only */
-  --color-accent-hover: #8e3213;
-  --color-accent-muted: #fff7ed; /* Orange-50 — urgency panel fills */
+  --color-accent:          #B44018;  /* Burnt Terracotta — claim/buy CTAs only */
+  --color-accent-hover:    #8E3213;
+  --color-accent-muted:    #FFF7ED;  /* Orange-50 — urgency panel fills */
 
   /* Semantic */
-  --color-danger: #c81e1e; /* Red-700 — errors, destructive (4.5:1) */
-  --color-danger-muted: #fef2f2;
-  --color-success: #15803d; /* Green-700 — sold, verified, free */
-  --color-success-muted: #f0fdf4;
-  --color-warning: #b45309; /* Amber-700 — PIN expiry, late cancel (4.5:1) */
-  --color-warning-muted: #fffbeb;
+  --color-danger:          #C81E1E;  /* Red-700 — errors, destructive (4.5:1) */
+  --color-danger-muted:    #FEF2F2;
+  --color-success:         #15803D;  /* Green-700 — sold, verified, free */
+  --color-success-muted:   #F0FDF4;
+  --color-warning:         #B45309;  /* Amber-700 — PIN expiry, late cancel (4.5:1) */
+  --color-warning-muted:   #FFFBEB;
 }
 
 /* ════════════════════════════════════
    DARK MODE
 ════════════════════════════════════ */
 [data-theme="dark"] {
-  --color-bg: #1c1917; /* Stone-950 */
-  --color-surface: #292524; /* Stone-900 */
-  --color-surface-raised: #44403c; /* Stone-700 */
-  --color-border: rgba(120, 113, 108, 0.2);
+  --color-bg:              #1C1917;  /* Stone-950 */
+  --color-surface:         #292524;  /* Stone-900 */
+  --color-surface-raised:  #44403C;  /* Stone-700 */
+  --color-border:          rgba(120, 113, 108, 0.2);
 
-  --color-ink-primary: #f5f5f4; /* Stone-100 */
-  --color-ink-secondary: #d6d3d1; /* Stone-300 (4.5:1 on surface-raised) */
-  --color-ink-tertiary: #87807b; /* Stone-500 */
+  --color-ink-primary:     #F5F5F4;  /* Stone-100 */
+  --color-ink-secondary:   #D6D3D1;  /* Stone-300 (4.5:1 on surface-raised) */
+  --color-ink-tertiary:    #87807B;  /* Stone-500 */
 
   /* NOTE: Teal-400 in dark. NEVER pair with white text — use dark ink (#1C1917) */
-  --color-primary: #2dd4bf; /* Teal-400 */
-  --color-primary-hover: #2dd4bf;
-  --color-primary-muted: rgba(13, 148, 136, 0.15);
+  --color-primary:         #2DD4BF;  /* Teal-400 */
+  --color-primary-hover:   #2DD4BF;
+  --color-primary-muted:   rgba(13, 148, 136, 0.15);
 
-  --color-accent: #f97316; /* Orange-500 */
-  --color-accent-hover: #f97316;
-  --color-accent-muted: rgba(234, 88, 12, 0.12);
+  --color-accent:          #F97316;  /* Orange-500 */
+  --color-accent-hover:    #F97316;
+  --color-accent-muted:    rgba(234, 88, 12, 0.12);
 
-  --color-danger: #f87171; /* Red-400 */
-  --color-danger-muted: rgba(239, 68, 68, 0.15);
-  --color-success: #4ade80; /* Green-400 */
-  --color-success-muted: rgba(21, 128, 61, 0.15);
-  --color-warning: #fbbf24; /* Amber-400 */
-  --color-warning-muted: rgba(217, 119, 6, 0.15);
+  --color-danger:          #F87171;  /* Red-400 */
+  --color-danger-muted:    rgba(239, 68, 68, 0.15);
+  --color-success:         #4ADE80;  /* Green-400 */
+  --color-success-muted:   rgba(21, 128, 61, 0.15);
+  --color-warning:         #FBBF24;  /* Amber-400 */
+  --color-warning-muted:   rgba(217, 119, 6, 0.15);
 }
 ```
 
@@ -147,21 +145,21 @@ All colors declared as CSS custom properties on `:root` and `[data-theme="dark"]
 
 ```css
 /* Font Families */
---font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
---font-mono: "JetBrains Mono", "Fira Code", monospace;
+--font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+--font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
 /* Type Scale */
---type-display: clamp(1.875rem, 4vw, 2.625rem); /* Page titles, hero heads */
---type-title: clamp(1.25rem, 2.5vw, 1.625rem); /* Section heads, modal heads */
---type-body-lg: 1.0625rem; /* Featured body intros */
---type-body: 0.9375rem; /* Base body, descriptions */
---type-small: 0.8125rem; /* Form labels, metadata */
---type-micro: 0.6875rem; /* Card timestamps, categories */
+--type-display: clamp(1.875rem, 4vw, 2.625rem);   /* Page titles, hero heads */
+--type-title:   clamp(1.25rem, 2.5vw, 1.625rem);  /* Section heads, modal heads */
+--type-body-lg: 1.0625rem;                          /* Featured body intros */
+--type-body:    0.9375rem;                          /* Base body, descriptions */
+--type-small:   0.8125rem;                          /* Form labels, metadata */
+--type-micro:   0.6875rem;                          /* Card timestamps, categories */
 
 /* Line Heights */
 --leading-display: 1.15;
---leading-title: 1.3;
---leading-body: 1.65;
+--leading-title:   1.3;
+--leading-body:    1.65;
 
 /* Letter Spacing Rules */
 /* Display: -0.02em to -0.03em. HARD FLOOR: -0.04em (letters touch below this) */
@@ -176,7 +174,6 @@ All colors declared as CSS custom properties on `:root` and `[data-theme="dark"]
 ```
 
 **Non-negotiable typography rules:**
-
 - `--font-mono` is mandatory for: all `kg_saved` values, PIN digits, countdown timers, price tags (large format), timestamps
 - Body text max-width: `65ch`
 - `text-wrap: balance` on all h1–h3
@@ -191,13 +188,13 @@ All colors declared as CSS custom properties on `:root` and `[data-theme="dark"]
 ### 1.3 Spacing System (4px base grid)
 
 ```css
---space-1: 4px;
---space-2: 8px;
---space-3: 12px;
---space-4: 16px;
---space-5: 20px;
---space-6: 24px;
---space-8: 32px;
+--space-1:  4px;
+--space-2:  8px;
+--space-3:  12px;
+--space-4:  16px;
+--space-5:  20px;
+--space-6:  24px;
+--space-8:  32px;
 --space-10: 40px;
 --space-12: 48px;
 --space-16: 64px;
@@ -208,24 +205,21 @@ All colors declared as CSS custom properties on `:root` and `[data-theme="dark"]
 ### 1.4 Border Radius Scale
 
 ```css
---radius-sm: 4px;
---radius-md: 8px;
---radius-lg: 12px;
---radius-xl: 16px;
---radius-2xl: 20px;
+--radius-sm:   4px;
+--radius-md:   8px;
+--radius-lg:   12px;
+--radius-xl:   16px;
+--radius-2xl:  20px;
 --radius-full: 9999px;
 ```
 
 ### 1.5 Shadow System
 
 ```css
---shadow-card:
-  0 1px 3px rgba(28, 25, 23, 0.06), 0 4px 12px rgba(28, 25, 23, 0.06);
---shadow-modal:
-  0 8px 32px rgba(28, 25, 23, 0.14), 0 2px 8px rgba(28, 25, 23, 0.08);
---shadow-nav: 0 2px 16px rgba(28, 25, 23, 0.08);
---shadow-lift:
-  0 4px 24px rgba(28, 25, 23, 0.1), 0 1px 4px rgba(28, 25, 23, 0.06);
+--shadow-card:  0 1px 3px rgba(28, 25, 23, 0.06), 0 4px 12px rgba(28, 25, 23, 0.06);
+--shadow-modal: 0 8px 32px rgba(28, 25, 23, 0.14), 0 2px 8px rgba(28, 25, 23, 0.08);
+--shadow-nav:   0 2px 16px rgba(28, 25, 23, 0.08);
+--shadow-lift:  0 4px 24px rgba(28, 25, 23, 0.10), 0 1px 4px rgba(28, 25, 23, 0.06);
 ```
 
 Dark mode: replace `rgba(28, 25, 23, X)` with `rgba(0, 0, 0, X * 1.4)` — darker shadows on dark surfaces.
@@ -234,27 +228,27 @@ Dark mode: replace `rgba(28, 25, 23, X)` with `rgba(0, 0, 0, X * 1.4)` — darke
 
 ```css
 --duration-instant: 80ms;
---duration-fast: 150ms;
---duration-base: 250ms;
---duration-slow: 400ms;
---duration-enter: 600ms;
+--duration-fast:    150ms;
+--duration-base:    250ms;
+--duration-slow:    400ms;
+--duration-enter:   600ms;
 
 /* Spring curves — no linear, no ease-in-out */
---ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* Standard exit/enter */
---ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* CTA hover, card press */
---ease-expo: cubic-bezier(0.19, 1, 0.22, 1); /* Count-up, page transitions */
+--ease-out:    cubic-bezier(0.16, 1, 0.3, 1);     /* Standard exit/enter */
+--ease-spring: cubic-bezier(0.32, 0.72, 0, 1);    /* CTA hover, card press */
+--ease-expo:   cubic-bezier(0.19, 1, 0.22, 1);    /* Count-up, page transitions */
 ```
 
 ### 1.7 Z-Index Scale
 
 ```css
---z-base: 0;
---z-raised: 10;
+--z-base:    0;
+--z-raised:  10;
 --z-dropdown: 100;
---z-sticky: 200;
+--z-sticky:  200;
 --z-modal-backdrop: 300;
---z-modal: 400;
---z-toast: 500;
+--z-modal:   400;
+--z-toast:   500;
 --z-tooltip: 600;
 ```
 
@@ -307,14 +301,14 @@ RIGHT — Actions
   [if unauthenticated]
     "Log in" — ghost text, --type-small, font-weight: 500, --color-ink-secondary
     "Register" — filled pill, var(--color-accent), height: 36px, --type-small, font-weight: 600
-
+    
   [if authenticated]
     Theme toggle button: 36×36px, icon-only, aria-label="Toggle theme"
       sun/dark_mode icon, --color-ink-secondary
       Hover: background: var(--color-surface-raised), border-radius: var(--radius-md)
-
+    
     "Sell" button: ghost pill with add icon
-
+    
     Avatar button: 36×36px circle
       Background: var(--color-primary-muted)
       Initials: --font-sans, 13px, font-weight: 700, --color-primary
@@ -363,7 +357,7 @@ Drawer panel:
   Background: var(--color-surface)
   Transform: translateX(0) ↔ translateX(100%) — spring animation
   overscroll-behavior: contain
-
+  
 Contents:
   Header: avatar + name + university email (truncated)
   Nav items: same as desktop dropdown
@@ -384,7 +378,7 @@ Display: grid, grid-template-columns: repeat(4, 1fr)
 Tabs (all authenticated users):
   [house] Home (marketplace)
   [add_circle] Sell
-  [notifications] Activity
+  [notifications] Activity  
   [person] Profile
 
 Tab item:
@@ -411,12 +405,12 @@ Search panel (desktop):
   Background: var(--color-surface)
   Border-radius: var(--radius-xl)
   Box-shadow: var(--shadow-modal)
-
+  
 Input row: 36px height, full-width, no border
   Icon: search 18px left
   Clear button right (appears when value present)
 
-Results (max 8, virtualized if more):
+Results (max 8, virtualized if more): 
   60px per row, icon left, title + category right, price far right
 ```
 
@@ -468,20 +462,17 @@ aria-live="polite" on the flash container
   height: 40px;
   padding: 0 var(--space-5);
   font-size: var(--type-body);
-  transition:
-    transform var(--duration-fast) var(--ease-spring),
-    background-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+  transition: transform var(--duration-fast) var(--ease-spring),
+              background-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
   touch-action: manipulation; /* prevents double-tap zoom */
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
   min-width: 44px; /* WCAG touch target */
   min-height: 44px;
 }
-.btn:active {
-  transform: scale(0.97);
-}
+.btn:active { transform: scale(0.97); }
 .btn:focus-visible {
   outline: 3px solid var(--color-primary-muted);
   outline-offset: 2px;
@@ -490,22 +481,16 @@ aria-live="polite" on the flash container
 /* Primary — filled teal */
 .btn-primary {
   background: var(--color-primary);
-  color: #ffffff;
+  color: #FFFFFF;
 }
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
+.btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
 
 /* Accent — filled terracotta (CTAs: claim, buy) */
 .btn-accent {
   background: var(--color-accent);
-  color: #ffffff;
+  color: #FFFFFF;
 }
-.btn-accent:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
+.btn-accent:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
 
 /* Ghost — outline */
 .btn-ghost {
@@ -513,37 +498,18 @@ aria-live="polite" on the flash container
   border: 1px solid var(--color-border);
   color: var(--color-ink-secondary);
 }
-.btn-ghost:hover {
-  border-color: var(--color-ink-tertiary);
-  color: var(--color-ink-primary);
-}
+.btn-ghost:hover { border-color: var(--color-ink-tertiary); color: var(--color-ink-primary); }
 
 /* Danger */
-.btn-danger {
-  background: var(--color-danger);
-  color: #ffffff;
-}
+.btn-danger { background: var(--color-danger); color: #FFFFFF; }
 
 /* Sizes */
-.btn-sm {
-  height: 32px;
-  padding: 0 var(--space-4);
-  font-size: var(--type-small);
-  border-radius: var(--radius-md);
-}
-.btn-lg {
-  height: 52px;
-  padding: 0 var(--space-8);
-  font-size: 1rem;
-  border-radius: var(--radius-lg);
-}
-.btn-pill {
-  border-radius: var(--radius-full);
-}
+.btn-sm { height: 32px; padding: 0 var(--space-4); font-size: var(--type-small); border-radius: var(--radius-md); }
+.btn-lg { height: 52px; padding: 0 var(--space-8); font-size: 1rem; border-radius: var(--radius-lg); }
+.btn-pill { border-radius: var(--radius-full); }
 
 /* Loading state */
-.btn[disabled],
-.btn.loading {
+.btn[disabled], .btn.loading {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
@@ -554,7 +520,7 @@ aria-live="polite" on the flash container
 ### 3.2 Item Card
 
 ```
-Shell:
+Shell: 
   Background: var(--color-surface)
   Border: 1px solid var(--color-border)
   Border-radius: var(--radius-xl)
@@ -562,7 +528,7 @@ Shell:
   Transition: transform var(--duration-fast) var(--ease-spring),
               box-shadow var(--duration-fast) var(--ease-out)
 
-Desktop hover:
+Desktop hover: 
   transform: translateY(-2px)
   box-shadow: var(--shadow-lift)
 
@@ -587,13 +553,13 @@ Title: --type-body, font-weight: 600, --color-ink-primary
 Bottom row (flex, space-between, align: center):
   Price: --font-mono, 16px, font-weight: 700, --color-ink-primary
     "Free": var(--color-success), font-weight: 700
-
+    
   kg chip:
     Display: inline-flex, align-items: center, gap: 4px
     Icon: eco (14px, --color-success, aria-hidden)
     Value: --font-mono, 11px, font-weight: 700, --color-primary
     "X.X kg"
-
+    
 Condition badge (top-right of image, absolute):
   Background: rgba(28, 25, 23, 0.75)
   Color: #FFFFFF, --type-micro, font-weight: 600
@@ -615,9 +581,8 @@ Condition badge (top-right of image, absolute):
   font-family: var(--font-sans);
   font-size: var(--type-body);
   color: var(--color-ink-primary);
-  transition:
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
   autocomplete: on; /* must match semantic field */
 }
 .input:focus {
@@ -625,12 +590,8 @@ Condition badge (top-right of image, absolute):
   box-shadow: 0 0 0 3px var(--color-primary-muted);
   outline: none;
 }
-.input.error {
-  border-color: var(--color-danger);
-}
-.input::placeholder {
-  color: var(--color-ink-tertiary);
-}
+.input.error { border-color: var(--color-danger); }
+.input::placeholder { color: var(--color-ink-tertiary); }
 /* Never block paste on any input */
 
 /* Textarea */
@@ -642,11 +603,7 @@ Condition badge (top-right of image, absolute):
 }
 
 /* Form group */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
+.form-group { display: flex; flex-direction: column; gap: var(--space-2); }
 .form-label {
   font-size: var(--type-small);
   font-weight: 600;
@@ -668,7 +625,7 @@ The PIN handshake is a ceremony, not a form. Design must reflect this.
 ```
 Container:
   Display: flex, gap: var(--space-3), justify-content: center
-
+  
 Each digit input:
   Width: 56px, height: 72px
   Background: var(--color-surface-raised)
@@ -677,19 +634,19 @@ Each digit input:
   Font: --font-mono, 32px, font-weight: 800, --color-ink-primary
   Text-align: center
   Caret: none (custom visual)
-
+  
   Focus: border-color: var(--color-primary), box-shadow: 0 0 0 3px var(--color-primary-muted)
   Filled: border-color: var(--color-primary), background: var(--color-primary-muted)
   Error: border-color: var(--color-danger), shake animation
-
+  
   Spring press physics (emil-kowalski):
     :active → transform: scale(0.94)
     Release → spring back: stiffness: 400, damping: 30
-
+    
   Mobile:
     Use visualViewport resize listener to re-center card when soft keyboard opens
     touch-action: manipulation (no double-tap zoom)
-
+    
 Shake animation (on wrong PIN):
   keyframes: translateX(-6px 0 6px 0 -4px 0 4px 0) — 400ms
   NOT bounce/elastic — controlled horizontal oscillation only
@@ -730,10 +687,10 @@ Modal panel:
   Z-index: var(--z-modal)
   overscroll-behavior: contain
   Padding: var(--space-8)
-
+  
 Mobile: bottom sheet — fixed bottom: 0, width: 100%, border-radius: 20px 20px 0 0
   Transform: translateY(100%) → translateY(0), spring animation
-
+  
 Enter animation: scale(0.96) opacity(0) → scale(1) opacity(1), 250ms var(--ease-out)
 Exit animation: scale(0.97) → opacity(0), 200ms var(--ease-out)
 
@@ -741,7 +698,7 @@ Close button: top-right, 32×32px, aria-label="Close"
   Icon: close (Material Symbols, 18px)
   Background: var(--color-surface-raised) on hover
   Border-radius: var(--radius-full)
-
+  
 Focus trap: mandatory. Escape key dismisses.
 ```
 
@@ -762,7 +719,7 @@ Hero Strip (context-aware, 80px height):
     Background: var(--color-primary)
     Left: "Campus items. Real kg saved." (18px, 600, white) + "Student-to-student. In person. No fees." (14px, 400, rgba white 0.75)
     Right: "Register free →" pill (white background, primary color text)
-
+    
   [Authenticated]
     Background: var(--color-surface)
     Border-bottom: 1px solid var(--color-border)
@@ -778,7 +735,7 @@ Filter Strip:
   Border-bottom: 1px solid var(--color-border)
   Padding: var(--space-3) var(--space-4)
   Overflow-x: auto, -webkit-overflow-scrolling: touch, scrollbar-width: none
-
+  
   Category filter pills: horizontal scroll
   Price toggle: "All | Free | Paid"
   Sort dropdown: "Latest | Price ↑ | Price ↓"
@@ -787,9 +744,9 @@ Listing Grid:
   Desktop: grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))
   Mobile: grid-template-columns: repeat(2, 1fr)
   Gap: var(--space-4)
-
+  
   Pagination: page-based, 12 items per page
-
+  
   Empty state:
     Icon: inventory_2 (48px, --color-ink-tertiary)
     Heading: "Nothing here yet"
@@ -802,7 +759,7 @@ Listing Grid:
 ```
 Max-width: 1100px desktop, full-width mobile
 
-Two-column layout (desktop):
+Two-column layout (desktop): 
   Left: image gallery (60% width)
   Right: item info (40% width)
 Mobile: stacked
@@ -810,29 +767,29 @@ Mobile: stacked
 Image gallery:
   Main image: aspect 4/3, object-fit: cover, --radius-xl
   Thumbnails (if multiple): 48px × 48px row below, gap: var(--space-2)
-
+  
 Item info:
   Category chip + Condition badge (row)
   Title: --type-display, font-weight: 800, --color-ink-primary, margin: var(--space-3) 0
   Price: --font-mono, 28px, font-weight: 800
     Free: --color-success + "Free to take"
     Paid: --color-ink-primary + "£X.XX"
-
+  
   kg chip: [eco icon] "X.X kg saved if this item is rehomed"
     Background: var(--color-success-muted), padding: var(--space-2) var(--space-3)
     Border-radius: var(--radius-md), display: inline-flex
     --type-small, --color-success
-
+  
   Divider: 1px solid var(--color-border)
-
+  
   Description: --type-body, --color-ink-secondary, line-height: 1.7, max-width: 65ch
-
+  
   Seller row:
     Avatar (36px circle) + username + "Listed X days ago"
     --type-small, --color-ink-tertiary
-
+  
   "Report this listing" text link below description (--type-small, --color-ink-tertiary, hover: --color-danger)
-
+  
   Claim CTA:
     Desktop: full-width btn-accent btn-lg below seller info
     Mobile: position: fixed, bottom: calc(60px + env(safe-area-inset-bottom) + var(--space-3))
@@ -847,51 +804,51 @@ Item info:
 ```
 Layout: single centered card
   Max-width: 420px, margin: var(--space-12) auto
-
+  
 Role-aware header:
   Icon: lock (32px, --color-primary, inside 56px circle with --color-primary-muted bg)
-
+  
   [Free item seller] "Share your PIN" (--type-title, 700)
   [Free item buyer] "Enter the seller's PIN" (--type-title, 700)
   [Paid item buyer] "Share your PIN" (--type-title, 700)
   [Paid item seller] "Enter the buyer's PIN" (--type-title, 700)
-
+  
   Item summary row: image thumbnail (40px) + item title + price
-
+  
   Instruction text: --type-body, --color-ink-secondary (role-specific guidance)
-
+  
 PIN display (for PIN holder):
   4 × digit boxes (see 3.4)
   Each digit revealed with scale-in spring animation
-
+  
   Expiry countdown: --font-mono, --color-warning
   Resend link: --type-small, --color-primary (rate-limited: 3/hr)
-
+  
 PIN input (for non-holder):
   4 × OTP input boxes (see 3.4)
   Auto-advance on fill
   Submit triggers on 4th digit complete
-
+  
   Failed attempt: shake animation + red border + attempt counter "X of 3 attempts"
   3rd fail: auto-cancel, redirect to marketplace with flash error
-
+  
 Chat thread (below PIN section):
   Background: var(--color-surface-raised)
   Border-radius: var(--radius-xl)
   Padding: var(--space-4)
   Max-height: 300px, overflow-y: auto
-
+  
   Bubble alignment: buyer right (--color-primary-muted), seller left (var(--color-surface))
   Timestamp: --type-micro, --color-ink-tertiary, centered between time gaps
-
+  
   Input: sticky bottom of chat box, 40px height
-
+  
 QR Code toggle (Phase 2):
   "Show QR code instead" link below PIN display (--type-small, --color-primary)
   Expanded: 200×200px QR image, centered, --radius-md border
-
+  
 WhatsApp bypass: "Contact via WhatsApp instead →" ghost link at bottom of card
-
+  
 Mobile visualViewport:
   Listen for visualViewport resize events
   On keyboard open: re-center the PIN card in the remaining visible area
@@ -908,12 +865,12 @@ Form sections (stacked, no tabs):
   1. Photos — drag-drop zone + upload button
      Accepts: JPG, PNG, WebP. Max: 5MB each.
      Shows thumbnail grid on upload (up to 5 images)
-
+     
   2. Item details — title, description (2000 char limit + counter), category, condition
-
+  
   3. Pricing — "Free" toggle OR price input (£ prefix, --font-mono)
      Price must be > 0 for paid items (enforced client + server)
-
+     
   4. Location — auto-filled from university domain (read-only display)
 
 Submit: btn-primary btn-lg, full-width
@@ -951,7 +908,7 @@ Impact tab:
     Total kg saved (--font-mono, large, --color-primary)
     Items circulated (--font-mono)
     Reputation score (--font-mono, 1–5 stars visual)
-
+  
   kg_saved timeline chart: simple SVG line chart
   Category breakdown: horizontal bar chart
 ```
@@ -963,14 +920,14 @@ Impact tab:
 ```
 Max-width: 1100px
 
-Header:
+Header: 
   University name + academic year
   Export button: "Download report" (ghost btn) → CSV/PDF
 
 Metric strip (4 cards, 2-col on mobile):
   Total kg saved (YTD) — --font-mono, large, --color-primary, count-up on load
   Active students (this semester) — --font-mono
-  Items circulated (YTD) — --font-mono
+  Items circulated (YTD) — --font-mono  
   CO2e equivalent (kg × 0.6 conversion) — --font-mono
 
 kg_saved trend chart:
@@ -983,7 +940,7 @@ kg_saved trend chart:
 Category breakdown:
   Horizontal bars per category
   % of total kg, item count
-
+  
 Student engagement:
   Active users / total registered (simple ratio)
   Peak activity days (heatmap: 7-day × 52-week grid, like GitHub contributions)
@@ -1000,13 +957,13 @@ Sections:
   Partner management table: name · university · status · ACV · actions
     Columns collapse to card list on mobile
     Actions: Activate · Deactivate · Edit
-
+    
   Student listings: search/filter + list view (not card grid)
-
+  
   Trust score management: user search + manual delta + reason log
-
+  
   Ghost mode log: read-only, sorted by date (admin-only context)
-
+  
   Platform metrics: total users, total kg, total transactions, active universities
 ```
 
@@ -1016,14 +973,14 @@ Sections:
 Auth pages do NOT extend base.html. Standalone layout:
   Background: var(--color-bg)
   Center-aligned vertically and horizontally
-
+  
 Desktop:
   Card: max-width 420px, background: var(--color-surface), --shadow-modal, --radius-xl, padding: var(--space-8)
-
+  
 Mobile:
   NO card — full-bleed, border-radius: 0
   Padding: var(--space-6)
-
+  
 Reuni wordmark at top of every auth page (centered)
 University badge if university context is known (from subdomain)
 
@@ -1077,30 +1034,13 @@ Zero card components, zero icons, zero metric stats on this page.
 
 ## PART 5 — PHASE 2+ FUTURE UI BANK
 
-### 5.1 Leaderboard (Phase 2)
+### 5.1 Leaderboard & Hall of Fame (Phase 2)
 
 **Access:** All authenticated users. Navbar dropdown + mobile drawer.
 
-**Note:** The leaderboard is NOT on the landing page. It is an in-app gamification feature, not a public marketing element. Showing inter-university competition on the landing page would look empty during early stages and distract from the core conversion goal.
+**Note:** Neither page is on the landing page. These are in-app gamification features, not public marketing elements. Showing inter-university competition or empty archives publicly would look thin during early stages and distract from the core conversion goal.
 
-```
-Seasonal leaderboard with kg_saved rankings per university.
-Season display: name + start/end dates + days remaining countdown
-Podium: top 3 with enlarged kg display
-Table: rank · avatar · username · kg saved (--font-mono) · items circulated
-Pagination: top 50, "View more" expands
-
-My rank: sticky row at bottom if user not in visible rows
-  "Your rank: #47 · 3.2 kg saved"
-
-Empty/low-population state:
-  When < 5 users have transactions:
-  "Rankings unlock when more students start listing."
-  Show current top user if exists, otherwise "Be the first."
-
-Per-university scoped — never aggregated across universities.
-Season freeze during university off-season (summer): "Season paused — rankings resume in September"
-```
+**Full specification superseded to a dedicated companion document:** see `REUNI_LEADERBOARD_HALLOFFAME_DESIGN.md` for the complete spec covering the Leaderboard page (weekly / seasonal / inter-university sections) and the Hall of Fame page (seasonal / weekly archives), including the podium component, rank row component, university row component, champion card component, empty and low-population states, motion, dark mode, mobile layout, and accessibility requirements. That document is the source of truth for this feature; the summary below is retained only as a pointer.
 
 ### 5.2 Notifications (Phase 2)
 
@@ -1126,10 +1066,10 @@ Access from Dashboard → My Listings tab.
 Boost tokens counter: "You have N boost tokens"
   N capped at 3, displayed in --font-mono
 
-Per-listing boost action: "Boost this listing" btn (ghost)
+Per-listing boost action: "Boost this listing" btn (ghost) 
   On boost: listing rises to top of marketplace, boost_expires_at shown
   Duration: 48 hours
-
+  
 Post-boost badge on listing card: small "Boosted" chip (warning-muted)
 ```
 
@@ -1143,10 +1083,10 @@ Triggered when trust_score >= 120
 Report review card:
   Item details (image, title, category, description)
   Report reason (from reporter)
-
+  
 Vote buttons: "Keep listing" (ghost) | "Remove listing" (danger)
   Requires: majority verdict from assigned jury pool
-
+  
 Result notification: sent to both reporter and reporter
 ```
 
@@ -1158,13 +1098,13 @@ Entry: "Report this listing" text link on item detail page
 
 Modal: 480px max-width (see 3.6 modal system)
   Header: "Report Listing" + "Your report is anonymous."
-
+  
   Radio group (4 options, 44px min height each):
     Category fraud · Misleading description · No longer available · Condition misrepresented
     Selected: border: --color-primary, background: --color-primary-muted
-
+    
   Submit: "Submit report" btn-primary full-width 48px height
-
+  
 Post-submit (replaces form):
   check_circle icon (40px, --color-success) centered
   "Report submitted. Our community jury will review this."
@@ -1183,7 +1123,7 @@ Expanded state:
   Server-side generated (encodes the PIN value)
   Alt: "QR code for PIN verification"
   "The other person scans this to confirm" (--type-small, --color-ink-secondary)
-
+  
   Collapse: "← Back to PIN digits" (--type-small, --color-ink-tertiary)
 
 Note: QR encodes the same 4-digit PIN. Scanning auto-fills the OTP input. PIN is not bypassed.
@@ -1206,7 +1146,7 @@ Desktop layout (flex, space-between):
     Data: sum of kg_saved across all sold items for current university domain
     Precision: 1 decimal place (e.g. "245.8 kg")
     Server-side rendered by Jinja2 — not client-side JS
-
+    
   Right: Links
     "Privacy Policy" · "© 2026 Reuni"
     --type-small, --color-ink-tertiary
@@ -1234,7 +1174,6 @@ App pages (subdomain): shows per-university counter only.
 ### 7.2 University Context in UI
 
 When on a university subdomain, all UI must reflect that university:
-
 - Navbar university badge: shows short name (e.g. "Brookes", "Oxford")
 - Hero strip: "Search [University] items…" placeholder
 - Footer counter: per-university kg total only
@@ -1242,7 +1181,6 @@ When on a university subdomain, all UI must reflect that university:
 - Empty states: "Be the first to list at [University]"
 
 When on `reuni.uk` (landing page):
-
 - University picker is the primary conversion flow (see landing page spec)
 - kg counter shows global total across all universities
 
@@ -1272,7 +1210,6 @@ The design system is regionally neutral — no language targeting, no cultural a
 ### 8.1 Theme Toggle
 
 Theme toggle button present in:
-
 - Desktop navbar (right side, icon-only, sun/dark_mode icon, aria-label="Toggle theme")
 - Mobile drawer (full-width row with "Dark mode" label + toggle switch)
 - Landing page floating navbar (desktop only)
@@ -1283,19 +1220,14 @@ Theme is stored in `localStorage` as `"reuni-theme": "light" | "dark"`. On page 
 
 ```javascript
 // In <head>, before any CSS paint:
-const theme =
-  localStorage.getItem("reuni-theme") ||
-  (window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light");
-document.documentElement.setAttribute("data-theme", theme);
+const theme = localStorage.getItem('reuni-theme') 
+  || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.documentElement.setAttribute('data-theme', theme);
 ```
 
 ```css
 /* Set color-scheme on html for dark mode */
-[data-theme="dark"] {
-  color-scheme: dark;
-}
+[data-theme="dark"] { color-scheme: dark; }
 /* <meta name="theme-color"> must update dynamically to match --color-bg */
 ```
 
@@ -1305,7 +1237,7 @@ The landing page must work in both light and dark modes. The dark ESG dashboard 
 
 ```css
 .esg-preview-card {
-  --esg-card-bg: #1e2b2a; /* fixed dark teal, not a theme variable */
+  --esg-card-bg: #1E2B2A; /* fixed dark teal, not a theme variable */
 }
 ```
 
@@ -1319,12 +1251,12 @@ Motion is motivated, not decorative. Before any animation: "What does this commu
 
 **Animation frequency rule (from Emil Kowalski):**
 
-| Frequency                                   | Decision           |
-| ------------------------------------------- | ------------------ |
-| 100+ times/day (keyboard shortcuts, search) | No animation       |
-| Tens of times/day (hover, list nav)         | Reduce drastically |
-| Occasional (modals, drawers, toasts)        | Standard animation |
-| Rare/first-time (onboarding, PIN ceremony)  | Can add delight    |
+| Frequency | Decision |
+|-----------|----------|
+| 100+ times/day (keyboard shortcuts, search) | No animation |
+| Tens of times/day (hover, list nav) | Reduce drastically |
+| Occasional (modals, drawers, toasts) | Standard animation |
+| Rare/first-time (onboarding, PIN ceremony) | Can add delight |
 
 ### 9.2 Spring Curves (Only These)
 
@@ -1343,42 +1275,20 @@ Use `IntersectionObserver` (not `window.addEventListener('scroll')`). Alternativ
 
 ```javascript
 // Safe pattern — element is visible by default, transition enhances it
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach(
-      (el) => el.isIntersecting && el.target.classList.add("revealed"),
-    );
-  },
-  { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
-);
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(el => el.isIntersecting && el.target.classList.add('revealed'));
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
 ```
 
 ```css
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity 600ms var(--ease-out),
-    transform 600ms var(--ease-out);
-}
-.reveal.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-@media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .reveal.revealed {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out); }
+.reveal.revealed { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .reveal, .reveal.revealed { opacity: 1; transform: none; transition: none; } }
 ```
 
 ### 9.4 `prefers-reduced-motion` (Non-Optional)
 
 Every animation must have a `@media (prefers-reduced-motion: reduce)` override:
-
 - Crossfade (opacity only, no transform) or instant state change
 - Count-up animation: show final value immediately
 - Card hover: color/border change only, no translateY
@@ -1405,27 +1315,27 @@ This is both WCAG compliance and respect for users who set this preference.
 
 Applies to every page, every component. Non-negotiable.
 
-| Requirement                          | Target                                                               | Method                                               |
-| ------------------------------------ | -------------------------------------------------------------------- | ---------------------------------------------------- |
-| Color contrast (body)                | ≥ 4.5:1                                                              | Verify against background, not token assumption      |
-| Color contrast (large text ≥ 18px)   | ≥ 3:1                                                                | Include bold 14px+                                   |
-| Touch target minimum                 | 44 × 44px                                                            | All interactive elements                             |
-| Focus ring                           | 3px `--color-primary-muted` outline, 2px offset                      | All interactive, use `:focus-visible` not `:focus`   |
-| Form labels                          | `<label for="...">` or wrapping                                      | No exception, no aria-label substitute without label |
-| Images                               | Descriptive `alt` or `alt=""` if decorative                          | Every `<img>`                                        |
-| Decorative icons                     | `aria-hidden="true"`                                                 | All icon spans/svgs not conveying information        |
-| Icon-only buttons                    | `aria-label="..."`                                                   | Every button with no visible text                    |
-| Skip link                            | `<a href="#main-content" class="skip-link">Skip to main content</a>` | First element in every page `<body>`                 |
-| `<button>` vs `<a>`                  | `<button>` for actions, `<a>` for navigation                         | Never `<div onClick>`                                |
-| Native semantics first               | `<button>`, `<a>`, `<label>`, `<table>` before ARIA                  | Semantics over ARIA                                  |
-| `aria-live`                          | On async update zones (flash messages, validation)                   | `aria-live="polite"`                                 |
-| `scroll-margin-top`                  | On all heading anchors                                               | Prevents anchor scroll behind sticky nav             |
-| Keyboard navigation                  | All interactive elements reachable and operable                      | Tab order, Enter/Space activation                    |
-| `color-scheme: dark`                 | On `<html>` for dark theme                                           | Fixes native controls (scrollbars, inputs)           |
-| Non-breaking spaces                  | `10&nbsp;kg`, `£&nbsp;8`, brand names                                | Prevents awkward line breaks                         |
-| `font-variant-numeric: tabular-nums` | On all number columns/comparisons                                    | Prevents reflow on count-up                          |
-| `touch-action: manipulation`         | On all interactive elements                                          | Prevents double-tap zoom delay                       |
-| `-webkit-tap-highlight-color`        | Set intentionally (usually transparent)                              | Consistent on mobile                                 |
+| Requirement | Target | Method |
+|------------|--------|--------|
+| Color contrast (body) | ≥ 4.5:1 | Verify against background, not token assumption |
+| Color contrast (large text ≥ 18px) | ≥ 3:1 | Include bold 14px+ |
+| Touch target minimum | 44 × 44px | All interactive elements |
+| Focus ring | 3px `--color-primary-muted` outline, 2px offset | All interactive, use `:focus-visible` not `:focus` |
+| Form labels | `<label for="...">` or wrapping | No exception, no aria-label substitute without label |
+| Images | Descriptive `alt` or `alt=""` if decorative | Every `<img>` |
+| Decorative icons | `aria-hidden="true"` | All icon spans/svgs not conveying information |
+| Icon-only buttons | `aria-label="..."` | Every button with no visible text |
+| Skip link | `<a href="#main-content" class="skip-link">Skip to main content</a>` | First element in every page `<body>` |
+| `<button>` vs `<a>` | `<button>` for actions, `<a>` for navigation | Never `<div onClick>` |
+| Native semantics first | `<button>`, `<a>`, `<label>`, `<table>` before ARIA | Semantics over ARIA |
+| `aria-live` | On async update zones (flash messages, validation) | `aria-live="polite"` |
+| `scroll-margin-top` | On all heading anchors | Prevents anchor scroll behind sticky nav |
+| Keyboard navigation | All interactive elements reachable and operable | Tab order, Enter/Space activation |
+| `color-scheme: dark` | On `<html>` for dark theme | Fixes native controls (scrollbars, inputs) |
+| Non-breaking spaces | `10&nbsp;kg`, `£&nbsp;8`, brand names | Prevents awkward line breaks |
+| `font-variant-numeric: tabular-nums` | On all number columns/comparisons | Prevents reflow on count-up |
+| `touch-action: manipulation` | On all interactive elements | Prevents double-tap zoom delay |
+| `-webkit-tap-highlight-color` | Set intentionally (usually transparent) | Consistent on mobile |
 
 ---
 
@@ -1510,21 +1420,10 @@ ICONS
 }
 
 /* Mobile-specific overrides */
-.auth-card {
-  border-radius: 0;
-} /* Mobile auth is full-bleed, not a card */
-.claim-cta {
-  position: fixed;
-  bottom: calc(60px + env(safe-area-inset-bottom) + 12px);
-}
-.category-filter-strip {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.dashboard-metrics {
-  grid-template-columns: 1fr 1fr;
-} /* 2-col not 4 on mobile */
+.auth-card { border-radius: 0; } /* Mobile auth is full-bleed, not a card */
+.claim-cta { position: fixed; bottom: calc(60px + env(safe-area-inset-bottom) + 12px); }
+.category-filter-strip { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.dashboard-metrics { grid-template-columns: 1fr 1fr; } /* 2-col not 4 on mobile */
 ```
 
 ---
@@ -1543,26 +1442,26 @@ When Phase 3+ introduces new surfaces:
 
 ## PART 14 — PAGE NAVIGATION MATRIX
 
-| Page                  | Who Sees                             | Entry Point                                     |
-| --------------------- | ------------------------------------ | ----------------------------------------------- |
-| Marketplace Index     | All users                            | Root of subdomain, Home tab                     |
-| Item Detail           | All users                            | Click item card                                 |
-| PIN Handshake         | Buyer + seller in active transaction | Transaction notification, activity feed         |
-| Listing Form          | Authenticated students               | "Sell" button (nav + tab bar)                   |
-| User Dashboard        | Authenticated                        | Profile tab (mobile), avatar dropdown (desktop) |
-| ESG Partner Dashboard | Partner role                         | Avatar dropdown → "ESG Dashboard"               |
-| Admin Panel           | Admin role                           | Avatar dropdown → "Admin Panel"                 |
-| Profile               | Authenticated                        | Mobile tab bar → Profile                        |
-| Settings              | Authenticated                        | Avatar dropdown → Settings                      |
-| Auth pages            | Unauthenticated                      | Register / Login links                          |
-| Privacy Policy        | All users                            | Footer link                                     |
-| Error pages           | Triggered by 404/500                 | Automatic                                       |
-| Leaderboard (P2)      | All authenticated                    | Navbar dropdown + mobile drawer                 |
-| Notifications (P2)    | All authenticated                    | Navbar badge → dropdown link                    |
-| Jury Voting (P2)      | High-trust (≥120)                    | Notification link only                          |
+| Page | Who Sees | Entry Point |
+|------|----------|-------------|
+| Marketplace Index | All users | Root of subdomain, Home tab |
+| Item Detail | All users | Click item card |
+| PIN Handshake | Buyer + seller in active transaction | Transaction notification, activity feed |
+| Listing Form | Authenticated students | "Sell" button (nav + tab bar) |
+| User Dashboard | Authenticated | Profile tab (mobile), avatar dropdown (desktop) |
+| ESG Partner Dashboard | Partner role | Avatar dropdown → "ESG Dashboard" |
+| Admin Panel | Admin role | Avatar dropdown → "Admin Panel" |
+| Profile | Authenticated | Mobile tab bar → Profile |
+| Settings | Authenticated | Avatar dropdown → Settings |
+| Auth pages | Unauthenticated | Register / Login links |
+| Privacy Policy | All users | Footer link |
+| Error pages | Triggered by 404/500 | Automatic |
+| Leaderboard (P2) | All authenticated | Navbar dropdown + mobile drawer |
+| Notifications (P2) | All authenticated | Navbar badge → dropdown link |
+| Jury Voting (P2) | High-trust (≥120) | Notification link only |
 
 ---
 
-_Unified Design System v1.0 · Reuni · July 2026_
-_Supersedes: REUNI_DESIGN_BLUEPRINT_v3.md, REUNI_DESIGN_BLUEPRINT_ADDENDUM.md, REUNI_DESIGN_SYSTEM.md v1.0_
-_This document does not include the landing page specification — see REUNI_LANDING_PAGE_DESIGN.md_
+*Unified Design System v1.0 · Reuni · July 2026*
+*Supersedes: REUNI_DESIGN_BLUEPRINT_v3.md, REUNI_DESIGN_BLUEPRINT_ADDENDUM.md, REUNI_DESIGN_SYSTEM.md v1.0*
+*This document does not include the landing page specification — see REUNI_LANDING_PAGE_DESIGN.md*

@@ -211,11 +211,18 @@ def get_cross_university_standings(season):
 
     results = []
     for i, row in enumerate(rows, start=1):
+        active_students = User.query.filter_by(
+            university_domain=row.university_domain,
+            role="student",
+            is_active=True,
+            is_verified=True,
+        ).count()
         results.append({
             "rank": i,
             "university_domain": row.university_domain,
             "display_name": domain_names.get(row.university_domain, row.university_domain),
             "total_kg": float(row.total_kg),
             "transaction_count": row.transaction_count,
+            "active_students": active_students,
         })
     return results

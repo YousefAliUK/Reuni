@@ -1,194 +1,270 @@
-/* Reuni — Modern App-Style Leaderboard Stylesheet */
+/* Reuni — Modern App-Style Leaderboard Stylesheet (Redesigned from scratch) */
 
-/* ─── Layout & Page Grid ─── */
-.leaderboard-layout {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
-    margin-top: var(--space-6);
+/* ─── Page Container & Grid Layout ─── */
+.reuni-leaderboard-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+    transition: max-width var(--duration-normal) var(--ease-out);
 }
 
-@media (min-width: 1024px) {
-    .leaderboard-layout {
-        grid-template-columns: 7.5fr 4.5fr; /* Rankings on left, user profile stats card on right */
-        align-items: start;
-    }
+/* Widen for University section */
+.reuni-leaderboard-container--wide {
+    max-width: 860px;
 }
 
-/* ─── Concentric Glassmorphic Cards ─── */
-.premium-card {
-    background-color: var(--color-surface);
+/* Widen for Seasonal grid cards in Hall of Fame */
+.reuni-leaderboard-container--widest {
+    max-width: 900px;
+}
+
+/* ─── Page Header ─── */
+.reuni-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.reuni-eyebrow {
+    font-size: var(--type-small);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-tertiary);
+    font-weight: 700;
+}
+
+.reuni-heading {
+    font-family: var(--font-sans);
+    font-size: var(--type-display);
+    font-weight: 800;
+    color: var(--color-ink-primary);
+    margin: 0;
+    line-height: var(--lead-display);
+    letter-spacing: var(--track-display);
+}
+
+/* ─── Counterpart Cross-Link Pill ─── */
+.reuni-cross-link-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: var(--space-6);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-    position: relative;
-    overflow: hidden;
+    border-radius: var(--radius-full);
+    font-size: var(--type-small);
+    font-weight: 500;
+    color: var(--color-ink-secondary);
+    text-decoration: none !important;
+    background-color: var(--color-surface);
+    transition: border-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out);
 }
 
-[data-theme="dark"] .premium-card {
-    background-color: var(--color-surface-raised);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.reuni-cross-link-pill:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
 }
 
-/* ─── Premium Segmented Tab Control ─── */
-.leaderboard-tabs-wrapper {
+/* ─── Segmented Tab Control ─── */
+.reuni-segmented-control-wrapper {
     display: flex;
     justify-content: center;
     margin-bottom: var(--space-8);
 }
 
-.leaderboard-tabs {
-    display: flex;
-    background-color: rgba(28, 25, 23, 0.05);
+.reuni-segmented-control {
+    display: inline-flex;
+    background-color: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-full);
     padding: 4px;
     position: relative;
     width: 100%;
-    max-width: 500px;
+    max-width: 480px;
+    gap: 2px;
 }
 
-[data-theme="dark"] .leaderboard-tabs {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.tab-indicator {
+.reuni-tab-indicator {
     position: absolute;
     background-color: var(--color-surface);
     border-radius: var(--radius-full);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     height: calc(100% - 8px);
     top: 4px;
     left: 0;
     z-index: 1;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-normal) var(--ease-out), width var(--duration-normal) var(--ease-out);
 }
 
-[data-theme="dark"] .tab-indicator {
-    background-color: var(--color-surface-raised);
+[data-theme="dark"] .reuni-tab-indicator {
+    background-color: var(--color-bg);
     border: 1px solid var(--color-border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.leaderboard-tab {
+.reuni-tab-btn {
     flex: 1;
-    background: none;
+    background: transparent;
     border: none;
     border-radius: var(--radius-full);
-    padding: var(--space-2) var(--space-4);
+    padding: 8px 20px;
     font-family: var(--font-sans);
     font-size: var(--type-small);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-ink-secondary);
     cursor: pointer;
     text-align: center;
-    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
     position: relative;
     z-index: 2;
-    transition: color 0.3s ease;
+    min-height: 36px;
+    transition: color var(--duration-fast) var(--ease-out);
 }
 
-.leaderboard-tab:hover {
+.reuni-tab-btn:hover {
     color: var(--color-primary);
 }
 
-.leaderboard-tab.active-tab {
+.reuni-tab-btn.active-tab {
     color: var(--color-primary);
 }
 
-/* ─── Hero Podium (Top 3) ─── */
-.hero-podium {
+@media (max-width: 640px) {
+    .reuni-segmented-control {
+        max-width: 100%;
+    }
+}
+
+/* ─── Countdown Chip ─── */
+.reuni-countdown-chip-wrapper {
     display: flex;
     justify-content: center;
-    align-items: flex-end;
-    gap: var(--space-4);
-    margin: var(--space-4) 0 var(--space-8) 0;
-    padding-bottom: var(--space-8);
-    border-bottom: 1px solid var(--color-border);
+    margin-top: calc(-1 * var(--space-4));
+    margin-bottom: var(--space-6);
 }
 
-.podium-member {
+.reuni-countdown-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--color-warning-muted);
+    color: var(--color-warning);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--type-small);
+    font-weight: 600;
+}
+
+.reuni-countdown-chip--paused {
+    background-color: var(--color-surface-raised);
+    color: var(--color-ink-secondary);
+}
+
+.reuni-countdown-chip .material-symbols-outlined {
+    font-size: 14px;
+}
+
+/* ─── Brand-Aligned Podium (No metallic slop) ─── */
+.reuni-podium {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr; /* 2nd | 1st | 3rd */
+    align-items: end;
+    gap: var(--space-4);
+    max-width: 560px;
+    margin: 0 auto var(--space-10);
+    padding: 0 var(--space-4);
+}
+
+.reuni-podium-step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1;
-    max-width: 140px;
     position: relative;
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(16px);
+    transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
 }
 
-.podium-member.animate-in {
+.reuni-podium-step.animate-in {
     opacity: 1;
     transform: translateY(0);
 }
 
-.podium-member__avatar-wrapper {
+.reuni-podium-avatar-wrapper {
     position: relative;
     margin-bottom: var(--space-3);
 }
 
-.podium-member__avatar {
-    width: 68px;
-    height: 68px;
+.reuni-podium-avatar {
     border-radius: 50%;
-    background-color: var(--color-surface-raised);
-    border: 3px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: var(--type-body-lg);
+    background-color: var(--color-surface-raised);
     color: var(--color-ink-secondary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-sm);
 }
 
-.podium-member--1 .podium-member__avatar {
-    width: 84px;
-    height: 84px;
-    border-color: #FACC15; /* Gold */
-    background-color: #FEF08A;
-    color: #713F12;
-    font-size: var(--type-title);
-    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.2);
+/* Rounded square for university config logos */
+.reuni-podium-logo {
+    border-radius: 12px;
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
-.podium-member--2 .podium-member__avatar {
-    border-color: #94A3B8; /* Silver */
-    background-color: #F1F5F9;
-    color: #334155;
+.reuni-podium-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
 }
 
-.podium-member--3 .podium-member__avatar {
-    border-color: #EA580C; /* Bronze */
-    background-color: #FFEDD5;
-    color: #7C2D12;
+/* Rank 1 Specifics */
+.reuni-podium-step--1 .reuni-podium-avatar {
+    width: 72px;
+    height: 72px;
+    border: 3px solid var(--color-primary);
+    font-size: var(--type-body-lg);
+    background-color: var(--color-primary-muted);
+    color: var(--color-primary);
 }
 
-/* Floating Crown on Champion */
-.crown-icon {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%) rotate(0deg);
-    color: #FACC15;
-    font-size: 24px;
-    animation: floatCrown 3s ease-in-out infinite;
+.reuni-podium-step--1 .reuni-podium-logo {
+    width: 64px;
+    height: 64px;
+    border: 3px solid var(--color-primary);
 }
 
-@keyframes floatCrown {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-4px); }
+/* Rank 2 & 3 Specifics */
+.reuni-podium-step--2 .reuni-podium-avatar,
+.reuni-podium-step--3 .reuni-podium-avatar {
+    width: 56px;
+    height: 56px;
+    border: 2px solid var(--color-border);
+    font-size: var(--type-body);
 }
 
-/* Floating Rank Medal Badge */
-.podium-rank-badge {
+.reuni-podium-step--2 .reuni-podium-logo,
+.reuni-podium-step--3 .reuni-podium-logo {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--color-border);
+}
+
+/* Rank Badges */
+.reuni-podium-badge {
     position: absolute;
     bottom: -4px;
     right: -4px;
@@ -198,19 +274,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--type-micro);
-    font-weight: 800;
-    color: white;
+    font-size: 11px;
+    font-weight: 700;
     border: 2px solid var(--color-surface);
 }
 
-.podium-member--1 .podium-rank-badge { background-color: #EAB308; }
-.podium-member--2 .podium-rank-badge { background-color: #64748B; }
-.podium-member--3 .podium-rank-badge { background-color: #C2410C; }
+.reuni-podium-step--1 .reuni-podium-badge {
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
 
-.podium-member__name {
-    font-size: var(--type-small);
-    font-weight: 700;
+[data-theme="dark"] .reuni-podium-step--1 .reuni-podium-badge {
+    color: var(--color-ink-primary);
+}
+
+.reuni-podium-step--2 .reuni-podium-badge,
+.reuni-podium-step--3 .reuni-podium-badge {
+    background-color: var(--color-surface);
+    color: var(--color-ink-secondary);
+    border: 2px solid var(--color-border);
+    font-family: var(--font-mono);
+}
+
+.reuni-podium-name {
+    font-size: var(--type-body);
+    font-weight: 600;
     color: var(--color-ink-primary);
     text-align: center;
     max-width: 100%;
@@ -220,248 +309,614 @@
     margin-bottom: 2px;
 }
 
-.podium-member__value {
-    font-size: var(--type-micro);
+.reuni-podium-value {
+    font-size: 16px;
     font-weight: 700;
-    color: var(--color-primary);
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink-primary);
 }
 
-/* ─── Stacked Card List Rows (Standard Leaderboard) ─── */
-.leaderboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
+.reuni-podium-step--1 .reuni-podium-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--color-primary);
 }
 
-.leaderboard-row {
+/* Podium Steps */
+.reuni-podium-base {
+    margin-top: var(--space-3);
     display: flex;
     align-items: center;
-    background-color: var(--color-bg);
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+.reuni-podium-step--1 .reuni-podium-base {
+    height: 88px;
+    background-color: var(--color-primary);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.reuni-podium-step--1 .reuni-podium-base .reuni-step-icon {
+    font-size: 20px;
+    color: white;
+}
+
+[data-theme="dark"] .reuni-podium-step--1 .reuni-podium-base .reuni-step-icon {
+    color: var(--color-ink-primary);
+}
+
+.reuni-podium-step--2 .reuni-podium-base {
+    height: 64px;
+    background-color: var(--color-surface-raised);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-3) var(--space-4);
+    border-bottom: none;
+}
+
+.reuni-podium-step--3 .reuni-podium-base {
+    height: 48px;
+    background-color: var(--color-surface-raised);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+}
+
+/* Ghost numerals inside steps */
+.reuni-podium-base-num {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--color-ink-tertiary);
+    opacity: 0.35;
+}
+
+@media (max-width: 640px) {
+    .reuni-podium {
+        gap: var(--space-2);
+    }
+    
+    .reuni-podium-step--1 .reuni-podium-avatar { width: 56px; height: 56px; }
+    .reuni-podium-step--1 .reuni-podium-logo { width: 50px; height: 50px; }
+    
+    .reuni-podium-step--2 .reuni-podium-avatar,
+    .reuni-podium-step--3 .reuni-podium-avatar { width: 44px; height: 44px; }
+    .reuni-podium-step--2 .reuni-podium-logo,
+    .reuni-podium-step--3 .reuni-podium-logo { width: 38px; height: 38px; }
+    
+    .reuni-podium-step--1 .reuni-podium-base { height: 64px; }
+    .reuni-podium-step--2 .reuni-podium-base { height: 48px; }
+    .reuni-podium-step--3 .reuni-podium-base { height: 36px; }
+    
+    .reuni-podium-base-num { font-size: 20px; }
+    .reuni-podium-name { font-size: var(--type-small); }
+    .reuni-podium-value { font-size: var(--type-small); }
+    .reuni-podium-step--1 .reuni-podium-value { font-size: 16px; }
+}
+
+/* ─── Premium Glassmorphic Cards ─── */
+.reuni-premium-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-card);
     position: relative;
     overflow: hidden;
-    transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+[data-theme="dark"] .reuni-premium-card {
+    background-color: var(--color-surface-raised);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Accessible Semantic Table ─── */
+.reuni-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--space-4);
+}
+
+.reuni-table th {
+    height: 0;
+    padding: 0;
+    border: none;
+}
+
+.reuni-row-tr {
+    display: grid;
+    grid-template-columns: 40px 40px 1fr auto auto; /* rank | avatar | name | kg | items */
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
     opacity: 0;
     transform: translateY(12px);
 }
 
-.leaderboard-row.animate-in {
+.reuni-row-tr.animate-in {
     opacity: 1;
     transform: translateY(0);
 }
 
-.leaderboard-row:hover {
-    background-color: var(--color-surface);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+.reuni-row-tr:hover {
+    background-color: var(--color-surface-raised);
 }
 
-.leaderboard-row--user {
-    background-color: rgba(15, 118, 110, 0.03);
-    border-color: rgba(15, 118, 110, 0.15);
+/* Highlight user row */
+.reuni-row-tr--user {
+    background-color: var(--color-primary-muted) !important;
+    border-left: 3px solid var(--color-primary);
+    padding-left: calc(var(--space-4) - 3px);
 }
 
-/* Custom CSS Medal Badges */
-.rank-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    font-size: var(--type-small);
-    font-weight: 800;
+.reuni-row-rank {
     font-family: var(--font-mono);
+    font-size: var(--type-small);
+    font-weight: 700;
+    color: var(--color-ink-tertiary);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
-.rank-badge--1 {
-    background: linear-gradient(135deg, #FDE047 0%, #EAB308 100%);
-    color: #713F12;
-    box-shadow: 0 2px 6px rgba(234, 179, 8, 0.2);
-}
-
-.rank-badge--2 {
-    background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
-    color: #1E293B;
-}
-
-.rank-badge--3 {
-    background: linear-gradient(135deg, #FFEDD5 0%, #EA580C 100%);
-    color: #7C2D12;
-}
-
-.rank-badge--other {
-    color: var(--color-ink-secondary);
-}
-
-/* User avatar initials */
-.leaderboard-row__avatar {
-    width: 36px;
-    height: 36px;
+.reuni-row-avatar {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background-color: rgba(28, 25, 23, 0.05);
-    color: var(--color-ink-secondary);
+    background-color: var(--color-surface-raised);
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: var(--type-micro);
-    margin-left: var(--space-3);
-    margin-right: var(--space-3);
+    font-size: 13px;
 }
 
-[data-theme="dark"] .leaderboard-row__avatar {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.leaderboard-row--user .leaderboard-row__avatar {
+.reuni-row-tr--user .reuni-row-avatar {
     background-color: var(--color-primary);
     color: white;
+    border-color: var(--color-primary);
 }
 
-.leaderboard-row__name-container {
-    flex: 1;
+.reuni-row-name-stack {
     display: flex;
-    align-items: center;
-    gap: var(--space-2);
+    flex-direction: column;
     min-width: 0;
 }
 
-.leaderboard-row__name {
-    font-weight: 600;
+.reuni-row-name {
+    font-weight: 500;
     color: var(--color-ink-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.user-pill {
+.reuni-row-user-tag {
     font-size: 9px;
+    background-color: var(--color-primary);
+    color: white;
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-left: var(--space-1);
+    display: inline-block;
+}
+
+.reuni-row-kg {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.reuni-row-items {
+    font-size: var(--type-small);
+    color: var(--color-ink-tertiary);
+    text-align: right;
+    width: 70px;
+}
+
+@media (max-width: 480px) {
+    .reuni-row-tr {
+        grid-template-columns: 32px 32px 1fr auto;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-3);
+    }
+    
+    .reuni-row-items {
+        display: none;
+    }
+    
+    .reuni-row-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+    
+    .reuni-row-kg {
+        font-size: var(--type-small);
+    }
+}
+
+/* ─── University Row Layout ─── */
+.reuni-university-row-tr {
+    display: grid;
+    grid-template-columns: 40px 48px 1fr auto auto auto; /* rank | logo | name | active students | items | kg */
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.reuni-university-row-tr:hover {
+    background-color: var(--color-surface-raised);
+}
+
+.reuni-university-logo-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.reuni-university-logo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 3px;
+}
+
+.reuni-university-logo-monogram {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    border-radius: 9px;
+}
+
+.reuni-university-name {
+    font-weight: 600;
+    color: var(--color-ink-primary);
+}
+
+.reuni-university-meta {
+    font-size: var(--type-micro);
+    color: var(--color-ink-tertiary);
+    margin-top: 2px;
+}
+
+.reuni-university-students,
+.reuni-university-items {
+    font-family: var(--font-mono);
+    font-size: var(--type-small);
+    color: var(--color-ink-secondary);
+    text-align: right;
+}
+
+.reuni-university-kg {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--color-primary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+    .reuni-university-row-tr {
+        grid-template-columns: 40px 48px 1fr auto auto;
+    }
+    .reuni-university-items {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .reuni-university-row-tr {
+        grid-template-columns: 32px 40px 1fr auto;
+        gap: var(--space-3);
+        padding: var(--space-3);
+    }
+    
+    .reuni-university-logo-wrap {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .reuni-university-students {
+        display: none;
+    }
+    
+    .reuni-university-kg {
+        font-size: 15px;
+    }
+}
+
+/* ─── Champion Cards (Seasonal Hall of Fame) ─── */
+.reuni-hof-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-5);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.reuni-champion-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.reuni-champion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.reuni-champion-card-trophy {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    color: var(--color-primary);
+    opacity: 0.5;
+    font-size: 20px;
+}
+
+.reuni-champion-card-term {
+    font-size: var(--type-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-tertiary);
+    font-weight: 700;
+}
+
+.reuni-champion-card-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
     background-color: var(--color-primary-muted);
     color: var(--color-primary);
-    padding: 1px 5px;
-    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 800;
+    font-size: var(--type-body-lg);
+    margin: var(--space-4) 0 var(--space-3);
+}
+
+.reuni-champion-card-name {
+    font-size: var(--type-body-lg);
+    font-weight: 700;
+    color: var(--color-ink-primary);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reuni-champion-card-kg {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--color-primary);
+    margin-top: var(--space-1);
+}
+
+.reuni-champion-card-desc {
+    font-size: var(--type-small);
+    color: var(--color-ink-secondary);
+}
+
+.reuni-champion-card-runners {
+    width: 100%;
+    font-size: var(--type-micro);
+    color: var(--color-ink-tertiary);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* ─── Weekly Hall of Fame Row ─── */
+.reuni-weekly-hof-group {
+    margin-bottom: var(--space-8);
+}
+
+.reuni-weekly-hof-group:last-child {
+    margin-bottom: 0;
+}
+
+.reuni-weekly-hof-header {
+    font-size: var(--type-small);
     text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-secondary);
+    font-weight: 700;
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--color-surface-raised);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--space-2);
+}
+
+.reuni-weekly-hof-row {
+    display: grid;
+    grid-template-columns: 120px 40px 1fr auto; /* date | avatar | name | kg */
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+}
+
+.reuni-weekly-hof-row:last-child {
+    border-bottom: none;
+}
+
+.reuni-weekly-hof-row__date {
+    font-size: var(--type-small);
+    font-family: var(--font-mono);
+    color: var(--color-ink-tertiary);
+}
+
+.reuni-weekly-hof-row__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--color-surface-raised);
+    color: var(--color-ink-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    border: 1px solid var(--color-border);
+}
+
+.reuni-weekly-hof-row__name {
+    font-size: var(--type-body);
+    font-weight: 500;
+    color: var(--color-ink-primary);
+}
+
+.reuni-weekly-hof-row__kg {
+    font-family: var(--font-mono);
+    font-size: var(--type-small);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── My-Rank Sticky Bar ─── */
+.reuni-sticky-bar-wrapper {
+    position: sticky;
+    bottom: var(--space-4);
+    z-index: 100;
+    max-width: 560px;
+    margin: var(--space-4) auto 0;
+    padding: 0 var(--space-4);
+    pointer-events: none;
+}
+
+@media (max-width: 767px) {
+    .reuni-sticky-bar-wrapper {
+        bottom: calc(56px + env(safe-area-inset-bottom) + var(--space-3));
+    }
+}
+
+.reuni-sticky-bar {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-surface);
+    border: 1.5px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-modal);
+    padding: var(--space-3) var(--space-4);
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.reuni-sticky-bar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(15, 118, 110, 0.15);
+}
+
+.reuni-sticky-bar-label {
+    font-size: var(--type-micro);
+    color: var(--color-ink-tertiary);
+    text-transform: uppercase;
+    font-weight: 700;
     letter-spacing: 0.05em;
 }
 
-.leaderboard-row__stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    margin-right: var(--space-2);
-    z-index: 2;
-}
-
-.leaderboard-row__impact {
+.reuni-sticky-bar-value {
     font-family: var(--font-mono);
     font-weight: 700;
     color: var(--color-ink-primary);
     font-size: var(--type-small);
 }
 
-.leaderboard-row__trades {
-    font-size: 10px;
-    color: var(--color-ink-tertiary);
-    font-weight: 500;
-}
-
-/* Subtle Row Progress Bar overlay */
-.row-progress-bar {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 3px;
-    background-color: var(--color-primary);
-    opacity: 0.15;
-    width: 0;
-    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 1;
-}
-
-.leaderboard-row--user .row-progress-bar {
-    opacity: 0.3;
-}
-
-/* ─── Profile Sidebar Cards ─── */
-.user-status-card {
+/* ─── Client-side Pagination ─── */
+.reuni-pagination-wrapper {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-}
-
-.profile-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: var(--space-5);
-}
-
-.profile-hero__avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: var(--color-primary);
-    color: white;
-    font-size: var(--type-body-lg);
-    font-weight: 800;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    margin-bottom: var(--space-3);
-    box-shadow: 0 4px 14px rgba(15, 118, 110, 0.2);
+    margin-top: var(--space-6);
 }
 
-.stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
-}
-
-.stat-block {
-    background-color: var(--color-bg);
+.reuni-pagination-btn {
+    background: transparent;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3);
-    text-align: center;
+    padding: 8px 24px;
+    border-radius: var(--radius-full);
+    font-size: var(--type-small);
+    font-weight: 600;
+    color: var(--color-ink-secondary);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
-.stat-block__value {
-    font-family: var(--font-mono);
-    font-size: var(--type-body-lg);
-    font-weight: 800;
+.reuni-pagination-btn:hover {
+    border-color: var(--color-primary);
     color: var(--color-primary);
 }
 
-.stat-block__label {
-    font-size: 10px;
-    font-weight: 700;
+/* Term selector dropdown */
+.reuni-term-select-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 6px 14px;
+    cursor: pointer;
+    position: relative;
+}
+
+.reuni-term-select-container select {
+    appearance: none;
+    background: transparent;
+    border: none;
+    font-size: var(--type-small);
+    font-weight: 600;
+    color: var(--color-ink-secondary);
+    cursor: pointer;
+    padding-right: 20px;
+}
+
+.reuni-term-select-container .select-chevron {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    font-size: 16px;
     color: var(--color-ink-tertiary);
-    text-transform: uppercase;
-    margin-top: 2px;
-    display: block;
-}
-
-/* ─── Hall of Fame Page Podiums ─── */
-.hof-section {
-    margin-bottom: var(--space-12);
-}
-
-.hof-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-}
-
-@media (min-width: 768px) {
-    .hof-grid {
-        grid-template-columns: 1fr 1fr;
-    }
 }
