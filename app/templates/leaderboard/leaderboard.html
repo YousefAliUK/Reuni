@@ -333,61 +333,63 @@
 
                 <div class="reuni-premium-card">
                     <!-- University Podium — Suppress if < 3 active universities -->
-                    {% if cross_uni_standings|length >= 3 %}
-                        <div class="reuni-podium">
-                            <!-- Rank 2 -->
-                            <div class="reuni-podium-step reuni-podium-step--2">
-                                <div class="reuni-podium-avatar-wrapper">
-                                    <div class="reuni-podium-logo">
-                                        {% if cross_uni_standings[1].logo_status == 'fetched' %}
-                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[1].slug + '.png') }}" alt="{{ cross_uni_standings[1].display_name }}">
-                                        {% else %}
-                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
-                                                {{ cross_uni_standings[1].initials }}
-                                            </div>
-                                        {% endif %}
+                    <div id="university-podium-container">
+                        {% if cross_uni_standings|length >= 3 %}
+                            <div class="reuni-podium">
+                                <!-- Rank 2 -->
+                                <div class="reuni-podium-step reuni-podium-step--2">
+                                    <div class="reuni-podium-avatar-wrapper">
+                                        <div class="reuni-podium-logo">
+                                            {% if cross_uni_standings[1].logo_status == 'fetched' %}
+                                                <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[1].slug + '.png') }}" alt="{{ cross_uni_standings[1].display_name }}">
+                                            {% else %}
+                                                <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                    {{ cross_uni_standings[1].initials }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
+                                    <div class="reuni-podium-name">{{ cross_uni_standings[1].display_name }}</div>
+                                    <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[1].total_kg) }} kg</div>
+                                    <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
                                 </div>
-                                <div class="reuni-podium-name">{{ cross_uni_standings[1].display_name }}</div>
-                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[1].total_kg) }} kg</div>
-                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
-                            </div>
-                            <!-- Rank 1 -->
-                            <div class="reuni-podium-step reuni-podium-step--1">
-                                <div class="reuni-podium-avatar-wrapper">
-                                    <div class="reuni-podium-logo">
-                                        {% if cross_uni_standings[0].logo_status == 'fetched' %}
-                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[0].slug + '.png') }}" alt="{{ cross_uni_standings[0].display_name }}">
-                                        {% else %}
-                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
-                                                {{ cross_uni_standings[0].initials }}
-                                            </div>
-                                        {% endif %}
+                                <!-- Rank 1 -->
+                                <div class="reuni-podium-step reuni-podium-step--1">
+                                    <div class="reuni-podium-avatar-wrapper">
+                                        <div class="reuni-podium-logo">
+                                            {% if cross_uni_standings[0].logo_status == 'fetched' %}
+                                                <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[0].slug + '.png') }}" alt="{{ cross_uni_standings[0].display_name }}">
+                                            {% else %}
+                                                <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                    {{ cross_uni_standings[0].initials }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
+                                    <div class="reuni-podium-name">{{ cross_uni_standings[0].display_name }}</div>
+                                    <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[0].total_kg) }} kg</div>
+                                    <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
                                 </div>
-                                <div class="reuni-podium-name">{{ cross_uni_standings[0].display_name }}</div>
-                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[0].total_kg) }} kg</div>
-                                <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
-                            </div>
-                            <!-- Rank 3 -->
-                            <div class="reuni-podium-step reuni-podium-step--3">
-                                <div class="reuni-podium-avatar-wrapper">
-                                    <div class="reuni-podium-logo">
-                                        {% if cross_uni_standings[2].logo_status == 'fetched' %}
-                                            <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[2].slug + '.png') }}" alt="{{ cross_uni_standings[2].display_name }}">
-                                        {% else %}
-                                            <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
-                                                {{ cross_uni_standings[2].initials }}
-                                            </div>
-                                        {% endif %}
+                                <!-- Rank 3 -->
+                                <div class="reuni-podium-step reuni-podium-step--3">
+                                    <div class="reuni-podium-avatar-wrapper">
+                                        <div class="reuni-podium-logo">
+                                            {% if cross_uni_standings[2].logo_status == 'fetched' %}
+                                                <img src="{{ url_for('static', filename='img/logos/' + cross_uni_standings[2].slug + '.png') }}" alt="{{ cross_uni_standings[2].display_name }}">
+                                            {% else %}
+                                                <div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">
+                                                    {{ cross_uni_standings[2].initials }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
+                                    <div class="reuni-podium-name">{{ cross_uni_standings[2].display_name }}</div>
+                                    <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[2].total_kg) }} kg</div>
+                                    <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
                                 </div>
-                                <div class="reuni-podium-name">{{ cross_uni_standings[2].display_name }}</div>
-                                <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[2].total_kg) }} kg</div>
-                                <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
                             </div>
-                        </div>
-                    {% endif %}
+                        {% endif %}
+                    </div>
 
                     <!-- Semantic table for cross-university list -->
                     <table class="reuni-table">

@@ -227,6 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ─── 4. AJAX Cross-University Term Selector ───
     const termSelect = document.getElementById("university-term-select");
     const universitiesTbody = document.getElementById("universities-list-tbody");
+    const universityPodiumContainer = document.getElementById("university-podium-container");
 
     if (termSelect && universitiesTbody) {
         termSelect.addEventListener("change", () => {
@@ -237,6 +238,83 @@ document.addEventListener("DOMContentLoaded", () => {
                     return response.json();
                 })
                 .then(data => {
+                    // 1. Update Podium Container
+                    if (universityPodiumContainer) {
+                        if (data.standings && data.standings.length >= 3) {
+                            const first = data.standings[0];
+                            const second = data.standings[1];
+                            const third = data.standings[2];
+                            
+                            const getLogoHTML = (entry) => {
+                                if (entry.logo_status === "fetched") {
+                                    return `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
+                                } else {
+                                    return `<div class="reuni-university-logo-monogram" style="background-color: ${entry.brand_color}; color: ${entry.brand_text_color};">${entry.initials}</div>`;
+                                }
+                            };
+                            
+                            universityPodiumContainer.innerHTML = `
+                                <div class="reuni-podium">
+                                    <!-- Rank 2 -->
+                                    <div class="reuni-podium-step reuni-podium-step--2">
+                                        <div class="reuni-podium-avatar-wrapper">
+                                            <div class="reuni-podium-logo">
+                                                ${getLogoHTML(second)}
+                                            </div>
+                                            <span class="reuni-podium-badge">2</span>
+                                        </div>
+                                        <div class="reuni-podium-name">${second.display_name}</div>
+                                        <div class="reuni-podium-value">${second.total_kg.toFixed(1)} kg</div>
+                                        <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
+                                    </div>
+                                    <!-- Rank 1 -->
+                                    <div class="reuni-podium-step reuni-podium-step--1">
+                                        <div class="reuni-podium-avatar-wrapper">
+                                            <div class="reuni-podium-logo">
+                                                ${getLogoHTML(first)}
+                                            </div>
+                                            <span class="reuni-podium-badge">
+                                                <span class="material-symbols-outlined" style="font-size: 14px; line-height: 20px;">workspace_premium</span>
+                                            </span>
+                                        </div>
+                                        <div class="reuni-podium-name">${first.display_name}</div>
+                                        <div class="reuni-podium-value">${first.total_kg.toFixed(1)} kg</div>
+                                        <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
+                                    </div>
+                                    <!-- Rank 3 -->
+                                    <div class="reuni-podium-step reuni-podium-step--3">
+                                        <div class="reuni-podium-avatar-wrapper">
+                                            <div class="reuni-podium-logo">
+                                                ${getLogoHTML(third)}
+                                            </div>
+                                            <span class="reuni-podium-badge">3</span>
+                                        </div>
+                                        <div class="reuni-podium-name">${third.display_name}</div>
+                                        <div class="reuni-podium-value">${third.total_kg.toFixed(1)} kg</div>
+                                        <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Trigger entrance animations for the new podium steps
+                            const newSteps = universityPodiumContainer.querySelectorAll(".reuni-podium-step");
+                            newSteps.forEach((col) => {
+                                col.classList.remove("animate-in");
+                                let delay = 0;
+                                if (col.classList.contains("reuni-podium-step--3")) delay = 0;
+                                else if (col.classList.contains("reuni-podium-step--2")) delay = 80;
+                                else if (col.classList.contains("reuni-podium-step--1")) delay = 160;
+                                
+                                col.style.transitionDelay = `${delay}ms`;
+                                void col.offsetWidth;
+                                col.classList.add("animate-in");
+                            });
+                        } else {
+                            universityPodiumContainer.innerHTML = "";
+                        }
+                    }
+
+                    // 2. Update Standings Table
                     universitiesTbody.innerHTML = "";
                     if (data.standings && data.standings.length > 0) {
                         data.standings.forEach(entry => {
