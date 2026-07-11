@@ -66,7 +66,7 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 - ✅ **Item Listing & Uploads:** Students can list items with titles, descriptions (max 2000 chars), categories, conditions, prices, or mark them as free. Enforces a price greater than zero (£ > 0.00) for all paid listings.
 - ✅ **Image Processing Pipeline:** Validates uploads against whitelisted extensions (JPG, PNG, WebP), verifies format integrity using Pillow, resizes to a max dimension of 800px, strips metadata/EXIF tags for privacy, saves with secure UUID-based filenames, and limits files to 5MB.
 - ✅ **Marketplace Browse:** Real-time search (wildcard-escaped), category filtering, price-type filter (free vs. paid), and price range filtering (min/max), using standard page-based pagination (12 items per page).
-- ✅ **Listing Lifecycle Management:** Ownership-guarded editing and deletion of listings (blocked once a transaction is pending or sold).
+- ✅ **Listing Lifecycle Management:** Ownership-guarded editing and soft-deletion of listings (blocked once a transaction is pending or sold).
 
 #### Transaction Verification (PIN Handshake Protocol)
 - ✅ **Physical Verification Scheme:** Cements physical collection via a secure 4-digit PIN exchange. PIN is generated atomically on claim:
@@ -116,10 +116,10 @@ Reuni is a student-to-student sustainability marketplace that prevents universit
 #### Security, Auditing & Quality Assurance
 - ✅ **CSRF Protection:** Enabled globally on all POST forms via Flask-WTF.
 - ✅ **SQL Injection Prevention:** Parameterized SQL queries enforced through SQLAlchemy ORM.
-- ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy` that authorizes Cloudflare integration. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
+- ✅ **Security Headers:** Strict response headers configured including `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and a custom `Content-Security-Policy` that authorizes Cloudflare integration. Strict-Transport-Security (HSTS) is enabled in non-debug mode.
 - ✅ **Bot Protection:** Integrated Cloudflare Turnstile CAPTCHA (Managed mode) on public-facing authentication forms (Login, Registration, Forgot Password) to block automated spam/abuse.
 - ✅ **Logging:** Application factory configures rotating file logger (`Reuni.log`, max 10MB, up to 10 backups) to audit startup, errors, partner invites, deactivation events, and GDPR actions.
-- ✅ **218 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: Turnstile verification, CSP headers, authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
+- ✅ **249 Automated Tests:** Extensive test suite using pytest and in-memory SQLite covering: Turnstile verification, CSP headers, authentication, registration flows, forgot password, admin features, partner dashboards, cancellation tiers, PIN handshakes, config validations, index pagination, GDPR deletion flows, settings management, and custom error pages.
 
 ---
 
@@ -174,7 +174,7 @@ Loaded from Google Fonts: `Plus Jakarta Sans` (wght@400;500;600;700;800) + `JetB
 | Inputs         | `border-radius: 10px`, 1.5px border, focus ring via `--color-primary` glow         |
 | Status badges  | Pill-shaped (`border-radius: 999px`), coloured by state                             |
 | Modals/Drawers | `border-radius: 16px` (`--radius-xl`), backdrop blur, slide-in from right (mobile) |
-| Flash messages | Inline alert banners rendered below the navbar, category-coloured (success/danger/warning/info). Not toast-style — no slide animations. |
+| Toast messages | Dynamic toast-style notification cards with CSS slide-in/slide-out animations, auto-dismiss functionality, and screen-reader accessibility, category-colored (success/danger/warning/info) for interactive feedback. |
 | Icons          | Google Material Symbols (outlined style), all decorative icons use `aria-hidden="true"` |
 
 ---
@@ -204,16 +204,17 @@ No native app. The web app is designed mobile-first with a responsive layout. PW
 | **Mobile** (<1024px)     | Single column, full-width cards     | Bottom tab bar (Home, Search, Sell, Profile) — **4 tabs**, plus Mobile Top Bar with hamburger button |
 | **Desktop** (≥1024px)    | Sidebar-free max-width 1100px grid  | Sticky top navbar (Brand, Search form, "List an Item" CTA) + Profile Dropdown |
 
-**Mobile bottom tab bar (4 items, fixed at bottom of screen):**
+**Mobile bottom tab bar (5 items, fixed at bottom of screen):**
 - **Home** → `/` (marketplace browse)
 - **Search** → opens a full-screen search overlay dialog (with accessible focus trap and Escape-key dismiss)
 - **Sell** → `/items/new` (or `/auth/login` if unauthenticated)
+- **Dashboard** → `/dashboard` (with active claims and listing management; redirects to login if unauthenticated)
 - **Profile** → `/profile` (shows first initial avatar if logged in, or `/auth/login` if not)
 
 **Desktop User Profile Dropdown links (authenticated users only):**
 List an Item → My Dashboard → My Profile → Settings → ESG Dashboard (partners/admin only) → Admin Panel (admin only) → Sign Out
 
-**Mobile hamburger drawer:** A slide-in drawer from the left (triggered by ☰ button in the mobile top bar, animating via `translateX(-100%)` to `0` using custom ease transitions) mirrors the profile dropdown options for authenticated users.
+**Mobile hamburger drawer:** A slide-in drawer from the right (triggered by ☰ button in the mobile top bar, animating via `translateX(100%)` to `0` using custom ease transitions) mirrors the profile dropdown options for authenticated users.
 
 > **Mobile-first rule:** Design for phone first, then `@media (min-width: 1024px)` overrides mobile-specific fixed overlays and enables the desktop navbar dropdown layout. The breakpoint is 1024px, not 768px.
 
@@ -544,6 +545,7 @@ Once Reuni has hundreds of users and proven data across multiple universities:
 - ✅ **Privacy policy page:** `/privacy` — covers data collected, retention, user rights, and GDPR contact.
 - ✅ **"Delete my account" (right to erasure):** Full two-phase deletion: immediate deactivation + claim cleanup → 30-day cooling-off → nightly anonymisation job at 2 AM.
 - ✅ **Data anonymisation:** `User.anonymise()` wipes all PII on the user record. Sold items retain `kg_saved` and `university_domain` for ESG integrity (data minimisation).
+- ✅ **Message Retention:** Interactive messages and chat threads are retained for 90 days after transaction completion or soft-deletion of the item, then purged automatically by a nightly background job to balance operational troubleshooting needs with user privacy.
 - **Planned:** Cookie consent banner (if analytics or non-essential cookies are introduced).
 - **Data stored:** Email, name, hashed password, transaction and cancellation history
 - **No:** GPS tracking, advertising IDs, third-party data sharing
@@ -740,7 +742,7 @@ erDiagram
 
 > **Data Integrity and Constraints Note:**
 > - The `items` table implements a database-level check constraint (`CheckConstraint('length(description) <= 2000')`) to enforce the 2000-character description limit across SQLite and production PostgreSQL environments.
-> - The `cancellation_records` table foreign keys (`item_id`, `cancelled_by_id`, and `other_party_id`) are configured with `ON DELETE RESTRICT` to serve as a database-level guard rail. Since users are anonymised in-place rather than hard-deleted, and unsold listings' cancellation records are explicitly cleaned up programmatically in application code before item deletion, this preserves the audit logs for B2B reporting and prevents accidental deletions.
+> - The `cancellation_records` table foreign keys (`item_id`, `cancelled_by_id`, and `other_party_id`) are configured with `ON DELETE RESTRICT` to serve as a database-level guard rail. Unsold listings are soft-deleted (`is_deleted=True`) to preserve transaction and cancellation history in the database, while user records are anonymised in-place rather than hard-deleted. This preserves the audit logs for B2B reporting and prevents database-level referential integrity issues.
 
 ---
 
@@ -785,7 +787,7 @@ New tables:
 | Image validation   | Extension whitelist + PIL verify + EXIF strip + UUID filenames                                            |
 | Upload limit       | `MAX_CONTENT_LENGTH = 5 MB`                                                                               |
 | Open redirect      | Login `?next=` param rejects absolute / external URLs                                                     |
-| Security headers   | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and Strict-Transport-Security (STS)       |
+| Security headers   | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, and Strict-Transport-Security (STS)  |
 | CSP configuration  | Strict `Content-Security-Policy` header restricting script-src to `'self'` and trusted Cloudflare domains (blocking inline scripts) and style-src to `'self' 'unsafe-inline'` to support template dynamic style attributes |
 | Bot protection     | Cloudflare Turnstile CAPTCHA (Managed mode) on register, login, and forgot-password endpoints              |
 | HTTPS              | Enforced via Cloudflare proxy SSL and Strict-Transport-Security (HSTS) configuration in production         |
