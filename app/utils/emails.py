@@ -188,7 +188,11 @@ def send_email(to_email: str, to_name: str, subject: str, html_content: str) -> 
         current_app.logger.warning("Brevo API key (BREVO_API_KEY) is not set; skipping email send")
         return False
 
-    client = Brevo(api_key=api_key)
+    try:
+        timeout_val = float(current_app.config.get("MAIL_TIMEOUT", 30))
+    except (ValueError, TypeError):
+        timeout_val = 30.0
+    client = Brevo(api_key=api_key, timeout=timeout_val)
     sender_email = current_app.config.get("BREVO_SENDER_EMAIL", "support@reuni.ac.uk")
     
     try:
@@ -246,7 +250,6 @@ def send_message_notification_email(recipient, sender, item, message_content):
     <a href="{current_app.config.get('PREFERRED_URL_SCHEME', 'http')}://{host}/items/{item.id}/pin" class="btn-primary">
         Reply in Chat
     </a>
-</p>
 <p>— The Reuni team</p>"""
     
     return send_email(
