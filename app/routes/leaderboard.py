@@ -177,11 +177,17 @@ def leaderboard():
 @limiter.limit("30 per minute")
 def universities_api():
     """AJAX endpoint for cross-university standings by season."""
+    if not current_app.config.get("FEATURE_MULTI_UNIVERSITY", False):
+        return {"error": "Multi-university leaderboard features are disabled"}, 403
+
     season_id = request.args.get("season_id", type=int)
     if not season_id:
         return {"error": "Missing season_id"}, 400
 
-    season = Season.query.get_or_404(season_id)
+    season = db.get_or_404(Season, season_id)
+    if season.university_domain != current_user.university_domain:
+        return {"error": "Unauthorized access to season data"}, 403
+
     standings = get_cross_university_standings(season)
     
     # Enrich with logo slugs for rendering on frontend

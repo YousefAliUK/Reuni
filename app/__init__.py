@@ -55,7 +55,7 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
 
     # Disable rate limits during local pentests if env var is True
-    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True":
+    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True" and (app.config.get("DEBUG") or app.config.get("TESTING")):
         app.config["RATELIMIT_ENABLED"] = False
 
     # Trust reverse proxy headers (Railway, Nginx) in non-debug/non-testing modes
@@ -303,7 +303,7 @@ def create_app(config_class=None):
                         from app.routes.partner import get_uni_name
                         name = get_uni_name(domain)
                         active_count = Item.query.filter_by(
-                            is_sold=False, buyer_id=None, university_domain=domain
+                            is_sold=False, buyer_id=None, is_deleted=False, university_domain=domain
                         ).count()
                         kg_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
                             Item.is_sold == True, Item.university_domain == domain
@@ -311,7 +311,7 @@ def create_app(config_class=None):
                         students = User.query.filter_by(
                             university_domain=domain, is_verified=True
                         ).count()
-                        circulated = Item.query.filter(Item.university_domain == domain).count()
+                        circulated = Item.query.filter(Item.university_domain == domain, Item.is_deleted == False).count()
                         universities.append({
                             "slug": slug,
                             "domain": domain,
@@ -324,7 +324,7 @@ def create_app(config_class=None):
                 else:
                     for cfg in configs:
                         active_count = Item.query.filter_by(
-                            is_sold=False, buyer_id=None, university_domain=cfg.domain
+                            is_sold=False, buyer_id=None, is_deleted=False, university_domain=cfg.domain
                         ).count()
                         kg_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
                             Item.is_sold == True, Item.university_domain == cfg.domain
@@ -332,7 +332,7 @@ def create_app(config_class=None):
                         students = User.query.filter_by(
                             university_domain=cfg.domain, is_verified=True
                         ).count()
-                        circulated = Item.query.filter(Item.university_domain == cfg.domain).count()
+                        circulated = Item.query.filter(Item.university_domain == cfg.domain, Item.is_deleted == False).count()
                         universities.append({
                             "slug": cfg.subdomain_slug,
                             "domain": cfg.domain,
@@ -386,10 +386,11 @@ def create_app(config_class=None):
             from sqlalchemy import or_
             query = Item.query.filter(
                 Item.is_sold == False,
+                Item.is_deleted == False,
                 or_(Item.university_domain == g.current_uni_domain, Item.university_domain.is_(None))
             )
         else:
-            query = Item.query.filter_by(is_sold=False, university_domain=g.current_uni_domain)
+            query = Item.query.filter_by(is_sold=False, is_deleted=False, university_domain=g.current_uni_domain)
 
         # Apply Category Filter
         if active_category and active_category in CATEGORIES:
@@ -512,7 +513,7 @@ def create_app(config_class=None):
 
         my_listings = (
             Item.query
-            .filter_by(seller_id=current_user.id)
+            .filter_by(seller_id=current_user.id, is_deleted=False)
             .order_by(Item.created_at.desc())
             .all()
         )
@@ -524,7 +525,7 @@ def create_app(config_class=None):
         )
         my_claims = (
             Item.query
-            .filter_by(buyer_id=current_user.id, is_sold=False)
+            .filter_by(buyer_id=current_user.id, is_sold=False, is_deleted=False)
             .order_by(Item.created_at.desc())
             .all()
         )
@@ -541,13 +542,13 @@ def create_app(config_class=None):
     def profile():
         from app.models import Item
 
-        total_listed = Item.query.filter_by(seller_id=current_user.id).count()
+        total_listed = Item.query.filter_by(seller_id=current_user.id, is_deleted=False).count()
         total_sold = Item.query.filter_by(
             seller_id=current_user.id, is_sold=True
         ).count()
         total_bought = Item.query.filter_by(buyer_id=current_user.id, is_sold=True).count()
         active_listings = Item.query.filter_by(
-            seller_id=current_user.id, is_sold=False, buyer_id=None
+            seller_id=current_user.id, is_sold=False, buyer_id=None, is_deleted=False
         ).all()
 
         return render_template(
@@ -728,16 +729,15 @@ def create_app(config_class=None):
             except Exception as mail_err:
                 app.logger.warning(f"Failed to send deletion claim cancellation email to buyer: {mail_err}")
 
-        # 5. Remove Active Listings (Unsold Items)
+        # 5. Soft-delete Active Listings (Unsold Items)
         active_listings = Item.query.filter_by(seller_id=user_id, is_sold=False).all()
         
         # Deletion ordering guard: read image filenames from memory before deleting row
         image_filenames_to_delete = [item.image_filename for item in active_listings if item.image_filename]
         
         for item in active_listings:
-            # Delete cancellation records of unsold items
-            CancellationRecord.query.filter_by(item_id=item.id).delete()
-            db.session.delete(item)
+            item.is_deleted = True
+            item.image_filename = None
 
         # 6. Deactivate and Queue Deletion
         user.is_active = False
@@ -749,14 +749,13 @@ def create_app(config_class=None):
         try:
             db.session.commit()
             
-            # Delete image files from static/uploads ONLY after successful DB transaction
+            # Delete image files ONLY after successful DB transaction
+            from app.routes.items import _delete_image
             for img_filename in image_filenames_to_delete:
-                img_path = os.path.join(app.static_folder, "uploads", img_filename)
-                if os.path.isfile(img_path):
-                    try:
-                        os.remove(img_path)
-                    except Exception as img_err:
-                        app.logger.warning(f"Failed to delete image file {img_filename} from disk during user deletion: {img_err}")
+                try:
+                    _delete_image(img_filename)
+                except Exception as img_err:
+                    app.logger.warning(f"Failed to delete image file {img_filename} during user deletion: {img_err}")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Database error during account deletion queue for user {user_id}: {e}")

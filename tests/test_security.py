@@ -172,3 +172,64 @@ def test_notifications_api_requires_login(client):
     res2 = client.post("/api/notifications/1/read")
     assert res2.status_code == 302 or res2.status_code == 401
 
+
+def test_host_header_injection_redirect_prevention(client):
+    """Verify that absolute redirect targets are validated and external redirects are rejected."""
+    response = client.get("/auth/login?next=https://evil.com", follow_redirects=False)
+    if response.status_code == 302:
+        location = response.headers.get("Location")
+        assert "evil.com" not in location
+
+
+def test_cross_university_standings_idor_prevention(client, db_session):
+    """Verify that cross-university standings endpoint prevents access to seasons from other domains."""
+    from app.models import Season, UniversityConfig
+    from datetime import datetime, timezone
+    cfg = UniversityConfig(domain="oxford.ac.uk", subdomain_slug="oxford", display_name="Oxford University")
+    season = Season(
+        university_domain="oxford.ac.uk",
+        name="Oxford Term",
+        start_date=datetime.now(timezone.utc).replace(tzinfo=None),
+        end_date=datetime.now(timezone.utc).replace(tzinfo=None),
+        is_active=True
+    )
+    db_session.session.add_all([cfg, season])
+    db_session.session.commit()
+    
+    response = client.get(f"/leaderboard/api/universities?season_id={season.id}")
+    assert response.status_code in [302, 401, 403]
+
+
+def test_item_detail_escapes_xss_payload(client, db_session):
+    """Verify that the item detail page escapes HTML/script payloads in titles and descriptions."""
+    user = User(
+        email="xss-test@brookes.ac.uk",
+        name="XSS Tester",
+        is_verified=True,
+        university_domain="brookes.ac.uk"
+    )
+    user.set_password("SecurePassword123")
+    db_session.session.add(user)
+    db_session.session.commit()
+    
+    client.post("/auth/login", data={"email": "xss-test@brookes.ac.uk", "password": "SecurePassword123"})
+    
+    item = Item(
+        title="<script>alert('xss-title')</script>",
+        description="<script>alert('xss-desc')</script>",
+        price=0.0,
+        is_free=True,
+        seller_id=user.id,
+        category="Books",
+        condition="New",
+        university_domain="brookes.ac.uk"
+    )
+    db_session.session.add(item)
+    db_session.session.commit()
+    
+    response = client.get(f"/items/{item.id}")
+    assert response.status_code == 200
+    assert b"<script>alert('xss-title')</script>" not in response.data
+    assert b"<script>alert('xss-desc')</script>" not in response.data
+    assert b"&lt;script&gt;" in response.data or b"xss-desc" in response.data
+

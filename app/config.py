@@ -40,12 +40,22 @@ class Config:
             _session_domain = ".localhost"
         elif _base_host not in ["127.0.0.1", ""]:
             _parts = _base_host.split(".")
-            if len(_parts) >= 2:
+            if len(_parts) >= 3 and (
+                (_parts[-2] == "ac" and _parts[-1] == "uk") or 
+                (_parts[-2] == "co" and _parts[-1] == "uk") or
+                (_parts[-2] == "org" and _parts[-1] == "uk") or
+                (_parts[-2] == "sch" and _parts[-1] == "uk")
+            ):
+                _session_domain = f".{'.'.join(_parts[-3:])}"
+            elif len(_parts) >= 2:
                 _session_domain = f".{'.'.join(_parts[-2:])}"
     SESSION_COOKIE_DOMAIN = _session_domain
 
     # Limit file uploads to 5MB
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+
+    # Email client timeout
+    MAIL_TIMEOUT = os.environ.get("MAIL_TIMEOUT", "30")
 
     # Password policy
     MIN_PASSWORD_LENGTH = 8
@@ -130,9 +140,9 @@ class ProductionConfig(Config):
                 "SECRET_KEY environment variable is not set. "
                 "Refusing to start in production without a secure secret key."
             )
-        if not cls.BASE_URL:
+        if not cls.BASE_URL or cls.BASE_URL == "http://localhost:5000":
             raise RuntimeError(
-                "BASE_URL environment variable is not set. "
+                "BASE_URL environment variable is not set or defaults to localhost. "
                 "All email links (PIN notifications, cancellation emails, password resets) "
                 "will be broken without it. Set BASE_URL=https://your-domain.com in your "
                 "Railway environment variables."
@@ -142,6 +152,17 @@ class ProductionConfig(Config):
                 "BREVO_API_KEY environment variable is not set. "
                 "Email functionality (OTP verification, password resets, PIN notifications) "
                 "will be completely broken without it."
+            )
+        db_url = os.environ.get("DATABASE_URL")
+        if not db_url or "sqlite" in db_url:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is not set or points to SQLite. "
+                "SQLite is not supported in production to prevent data loss."
+            )
+        rl_uri = os.environ.get("RATELIMIT_STORAGE_URI")
+        if not rl_uri or rl_uri.strip().lower() == "memory://":
+            raise RuntimeError(
+                "RATELIMIT_STORAGE_URI environment variable is required and cannot be memory:// in production."
             )
         if cls.STORAGE_PROVIDER == "r2":
             missing_r2_vars = [

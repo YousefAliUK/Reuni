@@ -120,6 +120,7 @@ class User(UserMixin, db.Model):
         # Clear operational temporal PII logs
         self.failed_login_attempts = 0
         self.locked_until = None
+        self.last_seen_at = None
 
         # Sever and mask leaderboard snapshot entries (GDPR: preserve history, erase identity)
         # Assign a deterministic eco-title based on the rank position.
@@ -167,6 +168,7 @@ class Item(db.Model):
     )
     is_sold = db.Column(db.Boolean, default=False)
     sold_at = db.Column(db.DateTime, nullable=True, default=None)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False, server_default=db.text("false"))
 
     university_domain = db.Column(db.String(100), nullable=True)
 

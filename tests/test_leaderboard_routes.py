@@ -89,6 +89,7 @@ def test_universities_api_endpoint(client, db_session):
         name="Verified Student",
         role="student",
         is_verified=True,
+        university_domain="brookes.ac.uk",
     )
     user.set_password("Password123!")
     
