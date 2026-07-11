@@ -244,6 +244,8 @@ input[type="search"]::-webkit-search-cancel-button {
 [data-theme="dark"] .condition-btn.active,
 [data-theme="dark"] .price-toggle-btn.active-paid,
 [data-theme="dark"] .pill-toggle__segment--active-paid,
+[data-theme="dark"] .pill--active,
+[data-theme="dark"] .pill--active:hover,
 [data-theme="dark"] .mobile-tabs__item--sell .material-symbols-outlined {
     color: var(--color-bg) !important;
 }
@@ -5994,14 +5996,14 @@ body {
 .mobile-drawer {
     position: fixed;
     top: 0;
-    left: 0;
+    right: 0;
     bottom: 0;
     width: 280px;
     background: var(--color-surface);
-    border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
     box-shadow: var(--shadow-modal);
     z-index: var(--z-drawer);
-    transform: translateX(-100%);
+    transform: translateX(100%);
     visibility: hidden;
     pointer-events: none;
     transition: transform var(--duration-slow) var(--ease-smooth), visibility 0s linear var(--duration-slow);
@@ -9816,4 +9818,230 @@ body {
 }
 .form-discard-link:hover {
     color: var(--color-primary);
+}
+
+/* --- Admin Seasons and Universities Form Styling --- */
+.admin-table-text-primary {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink-primary);
+}
+.admin-table-text-mono {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-ink-secondary);
+}
+.admin-status-badge--completed {
+    background-color: #E7E5E4 !important;
+    color: #57534E !important;
+}
+.admin-text-center {
+    text-align: center;
+}
+.admin-flex-center {
+    display: flex;
+    gap: var(--space-1);
+    justify-content: center;
+}
+.admin-form-inline {
+    margin: 0;
+    padding: 0;
+}
+.admin-btn-xs {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    height: auto !important;
+}
+.admin-edit-row {
+    display: none;
+    background: rgba(15, 118, 110, 0.03);
+}
+.admin-edit-text-muted {
+    font-size: 13px;
+    color: var(--color-ink-tertiary);
+}
+.admin-edit-input {
+    height: 36px !important;
+    padding: 0 var(--space-2) !important;
+    font-size: 13px !important;
+    background: var(--color-surface) !important;
+}
+.admin-empty-row {
+    height: 120px;
+}
+.admin-empty-cell {
+    text-align: center;
+    vertical-align: middle;
+    color: var(--color-ink-tertiary);
+    font-size: var(--type-body);
+}
+.admin-empty-icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--color-ink-tertiary);
+}
+.admin-filter-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.admin-filter-label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+.admin-filter-select {
+    background: var(--color-surface) !important;
+    height: 40px !important;
+    border-radius: var(--radius-md) !important;
+    padding: 0 var(--space-2) !important;
+    width: 220px !important;
+}
+.admin-card-icon {
+    color: var(--color-primary);
+    font-size: 20px;
+}
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto;
+    gap: var(--space-3);
+    align-items: end;
+}
+.admin-select-field {
+    background: var(--color-surface) !important;
+    height: 48px !important;
+    border-radius: var(--radius-md) !important;
+}
+.admin-input-field {
+    background: var(--color-surface) !important;
+    height: 48px !important;
+}
+.admin-submit-btn {
+    height: 48px !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    padding: 0 var(--space-4) !important;
+}
+.admin-card-full-table {
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+.admin-container-narrow {
+    max-width: 600px;
+    margin: 0 auto;
+}
+.admin-back-btn {
+    height: 40px !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+.admin-back-btn-icon {
+    font-size: 20px;
+}
+.admin-invite-form-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+.admin-form-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+.admin-input-readonly {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.admin-help-text {
+    font-size: 11px;
+    color: var(--color-ink-tertiary);
+}
+.admin-select-timezone {
+    background: var(--color-surface) !important;
+    height: 48px !important;
+    border-radius: var(--radius-md) !important;
+    padding: 0 var(--space-3) !important;
+    border: 1px solid rgba(28, 25, 23, 0.15) !important;
+}
+.admin-form-submit-btn {
+    height: 48px !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    margin-top: var(--space-2) !important;
+}
+
+/* --- Dashboard Specific Styling --- */
+.dashboard-banner-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--color-ink-secondary) !important;
+    margin-top: var(--space-1) !important;
+    margin-bottom: 0 !important;
+}
+.dashboard-banner-sub {
+    margin-top: 2px !important;
+    margin-bottom: 0 !important;
+}
+.color-success-icon {
+    color: var(--color-success) !important;
+}
+.dashboard-campus-sub {
+    margin-top: var(--space-3) !important;
+    border-top: 1px solid var(--color-border) !important;
+    padding-top: var(--space-2) !important;
+    font-size: 12px !important;
+    color: var(--color-ink-secondary) !important;
+    display: block !important;
+}
+.dashboard-success-text {
+    color: var(--color-success) !important;
+}
+.dashboard-btn-link {
+    text-decoration: none !important;
+}
+.dashboard-edit-btn {
+    text-decoration: none !important;
+}
+.dashboard-purchase-title-link {
+    text-decoration: none !important;
+    color: inherit !important;
+}
+.admin-hidden-form-cell {
+    display: none;
+}
+
+/* --- Mobile Responsiveness and Animations Accessibility --- */
+@media (max-width: 480px) {
+    .dashboard-header-grid {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        padding-bottom: var(--space-2) !important;
+        gap: var(--space-4) !important;
+    }
+    .personal-impact-banner,
+    .campus-momentum-card {
+        flex: 0 0 85% !important;
+        scroll-snap-align: start !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-delay: -1ms !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        background-attachment: initial !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+    }
 }

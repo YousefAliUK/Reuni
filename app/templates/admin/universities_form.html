@@ -2,7 +2,7 @@
 {% block title %}{% if config %}Edit{% else %}Add{% endif %} University Configuration — Reuni{% endblock %}
 
 {% block content %}
-<div class="admin-container" style="max-width: 600px; margin: 0 auto;">
+<div class="admin-container admin-container-narrow">
 
     <!-- Header Row -->
     <div class="admin-header">
@@ -10,8 +10,8 @@
             <h1 class="admin-title">{% if config %}Edit{% else %}Add{% endif %} University</h1>
             <span class="admin-badge">Admin Panel</span>
         </div>
-        <a href="{{ url_for('admin.admin_universities') }}" class="btn btn--outline" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none;">
-            <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">arrow_back</span>
+        <a href="{{ url_for('admin.admin_universities') }}" class="btn btn--outline admin-back-btn">
+            <span class="material-symbols-outlined admin-back-btn-icon" aria-hidden="true">arrow_back</span>
             <span>Back to list</span>
         </a>
     </div>
@@ -19,49 +19,49 @@
     <!-- Form Card -->
     <div class="admin-card">
         <h2 class="admin-card-title">
-            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">school</span>
+            <span class="material-symbols-outlined admin-card-icon" aria-hidden="true">school</span>
             <span>University Details</span>
         </h2>
         
-        <form method="POST" class="admin-invite-form" style="display: flex; flex-direction: column; gap: var(--space-4);">
+        <form method="POST" class="admin-invite-form admin-invite-form-vertical">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="domain" class="form-label">Primary Domain (e.g. brookes.ac.uk)</label>
-                <input type="text" id="domain" name="domain" value="{{ config.domain if config else '' }}" required class="form-input" style="background: var(--color-surface);" {% if config %}readonly style="opacity: 0.6; cursor: not-allowed;"{% endif %}>
+                <input type="text" id="domain" name="domain" value="{{ config.domain if config else '' }}" required class="form-input admin-input-field {% if config %}admin-input-readonly{% endif %}" {% if config %}readonly{% endif %}>
                 {% if config %}
-                    <span style="font-size: 11px; color: var(--color-ink-tertiary);">Primary domain cannot be modified after creation.</span>
+                    <span class="admin-help-text">Primary domain cannot be modified after creation.</span>
                 {% endif %}
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="subdomain_slug" class="form-label">Subdomain Slug (e.g. brookes)</label>
-                <input type="text" id="subdomain_slug" name="subdomain_slug" value="{{ config.subdomain_slug if config else '' }}" required class="form-input" style="background: var(--color-surface);">
+                <input type="text" id="subdomain_slug" name="subdomain_slug" value="{{ config.subdomain_slug if config else '' }}" required class="form-input admin-input-field">
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="display_name" class="form-label">Display Name</label>
-                <input type="text" id="display_name" name="display_name" value="{{ config.display_name if config else '' }}" required class="form-input" style="background: var(--color-surface);">
+                <input type="text" id="display_name" name="display_name" value="{{ config.display_name if config else '' }}" required class="form-input admin-input-field">
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="email_domain" class="form-label">Email Domain Matcher (e.g. brookes.ac.uk)</label>
-                <input type="text" id="email_domain" name="email_domain" value="{{ config.email_domain if config else '' }}" required class="form-input" style="background: var(--color-surface);">
+                <input type="text" id="email_domain" name="email_domain" value="{{ config.email_domain if config else '' }}" required class="form-input admin-input-field">
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="brand_color" class="form-label">Brand Background CSS Color (Optional)</label>
-                <input type="text" id="brand_color" name="brand_color" value="{{ config.brand_color if config else '' }}" placeholder="var(--color-primary-muted)" class="form-input" style="background: var(--color-surface);">
+                <input type="text" id="brand_color" name="brand_color" value="{{ config.brand_color if config else '' }}" placeholder="var(--color-primary-muted)" class="form-input admin-input-field">
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="brand_text_color" class="form-label">Brand Text CSS Color (Optional)</label>
-                <input type="text" id="brand_text_color" name="brand_text_color" value="{{ config.brand_text_color if config else '' }}" placeholder="var(--color-primary)" class="form-input" style="background: var(--color-surface);">
+                <input type="text" id="brand_text_color" name="brand_text_color" value="{{ config.brand_text_color if config else '' }}" placeholder="var(--color-primary)" class="form-input admin-input-field">
             </div>
 
-            <div class="admin-form-group" style="display: flex; flex-direction: column; gap: var(--space-1);">
+            <div class="admin-form-group admin-form-group-vertical">
                 <label for="timezone" class="form-label">Local Timezone</label>
-                <select id="timezone" name="timezone" class="form-input" style="background: var(--color-surface); height: 48px; border-radius: var(--radius-md); padding: 0 var(--space-3); border: 1px solid rgba(28, 25, 23, 0.15);">
+                <select id="timezone" name="timezone" class="form-input admin-select-timezone">
                     {% set tz_list = ['Europe/London', 'UTC', 'Asia/Dubai', 'America/New_York', 'Asia/Singapore', 'Europe/Paris'] %}
                     {% for tz in tz_list %}
                         <option value="{{ tz }}" {% if config and config.timezone == tz %}selected{% elif not config and tz == 'Europe/London' %}selected{% endif %}>{{ tz }}</option>
@@ -69,7 +69,7 @@
                 </select>
             </div>
             
-            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; margin-top: var(--space-2);">
+            <button type="submit" class="btn btn--primary admin-form-submit-btn">
                 {% if config %}Save Changes{% else %}Create Configuration{% endif %}
             </button>
         </form>

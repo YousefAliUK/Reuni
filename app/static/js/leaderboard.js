@@ -260,10 +260,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const universitiesTbody = document.getElementById("universities-list-tbody");
     const universityPodiumContainer = document.getElementById("university-podium-container");
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    let currentController = null;
+
     if (termSelect && universitiesTbody) {
         termSelect.addEventListener("change", () => {
             const seasonId = termSelect.value;
-            fetch(`/leaderboard/api/universities?season_id=${seasonId}`)
+
+            if (currentController) {
+                currentController.abort();
+            }
+            currentController = new AbortController();
+            const signal = currentController.signal;
+
+            fetch(`/leaderboard/api/universities?season_id=${seasonId}`, { signal })
                 .then(response => {
                     if (!response.ok) throw new Error("Network response was not ok");
                     return response.json();
@@ -277,18 +296,22 @@ document.addEventListener("DOMContentLoaded", () => {
                             const third = data.standings[2];
                             
                             const getDisplayNameHTML = (entry) => {
-                                const short = entry.short_name || entry.display_name;
+                                const full = escapeHtml(entry.display_name);
+                                const short = escapeHtml(entry.short_name || entry.display_name);
                                 return `
-                                    <span class="reuni-university-name--full">${entry.display_name}</span>
+                                    <span class="reuni-university-name--full">${full}</span>
                                     <span class="reuni-university-name--short" style="display: none;">${short}</span>
                                 `;
                             };
 
                             const getLogoHTML = (entry) => {
+                                const full = escapeHtml(entry.display_name);
+                                const slug = escapeHtml(entry.slug);
+                                const initials = escapeHtml(entry.initials);
                                 if (entry.logo_status === "fetched") {
-                                    return `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
+                                    return `<img src="/static/img/logos/${slug}.png" alt="${full}">`;
                                 } else {
-                                    return `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${entry.initials}</div>`;
+                                    return `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${initials}</div>`;
                                 }
                             };
                             
@@ -378,10 +401,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                             
                             let logoHTML = "";
+                            const full = escapeHtml(entry.display_name);
+                            const slug = escapeHtml(entry.slug);
+                            const initials = escapeHtml(entry.initials);
+                            const short = escapeHtml(entry.short_name || entry.display_name);
                             if (entry.logo_status === "fetched") {
-                                logoHTML = `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
+                                logoHTML = `<img src="/static/img/logos/${slug}.png" alt="${full}">`;
                             } else {
-                                logoHTML = `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${entry.initials}</div>`;
+                                logoHTML = `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${initials}</div>`;
                             }
                             
                             tr.innerHTML = `
@@ -393,8 +420,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </td>
                                 <td class="reuni-row-name-stack">
                                     <span class="reuni-university-name">
-                                        <span class="reuni-university-name--full">${entry.display_name}</span>
-                                        <span class="reuni-university-name--short" style="display: none;">${entry.short_name || entry.display_name}</span>
+                                        <span class="reuni-university-name--full">${full}</span>
+                                        <span class="reuni-university-name--short" style="display: none;">${short}</span>
                                     </span>
                                 </td>
                                 <td class="reuni-university-students">${entry.active_students} ${entry.active_students === 1 ? 'student' : 'students'}</td>
@@ -418,6 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
                     console.error("Failed to load university standings:", err);
                 });
         });

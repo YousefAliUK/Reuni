@@ -12,9 +12,9 @@
         </div>
         
         <!-- Filter Form -->
-        <form method="GET" action="{{ url_for('admin.admin_seasons') }}" style="display: flex; align-items: center; gap: var(--space-2);">
-            <label for="university_domain_filter" class="form-label" style="margin-bottom: 0; white-space: nowrap;">Filter University:</label>
-            <select id="university_domain_filter" name="university_domain" class="form-input" style="background: var(--color-surface); height: 40px; border-radius: var(--radius-md); padding: 0 var(--space-2); width: 220px;">
+        <form method="GET" action="{{ url_for('admin.admin_seasons') }}" class="admin-filter-form">
+            <label for="university_domain_filter" class="form-label admin-filter-label">Filter University:</label>
+            <select id="university_domain_filter" name="university_domain" class="form-input admin-filter-select">
                 <option value="">All Universities</option>
                 {% for config in configs %}
                     <option value="{{ config.domain }}" {% if selected_domain == config.domain %}selected{% endif %}>{{ config.display_name }}</option>
@@ -26,16 +26,16 @@
     <!-- Create Season Card -->
     <div class="admin-card">
         <h2 class="admin-card-title">
-            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">date_range</span>
+            <span class="material-symbols-outlined admin-card-icon" aria-hidden="true">date_range</span>
             <span>Create New Season</span>
         </h2>
         
-        <form method="POST" action="{{ url_for('admin.new_season') }}" class="admin-invite-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: var(--space-3); align-items: end;">
+        <form method="POST" action="{{ url_for('admin.new_season') }}" class="admin-invite-form admin-form-grid">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="admin-form-group">
                 <label for="university_domain" class="form-label">University Domain</label>
-                <select id="university_domain" name="university_domain" required class="form-input" style="background: var(--color-surface); height: 48px; border-radius: var(--radius-md);">
+                <select id="university_domain" name="university_domain" required class="form-input admin-select-field">
                     <option value="" disabled selected>Select University</option>
                     {% for config in configs %}
                         <option value="{{ config.domain }}">{{ config.display_name }}</option>
@@ -45,27 +45,27 @@
 
             <div class="admin-form-group">
                 <label for="name" class="form-label">Season Name (e.g. Autumn Term 2026)</label>
-                <input type="text" id="name" name="name" placeholder="Autumn Term 2026" required class="form-input" style="background: var(--color-surface); height: 48px;">
+                <input type="text" id="name" name="name" placeholder="Autumn Term 2026" required class="form-input admin-input-field">
             </div>
 
             <div class="admin-form-group">
                 <label for="start_date" class="form-label">Start Date</label>
-                <input type="date" id="start_date" name="start_date" required class="form-input" style="background: var(--color-surface); height: 48px;">
+                <input type="date" id="start_date" name="start_date" required class="form-input admin-input-field">
             </div>
 
             <div class="admin-form-group">
                 <label for="end_date" class="form-label">End Date</label>
-                <input type="date" id="end_date" name="end_date" required class="form-input" style="background: var(--color-surface); height: 48px;">
+                <input type="date" id="end_date" name="end_date" required class="form-input admin-input-field">
             </div>
             
-            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; padding: 0 var(--space-4);">
+            <button type="submit" class="btn btn--primary admin-submit-btn">
                 Create Season
             </button>
         </form>
     </div>
 
     <!-- Seasons List Table -->
-    <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="admin-card admin-card-full-table">
         <div class="admin-table-wrapper">
             <table class="admin-table">
                 <thead>
@@ -75,7 +75,7 @@
                         <th>Start Date</th>
                         <th>End Date</th>
                         <th>Status</th>
-                        <th style="text-align: center;">Actions</th>
+                        <th class="admin-text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,39 +83,39 @@
                         {% for season in seasons %}
                             <!-- Display Row -->
                             <tr id="display-row-{{ season.id }}">
-                                <td style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">
+                                <td class="admin-table-text-primary">
                                     {{ season.university_domain }}
                                 </td>
-                                <td style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">
+                                <td class="admin-table-text-primary">
                                     {{ season.name }}
                                 </td>
-                                <td style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                <td class="admin-table-text-mono">
                                     {{ season.start_date.strftime('%Y-%m-%d') }}
                                 </td>
-                                <td style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                <td class="admin-table-text-mono">
                                     {{ season.end_date.strftime('%Y-%m-%d') }}
                                 </td>
                                 <td>
                                     {% if season.is_active %}
                                         <span class="admin-status-badge admin-status-badge--active">Active</span>
                                     {% elif season.is_complete %}
-                                        <span class="admin-status-badge admin-status-badge--inactive" style="background-color: #E7E5E4; color: #57534E;">Completed</span>
+                                        <span class="admin-status-badge admin-status-badge--inactive admin-status-badge--completed">Completed</span>
                                     {% else %}
                                         <span class="admin-status-badge admin-status-badge--inactive">Scheduled</span>
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;">
-                                    <div style="display: flex; gap: var(--space-1); justify-content: center;">
+                                <td class="admin-text-center">
+                                    <div class="admin-flex-center">
                                         {% if not season.is_active and not season.is_complete %}
-                                            <form method="POST" action="{{ url_for('admin.activate_season', season_id=season.id) }}" style="margin:0; padding:0;">
+                                            <form id="activate-form-{{ season.id }}" method="POST" action="{{ url_for('admin.activate_season', season_id=season.id) }}" class="admin-form-inline">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn--primary btn--sm" style="padding: 4px 8px; font-size: 12px; height: auto;">
+                                                <button type="submit" class="btn btn--primary btn--sm admin-btn-xs">
                                                     Activate
                                                 </button>
                                             </form>
                                         {% endif %}
                                         {% if not season.is_complete %}
-                                            <button type="button" class="btn btn--outline btn--sm" data-action="edit-season" data-season-id="{{ season.id }}" style="padding: 4px 8px; font-size: 12px; height: auto;">
+                                            <button type="button" class="btn btn--outline btn--sm admin-btn-xs" data-action="edit-season" data-season-id="{{ season.id }}">
                                                 Edit
                                             </button>
                                         {% endif %}
@@ -125,46 +125,48 @@
 
                             <!-- Edit Form Row (Hidden by Default) -->
                             {% if not season.is_complete %}
-                                <tr id="edit-row-{{ season.id }}" style="display: none; background: rgba(15, 118, 110, 0.03);">
-                                    <form method="POST" action="{{ url_for('admin.edit_season', season_id=season.id) }}">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <td>
-                                            <span style="font-size: 13px; color: var(--color-ink-tertiary);">{{ season.university_domain }}</span>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="name" value="{{ season.name }}" required class="form-input" style="height: 36px; padding: 0 var(--space-2); font-size: 13px; background: var(--color-surface);">
-                                        </td>
-                                        <td>
-                                            <input type="date" name="start_date" value="{{ season.start_date.strftime('%Y-%m-%d') }}" required class="form-input" style="height: 36px; padding: 0 var(--space-2); font-size: 13px; background: var(--color-surface);">
-                                        </td>
-                                        <td>
-                                            <input type="date" name="end_date" value="{{ season.end_date.strftime('%Y-%m-%d') }}" required class="form-input" style="height: 36px; padding: 0 var(--space-2); font-size: 13px; background: var(--color-surface);">
-                                        </td>
-                                        <td>
-                                            {% if season.is_active %}
-                                                <span class="admin-status-badge admin-status-badge--active">Active</span>
-                                            {% else %}
-                                                <span class="admin-status-badge admin-status-badge--inactive">Scheduled</span>
-                                            {% endif %}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <div style="display: flex; gap: var(--space-1); justify-content: center;">
-                                                <button type="submit" class="btn btn--primary btn--sm" style="padding: 4px 8px; font-size: 12px; height: auto;">
-                                                    Save
-                                                </button>
-                                                <button type="button" class="btn btn--outline btn--sm" data-action="cancel-edit-season" data-season-id="{{ season.id }}" style="padding: 4px 8px; font-size: 12px; height: auto;">
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </form>
+                                <tr id="edit-row-{{ season.id }}" class="admin-edit-row">
+                                    <td class="admin-hidden-form-cell">
+                                        <form id="edit-form-{{ season.id }}" method="POST" action="{{ url_for('admin.edit_season', season_id=season.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <span class="admin-edit-text-muted">{{ season.university_domain }}</span>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="name" value="{{ season.name }}" required class="form-input admin-edit-input" form="edit-form-{{ season.id }}">
+                                    </td>
+                                    <td>
+                                        <input type="date" name="start_date" value="{{ season.start_date.strftime('%Y-%m-%d') }}" required class="form-input admin-edit-input" form="edit-form-{{ season.id }}">
+                                    </td>
+                                    <td>
+                                        <input type="date" name="end_date" value="{{ season.end_date.strftime('%Y-%m-%d') }}" required class="form-input admin-edit-input" form="edit-form-{{ season.id }}">
+                                    </td>
+                                    <td>
+                                        {% if season.is_active %}
+                                            <span class="admin-status-badge admin-status-badge--active">Active</span>
+                                        {% else %}
+                                            <span class="admin-status-badge admin-status-badge--inactive">Scheduled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="admin-text-center">
+                                        <div class="admin-flex-center">
+                                            <button type="submit" class="btn btn--primary btn--sm admin-btn-xs" form="edit-form-{{ season.id }}">
+                                                Save
+                                            </button>
+                                            <button type="button" class="btn btn--outline btn--sm admin-btn-xs" data-action="cancel-edit-season" data-season-id="{{ season.id }}">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        <tr style="height: 120px;">
-                            <td colspan="6" style="text-align: center; vertical-align: middle; color: var(--color-ink-tertiary); font-size: var(--type-body);">
-                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);" aria-hidden="true">date_range</span>
+                        <tr class="admin-empty-row">
+                            <td colspan="6" class="admin-empty-cell">
+                                <span class="material-symbols-outlined admin-empty-icon" aria-hidden="true">date_range</span>
                                 <span>No seasons found. Create your first season above.</span>
                             </td>
                         </tr>

@@ -125,7 +125,7 @@ class TestDashboard:
         """Dashboard should display the user's kg saved total."""
         resp = auth_client.get("/dashboard")
         # kg saved value is 0.0 for a new user
-        assert b"kg Saved" in resp.data
+        assert b"saved from landfill" in resp.data
 
 
 class TestSecurityHeaders:
