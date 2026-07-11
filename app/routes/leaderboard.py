@@ -222,8 +222,6 @@ def hall_of_fame():
     recent_week_starts = [row[0] for row in recent_week_starts]
 
     weekly_hof = []
-    current_month = None
-    month_data = None
 
     for ws in recent_week_starts:
         winner = (
@@ -235,30 +233,38 @@ def hall_of_fame():
         if not winner:
             continue
 
-        month_str = ws.strftime("%B %Y").upper()
-        if month_str != current_month:
-            current_month = month_str
-            month_data = {"month": month_str, "weeks": []}
-            weekly_hof.append(month_data)
-
-        # Date range formatting: e.g. "Jun 30–Jul 6"
-        week_end = ws + timedelta(days=6)
-        if ws.month == week_end.month:
-            date_range = f"{ws.strftime('%b %d')}–{week_end.strftime('%d')}"
-        else:
-            date_range = f"{ws.strftime('%b %d')}–{week_end.strftime('%b %d')}"
+        # Date range formatting: e.g. "Week of Jun 29"
+        date_label = f"Week of {ws.strftime('%b %d')}"
 
         initials = winner.display_name[:2].upper()
         if winner.user_id and winner.user:
             initials = winner.user.name[:2].upper()
 
-        month_data["weeks"].append({
-            "date_range": date_range,
+        # Fetch runners-up (rank 2 and 3)
+        runners = (
+            WeeklySnapshot.query
+            .filter_by(university_domain=uni_domain, week_start=ws)
+            .filter(WeeklySnapshot.rank.in_([2, 3]))
+            .order_by(WeeklySnapshot.rank)
+            .all()
+        )
+        runners_list = []
+        for r in runners:
+            runners_list.append({
+                "rank": r.rank,
+                "display_name": r.display_name,
+                "kg_saved": float(r.kg_saved)
+            })
+
+        weekly_hof.append({
+            "date_label": date_label,
             "display_name": winner.display_name,
             "initials": initials,
             "kg_saved": float(winner.kg_saved),
             "transaction_count": winner.transaction_count,
             "user_id": winner.user_id,
+            "runners": runners_list,
+            "week_id": ws.strftime("%Y-%m-%d"),
         })
 
     # ── Seasonal / Grand Hall of Fame (all completed seasons, top 3 each) ──

@@ -86,23 +86,32 @@
         <div id="tab-content-weekly" class="leaderboard-tab-content" style="display: none;" data-eyebrow="{{ g.current_uni_domain.split('.')[0].upper() }} · ARCHIVE" data-layout-class="reuni-leaderboard-container">
             {% if weekly_hof %}
                 <div class="reuni-premium-card" style="padding: var(--space-4) var(--space-6);">
-                    {% for group in weekly_hof %}
-                        <div class="reuni-weekly-hof-group">
-                            <div class="reuni-weekly-hof-header">{{ group.month }}</div>
-                            <div style="display: flex; flex-direction: column; margin-top: var(--space-2);">
-                                {% for week in group.weeks %}
-                                    <div class="reuni-weekly-hof-row">
-                                        <span class="reuni-weekly-hof-row__date">{{ week.date_range }}</span>
-                                        <div class="reuni-weekly-hof-row__avatar">
-                                            {{ week.initials }}
-                                        </div>
-                                        <span class="reuni-weekly-hof-row__name">{{ week.display_name }}</span>
-                                        <span class="reuni-weekly-hof-row__kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                    <div style="display: flex; flex-direction: column;">
+                        {% for week in weekly_hof %}
+                            <div class="reuni-weekly-hof-item" data-week-id="{{ week.week_id }}">
+                                <div class="reuni-weekly-hof-row">
+                                    <span class="reuni-weekly-hof-row__date">{{ week.date_label }}</span>
+                                    <div class="reuni-weekly-hof-row__avatar">
+                                        {{ week.initials }}
                                     </div>
-                                {% endfor %}
+                                    <span class="reuni-weekly-hof-row__name">{{ week.display_name }}</span>
+                                    <span class="reuni-weekly-hof-row__kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                                    {% if week.runners %}
+                                        <button type="button" class="reuni-weekly-hof-expand-btn" aria-label="Expand runners" aria-expanded="false">
+                                            <span class="material-symbols-outlined">expand_more</span>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                                {% if week.runners %}
+                                    <div class="reuni-weekly-hof-details" style="display: none;">
+                                        <div class="reuni-weekly-hof-runners-text">
+                                            2nd: {{ week.runners[0].display_name if week.runners|length >= 1 else '—' }} · 3rd: {{ week.runners[1].display_name if week.runners|length >= 2 else '—' }}
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             {% else %}
                 <div class="reuni-premium-card">
@@ -121,4 +130,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hall_of_fame.js') }}"></script>
 {% endblock %}

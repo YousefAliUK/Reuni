@@ -215,7 +215,7 @@
 
 /* Rounded square for university config logos */
 .reuni-podium-logo {
-    border-radius: 12px;
+    border-radius: 10px;
     background-color: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     display: flex;
@@ -242,8 +242,8 @@
 }
 
 .reuni-podium-step--1 .reuni-podium-logo {
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     border: 3px solid var(--color-primary);
 }
 
@@ -318,7 +318,7 @@
 }
 
 .reuni-podium-step--1 .reuni-podium-value {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 800;
     color: var(--color-primary);
 }
@@ -457,7 +457,7 @@
     font-family: var(--font-mono);
     font-size: var(--type-small);
     font-weight: 700;
-    color: var(--color-ink-tertiary);
+    color: var(--color-ink-secondary);
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
@@ -494,18 +494,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
 }
 
 .reuni-row-user-tag {
-    font-size: 9px;
+    font-size: 10px;
     background-color: var(--color-primary);
     color: white;
-    padding: 1px 4px;
-    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+    border-radius: 4px;
     font-weight: 700;
     text-transform: uppercase;
     margin-left: var(--space-1);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
 }
 
 .reuni-row-kg {
@@ -588,7 +595,7 @@
     justify-content: center;
     font-weight: 700;
     font-size: 16px;
-    border-radius: 9px;
+    border-radius: inherit;
 }
 
 .reuni-university-name {
@@ -763,18 +770,65 @@
     margin-bottom: var(--space-2);
 }
 
+.reuni-weekly-hof-item {
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+}
+
+.reuni-weekly-hof-item:last-child {
+    border-bottom: none;
+}
+
 .reuni-weekly-hof-row {
     display: grid;
-    grid-template-columns: 120px 40px 1fr auto; /* date | avatar | name | kg */
+    grid-template-columns: 120px 40px 1fr auto auto; /* date | avatar | name | kg | expand */
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
-    border-bottom: 1px solid var(--color-border);
-    background-color: var(--color-surface);
+    background-color: transparent;
 }
 
-.reuni-weekly-hof-row:last-child {
-    border-bottom: none;
+.reuni-weekly-hof-expand-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--color-ink-tertiary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    border-radius: var(--radius-full);
+}
+
+.reuni-weekly-hof-expand-btn:hover {
+    color: var(--color-primary);
+    background-color: var(--color-surface-raised);
+}
+
+.reuni-weekly-hof-expand-btn[aria-expanded="true"] {
+    transform: rotate(180deg);
+}
+
+.reuni-weekly-hof-details {
+    padding: 0 var(--space-4) var(--space-3) calc(120px + 40px + var(--space-4) + var(--space-3)); /* Align with the name column */
+    background-color: transparent;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.reuni-weekly-hof-runners-text {
+    font-size: var(--type-small);
+    color: var(--color-ink-tertiary);
+    border-top: 1px dashed var(--color-border);
+    padding-top: var(--space-2);
+}
+
+@media (max-width: 640px) {
+    .reuni-weekly-hof-details {
+        padding: 0 var(--space-4) var(--space-3) var(--space-4); /* full width on mobile */
+    }
 }
 
 .reuni-weekly-hof-row__date {
@@ -919,4 +973,11 @@
     pointer-events: none;
     font-size: 16px;
     color: var(--color-ink-tertiary);
+}
+
+/* Force absolute hidden row displays to collapse completely */
+.reuni-table tbody tr.sr-only,
+.reuni-row-tr.sr-only,
+.reuni-university-row-tr.sr-only {
+    display: none !important;
 }

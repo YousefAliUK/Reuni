@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (entry.logo_status === "fetched") {
                                     return `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
                                 } else {
-                                    return `<div class="reuni-university-logo-monogram" style="background-color: ${entry.brand_color}; color: ${entry.brand_text_color};">${entry.initials}</div>`;
+                                    return `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${entry.initials}</div>`;
                                 }
                             };
                             
@@ -315,17 +315,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     // 2. Update Standings Table
+                    const universitiesTable = document.getElementById("universities-table");
                     universitiesTbody.innerHTML = "";
                     if (data.standings && data.standings.length > 0) {
-                        data.standings.forEach(entry => {
+                        if (universitiesTable) {
+                            if (data.standings.length <= 3) {
+                                universitiesTable.style.display = "none";
+                            } else {
+                                universitiesTable.style.display = "table";
+                            }
+                        }
+                        const startIdx = data.standings.length >= 3 ? 3 : 0;
+                        data.standings.forEach((entry, idx) => {
                             const tr = document.createElement("tr");
                             tr.className = "reuni-university-row-tr";
+                            if (idx < startIdx) {
+                                tr.classList.add("sr-only");
+                            }
                             
                             let logoHTML = "";
                             if (entry.logo_status === "fetched") {
                                 logoHTML = `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
                             } else {
-                                logoHTML = `<div class="reuni-university-logo-monogram" style="background-color: ${entry.brand_color}; color: ${entry.brand_text_color};">${entry.initials}</div>`;
+                                logoHTML = `<div class="reuni-university-logo-monogram" style="background-color: var(--color-primary-muted); color: var(--color-primary);">${entry.initials}</div>`;
                             }
                             
                             tr.innerHTML = `
@@ -338,8 +350,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <td class="reuni-row-name-stack">
                                     <span class="reuni-university-name">${entry.display_name}</span>
                                 </td>
-                                <td class="reuni-university-students">${entry.active_students} students</td>
-                                <td class="reuni-university-items">${entry.transaction_count} items</td>
+                                <td class="reuni-university-students">${entry.active_students} ${entry.active_students === 1 ? 'student' : 'students'}</td>
+                                <td class="reuni-university-items">${entry.transaction_count} ${entry.transaction_count === 1 ? 'item' : 'items'}</td>
                                 <td class="reuni-university-kg">${entry.total_kg.toFixed(1)} kg</td>
                             `;
                             universitiesTbody.appendChild(tr);

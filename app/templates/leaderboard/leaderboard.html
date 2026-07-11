@@ -134,7 +134,7 @@
                                         </span>
                                     </td>
                                     <td class="reuni-row-kg">{{ "%.1f"|format(entry.kg_saved) }} kg</td>
-                                    <td class="reuni-row-items">{{ entry.transaction_count }} items</td>
+                                    <td class="reuni-row-items">{{ entry.transaction_count }} {{ 'item' if entry.transaction_count == 1 else 'items' }}</td>
                                 </tr>
                             {% endfor %}
                         {% else %}
@@ -266,7 +266,7 @@
                                             </span>
                                         </td>
                                         <td class="reuni-row-kg">{{ "%.1f"|format(entry.kg_saved) }} kg</td>
-                                        <td class="reuni-row-items">{{ entry.transaction_count }} items</td>
+                                        <td class="reuni-row-items">{{ entry.transaction_count }} {{ 'item' if entry.transaction_count == 1 else 'items' }}</td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
@@ -392,7 +392,7 @@
                     </div>
 
                     <!-- Semantic table for cross-university list -->
-                    <table class="reuni-table">
+                    <table class="reuni-table" id="universities-table" {% if cross_uni_standings|length <= 3 %}style="display: none;"{% endif %}>
                         <caption class="sr-only">Cross-university standings</caption>
                         <thead>
                             <tr class="sr-only">
@@ -425,8 +425,8 @@
                                             <span class="reuni-university-name">{{ entry.display_name }}</span>
                                             <span class="reuni-university-meta" style="display: none;">{{ entry.active_students }} active students</span>
                                         </td>
-                                        <td class="reuni-university-students">{{ entry.active_students }} students</td>
-                                        <td class="reuni-university-items">{{ entry.transaction_count }} items</td>
+                                         <td class="reuni-university-students">{{ entry.active_students }} {{ 'student' if entry.active_students == 1 else 'students' }}</td>
+                                        <td class="reuni-university-items">{{ entry.transaction_count }} {{ 'item' if entry.transaction_count == 1 else 'items' }}</td>
                                         <td class="reuni-university-kg">{{ "%.1f"|format(entry.total_kg) }} kg</td>
                                     </tr>
                                 {% endfor %}
