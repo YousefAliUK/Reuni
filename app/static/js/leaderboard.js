@@ -88,11 +88,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const columns = container.querySelectorAll(".reuni-podium-step");
         columns.forEach((col, index) => {
             col.classList.remove("animate-in");
-            // Stagger 3rd, then 2nd, then 1st
             let delay = 0;
-            if (col.classList.contains("reuni-podium-step--3")) delay = 0;
-            else if (col.classList.contains("reuni-podium-step--2")) delay = 80;
-            else if (col.classList.contains("reuni-podium-step--1")) delay = 160;
+            if (window.innerWidth < 1024) {
+                // Mobile stagger: duo row (Rank 2 and 3) first, spotlight last
+                if (col.classList.contains("reuni-podium-step--1")) delay = 120;
+                else delay = 0;
+            } else {
+                // Desktop stagger: 3rd, then 2nd, then 1st
+                if (col.classList.contains("reuni-podium-step--3")) delay = 0;
+                else if (col.classList.contains("reuni-podium-step--2")) delay = 80;
+                else if (col.classList.contains("reuni-podium-step--1")) delay = 160;
+            }
             
             col.style.transitionDelay = `${delay}ms`;
             void col.offsetWidth;
@@ -155,24 +161,49 @@ document.addEventListener("DOMContentLoaded", () => {
         const showMoreBtn = document.getElementById(`show-more-btn-${scope}`);
         if (!table || !showMoreBtn) return;
 
-        const rows = table.querySelectorAll("tbody tr.rank-row");
-        const limit = 50;
+        const rows = Array.from(table.querySelectorAll("tbody tr.rank-row"));
 
-        // Hide rows beyond limit on load
-        rows.forEach((row, index) => {
-            if (index >= limit) {
+        // Hide rows with rank > 10 on load
+        rows.forEach((row) => {
+            const rank = parseInt(row.getAttribute("data-rank"), 10);
+            if (rank > 10) {
                 row.classList.add("sr-only");
             }
         });
 
-        // Click to load all remaining rows
+        let currentVisibleLimit = 10;
+
+        // Click to load next 20 rows
         showMoreBtn.addEventListener("click", () => {
-            rows.forEach(row => row.classList.remove("sr-only"));
-            if (paginationWrapper) {
-                paginationWrapper.style.display = "none";
-            }
-            // Trigger animation on newly shown rows
-            animateRows(table);
+            if (showMoreBtn.disabled) return;
+
+            showMoreBtn.disabled = true;
+            const originalHTML = showMoreBtn.innerHTML;
+            showMoreBtn.innerHTML = `<span class="material-symbols-outlined reuni-spinner-spin" style="font-size: 16px; display: inline-block; vertical-align: middle; margin-right: 8px;">sync</span>Loading…`;
+
+            setTimeout(() => {
+                currentVisibleLimit += 20;
+                let hasMoreHidden = false;
+
+                rows.forEach((row) => {
+                    const rank = parseInt(row.getAttribute("data-rank"), 10);
+                    if (rank <= currentVisibleLimit) {
+                        row.classList.remove("sr-only");
+                    } else {
+                        hasMoreHidden = true;
+                    }
+                });
+
+                showMoreBtn.disabled = false;
+                showMoreBtn.innerHTML = originalHTML;
+
+                if (!hasMoreHidden && paginationWrapper) {
+                    paginationWrapper.style.display = "none";
+                }
+
+                // Trigger animation on newly shown rows
+                animateRows(table);
+            }, 350);
         });
     }
 
@@ -245,6 +276,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             const second = data.standings[1];
                             const third = data.standings[2];
                             
+                            const getDisplayNameHTML = (entry) => {
+                                const short = entry.short_name || entry.display_name;
+                                return `
+                                    <span class="reuni-university-name--full">${entry.display_name}</span>
+                                    <span class="reuni-university-name--short" style="display: none;">${short}</span>
+                                `;
+                            };
+
                             const getLogoHTML = (entry) => {
                                 if (entry.logo_status === "fetched") {
                                     return `<img src="/static/img/logos/${entry.slug}.png" alt="${entry.display_name}">`;
@@ -263,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                             </div>
                                             <span class="reuni-podium-badge">2</span>
                                         </div>
-                                        <div class="reuni-podium-name">${second.display_name}</div>
+                                        <div class="reuni-podium-name">${getDisplayNameHTML(second)}</div>
                                         <div class="reuni-podium-value">${second.total_kg.toFixed(1)} kg</div>
                                         <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
                                     </div>
@@ -277,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                                 <span class="material-symbols-outlined" style="font-size: 14px; line-height: 20px;">workspace_premium</span>
                                             </span>
                                         </div>
-                                        <div class="reuni-podium-name">${first.display_name}</div>
+                                        <div class="reuni-podium-name">${getDisplayNameHTML(first)}</div>
                                         <div class="reuni-podium-value">${first.total_kg.toFixed(1)} kg</div>
                                         <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
                                     </div>
@@ -289,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                             </div>
                                             <span class="reuni-podium-badge">3</span>
                                         </div>
-                                        <div class="reuni-podium-name">${third.display_name}</div>
+                                        <div class="reuni-podium-name">${getDisplayNameHTML(third)}</div>
                                         <div class="reuni-podium-value">${third.total_kg.toFixed(1)} kg</div>
                                         <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
                                     </div>
@@ -301,9 +340,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             newSteps.forEach((col) => {
                                 col.classList.remove("animate-in");
                                 let delay = 0;
-                                if (col.classList.contains("reuni-podium-step--3")) delay = 0;
-                                else if (col.classList.contains("reuni-podium-step--2")) delay = 80;
-                                else if (col.classList.contains("reuni-podium-step--1")) delay = 160;
+                                if (window.innerWidth < 1024) {
+                                    if (col.classList.contains("reuni-podium-step--1")) delay = 120;
+                                    else delay = 0;
+                                } else {
+                                    if (col.classList.contains("reuni-podium-step--3")) delay = 0;
+                                    else if (col.classList.contains("reuni-podium-step--2")) delay = 80;
+                                    else if (col.classList.contains("reuni-podium-step--1")) delay = 160;
+                                }
                                 
                                 col.style.transitionDelay = `${delay}ms`;
                                 void col.offsetWidth;
@@ -348,7 +392,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                 </td>
                                 <td class="reuni-row-name-stack">
-                                    <span class="reuni-university-name">${entry.display_name}</span>
+                                    <span class="reuni-university-name">
+                                        <span class="reuni-university-name--full">${entry.display_name}</span>
+                                        <span class="reuni-university-name--short" style="display: none;">${entry.short_name || entry.display_name}</span>
+                                    </span>
                                 </td>
                                 <td class="reuni-university-students">${entry.active_students} ${entry.active_students === 1 ? 'student' : 'students'}</td>
                                 <td class="reuni-university-items">${entry.transaction_count} ${entry.transaction_count === 1 ? 'item' : 'items'}</td>
@@ -373,6 +420,79 @@ document.addEventListener("DOMContentLoaded", () => {
                 .catch(err => {
                     console.error("Failed to load university standings:", err);
                 });
+        });
+    }
+
+    // ─── 5. Term Selector Bottom Sheet (Mobile) ───
+    const selectContainer = document.querySelector(".reuni-term-select-container");
+    const bottomSheet = document.getElementById("term-bottom-sheet");
+    const closeSheetBtn = document.getElementById("close-term-sheet");
+    const sheetRows = document.querySelectorAll(".reuni-bottom-sheet-row");
+    const nativeSelect = document.getElementById("university-term-select");
+
+    if (selectContainer && bottomSheet && nativeSelect) {
+        // Tap to open bottom sheet on mobile
+        selectContainer.addEventListener("click", (e) => {
+            if (window.innerWidth < 1024) {
+                e.preventDefault();
+                openBottomSheet();
+            }
+        });
+
+        function openBottomSheet() {
+            bottomSheet.classList.add("reuni-bottom-sheet-overlay--open");
+            document.body.style.overflow = "hidden"; // Prevent background scroll
+            
+            // Focus trap - focus the close button initially
+            if (closeSheetBtn) {
+                closeSheetBtn.focus();
+            }
+            
+            // Add escape event
+            document.addEventListener("keydown", handleEscapeKey);
+            // Click outside to close
+            bottomSheet.addEventListener("click", handleOutsideClick);
+        }
+
+        function closeBottomSheet() {
+            bottomSheet.classList.remove("reuni-bottom-sheet-overlay--open");
+            document.body.style.overflow = "";
+            document.removeEventListener("keydown", handleEscapeKey);
+            bottomSheet.removeEventListener("click", handleOutsideClick);
+        }
+
+        function handleEscapeKey(e) {
+            if (e.key === "Escape") {
+                closeBottomSheet();
+            }
+        }
+
+        function handleOutsideClick(e) {
+            if (e.target === bottomSheet) {
+                closeBottomSheet();
+            }
+        }
+
+        if (closeSheetBtn) {
+            closeSheetBtn.addEventListener("click", closeBottomSheet);
+        }
+
+        // Tap row to select term
+        sheetRows.forEach((row) => {
+            row.addEventListener("click", () => {
+                const termId = row.getAttribute("data-term-id");
+                
+                // Update active highlight
+                sheetRows.forEach(r => r.classList.remove("reuni-bottom-sheet-row--selected"));
+                row.classList.add("reuni-bottom-sheet-row--selected");
+                
+                // Update native select and trigger AJAX
+                nativeSelect.value = termId;
+                nativeSelect.dispatchEvent(new Event("change"));
+                
+                // Close bottom sheet
+                closeBottomSheet();
+            });
         });
     }
 });

@@ -136,6 +136,7 @@ def leaderboard():
                 enriched_item["logo_status"] = cfg.logo_status if cfg else "pending"
                 enriched_item["brand_color"] = cfg.brand_color if cfg else "var(--color-primary-muted)"
                 enriched_item["brand_text_color"] = cfg.brand_text_color if cfg else "var(--color-primary)"
+                enriched_item["short_name"] = cfg.short_name if cfg else None
                 
                 name = item["display_name"]
                 words = name.split()
@@ -190,6 +191,7 @@ def universities_api():
         item["logo_status"] = cfg.logo_status if cfg else "pending"
         item["brand_color"] = cfg.brand_color if cfg else "var(--color-primary-muted)"
         item["brand_text_color"] = cfg.brand_text_color if cfg else "var(--color-primary)"
+        item["short_name"] = cfg.short_name if cfg else None
         
         # Monogram initials
         name = item["display_name"]
@@ -250,10 +252,14 @@ def hall_of_fame():
         )
         runners_list = []
         for r in runners:
+            r_initials = r.display_name[:2].upper()
+            if r.user_id and r.user:
+                r_initials = r.user.name[:2].upper()
             runners_list.append({
                 "rank": r.rank,
                 "display_name": r.display_name,
-                "kg_saved": float(r.kg_saved)
+                "kg_saved": float(r.kg_saved),
+                "initials": r_initials
             })
 
         weekly_hof.append({

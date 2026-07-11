@@ -1516,6 +1516,7 @@ def seed():
             domain="brookes.ac.uk",
             subdomain_slug="brookes",
             display_name="Oxford Brookes University",
+            short_name="Brookes",
             email_domain="brookes.ac.uk",
             timezone="Europe/London",
             logo_status="fetched"
@@ -1524,6 +1525,7 @@ def seed():
             domain="ox.ac.uk",
             subdomain_slug="oxford",
             display_name="Oxford University",
+            short_name="Oxford",
             email_domain="ox.ac.uk",
             timezone="Europe/London",
             logo_status="fetched"
@@ -1532,6 +1534,7 @@ def seed():
             domain="cam.ac.uk",
             subdomain_slug="cambridge",
             display_name="Cambridge University",
+            short_name="Cambridge",
             email_domain="cam.ac.uk",
             timezone="Europe/London",
             logo_status="fetched"

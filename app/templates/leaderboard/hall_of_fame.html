@@ -85,31 +85,46 @@
         <!-- ─── 2. Weekly Hall of Fame Tab ─── -->
         <div id="tab-content-weekly" class="leaderboard-tab-content" style="display: none;" data-eyebrow="{{ g.current_uni_domain.split('.')[0].upper() }} · ARCHIVE" data-layout-class="reuni-leaderboard-container">
             {% if weekly_hof %}
-                <div class="reuni-premium-card" style="padding: var(--space-4) var(--space-6);">
+                <div class="reuni-premium-card" style="padding: 0;">
                     <div style="display: flex; flex-direction: column;">
                         {% for week in weekly_hof %}
-                            <div class="reuni-weekly-hof-item" data-week-id="{{ week.week_id }}">
-                                <div class="reuni-weekly-hof-row">
-                                    <span class="reuni-weekly-hof-row__date">{{ week.date_label }}</span>
-                                    <div class="reuni-weekly-hof-row__avatar">
-                                        {{ week.initials }}
+                            {% if week.runners %}
+                                <details class="hof-week-row">
+                                    <summary class="hof-week-summary">
+                                        <span class="hof-week-date">
+                                            <span class="hof-week-date-full">{{ week.date_label }}</span>
+                                            <span class="hof-week-date-short" style="display: none;">{{ week.date_label.replace('Week of ', '') }}</span>
+                                        </span>
+                                        <span class="hof-week-avatar">{{ week.initials }}</span>
+                                        <span class="hof-week-name">{{ week.display_name }}</span>
+                                        <span class="hof-week-kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                                        <span class="hof-week-chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                                    </summary>
+                                    <div class="hof-week-runnerups">
+                                        {% for r in week.runners %}
+                                            <div class="hof-runnerup-row">
+                                                <span class="rank-label">{{ '2nd' if r.rank == 2 else '3rd' }}</span>
+                                                <span class="avatar">{{ r.initials }}</span>
+                                                <span class="name">{{ r.display_name }}</span>
+                                                <span class="kg">{{ "%.1f"|format(r.kg_saved) }} kg</span>
+                                            </div>
+                                        {% endfor %}
                                     </div>
-                                    <span class="reuni-weekly-hof-row__name">{{ week.display_name }}</span>
-                                    <span class="reuni-weekly-hof-row__kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
-                                    {% if week.runners %}
-                                        <button type="button" class="reuni-weekly-hof-expand-btn" aria-label="Expand runners" aria-expanded="false">
-                                            <span class="material-symbols-outlined">expand_more</span>
-                                        </button>
-                                    {% endif %}
+                                </details>
+                            {% else %}
+                                <div class="hof-week-row hof-week-row--no-runners">
+                                    <div class="hof-week-summary" style="cursor: default;">
+                                        <span class="hof-week-date">
+                                            <span class="hof-week-date-full">{{ week.date_label }}</span>
+                                            <span class="hof-week-date-short" style="display: none;">{{ week.date_label.replace('Week of ', '') }}</span>
+                                        </span>
+                                        <span class="hof-week-avatar">{{ week.initials }}</span>
+                                        <span class="hof-week-name">{{ week.display_name }}</span>
+                                        <span class="hof-week-kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                                        <span class="hof-week-chevron" style="opacity: 0;" aria-hidden="true"></span>
+                                    </div>
                                 </div>
-                                {% if week.runners %}
-                                    <div class="reuni-weekly-hof-details" style="display: none;">
-                                        <div class="reuni-weekly-hof-runners-text">
-                                            2nd: {{ week.runners[0].display_name if week.runners|length >= 1 else '—' }} · 3rd: {{ week.runners[1].display_name if week.runners|length >= 2 else '—' }}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
+                            {% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -130,5 +145,4 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
-<script src="{{ url_for('static', filename='js/hall_of_fame.js') }}"></script>
 {% endblock %}

@@ -288,6 +288,7 @@ class UniversityConfig(db.Model):
     domain = db.Column(db.String(100), unique=True, nullable=False, index=True)
     subdomain_slug = db.Column(db.String(50), unique=True, nullable=False, index=True)
     display_name = db.Column(db.String(200), nullable=False)
+    short_name = db.Column(db.String(100), nullable=True)
     email_domain = db.Column(db.String(100), nullable=False)  # e.g. "brookes.ac.uk"
     timezone = db.Column(db.String(50), nullable=False, default="Europe/London")
     brand_color = db.Column(db.String(7), nullable=False, default="#1a1a2e")

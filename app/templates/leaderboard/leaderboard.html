@@ -41,7 +41,8 @@
             {% if multi_uni_enabled %}
                 <button type="button" class="reuni-tab-btn" data-tab-target="universities" id="tab-btn-universities">
                     <span class="material-symbols-outlined" aria-hidden="true">hub</span>
-                    <span>Universities</span>
+                    <span class="reuni-tab-label-desktop">Universities</span>
+                    <span class="reuni-tab-label-mobile" style="display: none;">Unis</span>
                 </button>
             {% endif %}
         </nav>
@@ -152,7 +153,7 @@
                     </tbody>
                 </table>
 
-                {% if weekly_rankings|length > 50 %}
+                {% if weekly_rankings|length > 10 %}
                     <div class="reuni-pagination-wrapper" id="pagination-wrapper-weekly">
                         <button type="button" class="reuni-pagination-btn" id="show-more-btn-weekly">Show more</button>
                     </div>
@@ -284,7 +285,7 @@
                         </tbody>
                     </table>
 
-                    {% if seasonal_rankings|length > 50 %}
+                    {% if seasonal_rankings|length > 10 %}
                         <div class="reuni-pagination-wrapper" id="pagination-wrapper-seasonal">
                             <button type="button" class="reuni-pagination-btn" id="show-more-btn-seasonal">Show more</button>
                         </div>
@@ -349,7 +350,14 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="reuni-podium-name">{{ cross_uni_standings[1].display_name }}</div>
+                                    <div class="reuni-podium-name">
+                                        <span class="reuni-university-name--full">{{ cross_uni_standings[1].display_name }}</span>
+                                        {% if cross_uni_standings[1].short_name %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[1].short_name }}</span>
+                                        {% else %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[1].display_name }}</span>
+                                        {% endif %}
+                                    </div>
                                     <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[1].total_kg) }} kg</div>
                                     <div class="reuni-podium-base"><span class="reuni-podium-base-num">2</span></div>
                                 </div>
@@ -366,7 +374,14 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="reuni-podium-name">{{ cross_uni_standings[0].display_name }}</div>
+                                    <div class="reuni-podium-name">
+                                        <span class="reuni-university-name--full">{{ cross_uni_standings[0].display_name }}</span>
+                                        {% if cross_uni_standings[0].short_name %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[0].short_name }}</span>
+                                        {% else %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[0].display_name }}</span>
+                                        {% endif %}
+                                    </div>
                                     <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[0].total_kg) }} kg</div>
                                     <div class="reuni-podium-base"><span class="material-symbols-outlined reuni-step-icon">eco</span></div>
                                 </div>
@@ -383,7 +398,14 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="reuni-podium-name">{{ cross_uni_standings[2].display_name }}</div>
+                                    <div class="reuni-podium-name">
+                                        <span class="reuni-university-name--full">{{ cross_uni_standings[2].display_name }}</span>
+                                        {% if cross_uni_standings[2].short_name %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[2].short_name }}</span>
+                                        {% else %}
+                                            <span class="reuni-university-name--short" style="display: none;">{{ cross_uni_standings[2].display_name }}</span>
+                                        {% endif %}
+                                    </div>
                                     <div class="reuni-podium-value">{{ "%.1f"|format(cross_uni_standings[2].total_kg) }} kg</div>
                                     <div class="reuni-podium-base"><span class="reuni-podium-base-num">3</span></div>
                                 </div>
@@ -422,7 +444,14 @@
                                             </div>
                                         </td>
                                         <td class="reuni-row-name-stack">
-                                            <span class="reuni-university-name">{{ entry.display_name }}</span>
+                                            <span class="reuni-university-name">
+                                                <span class="reuni-university-name--full">{{ entry.display_name }}</span>
+                                                {% if entry.short_name %}
+                                                    <span class="reuni-university-name--short" style="display: none;">{{ entry.short_name }}</span>
+                                                {% else %}
+                                                    <span class="reuni-university-name--short" style="display: none;">{{ entry.display_name }}</span>
+                                                {% endif %}
+                                            </span>
                                             <span class="reuni-university-meta" style="display: none;">{{ entry.active_students }} active students</span>
                                         </td>
                                          <td class="reuni-university-students">{{ entry.active_students }} {{ 'student' if entry.active_students == 1 else 'students' }}</td>
@@ -453,6 +482,27 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- Term Selector Bottom Sheet Overlay -->
+    <div id="term-bottom-sheet" class="reuni-bottom-sheet-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Select term">
+        <div class="reuni-bottom-sheet">
+            <div class="reuni-bottom-sheet-header">
+                <h2 class="reuni-bottom-sheet-title">Select Term</h2>
+                <button type="button" class="reuni-bottom-sheet-close" aria-label="Close" id="close-term-sheet">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="reuni-bottom-sheet-body">
+                {% for s in all_seasons %}
+                    <div class="reuni-bottom-sheet-row {% if s.id == active_season.id %}reuni-bottom-sheet-row--selected{% endif %}" data-term-id="{{ s.id }}">
+                        <span>{{ s.name }}{% if s.is_complete %} (Final){% endif %}</span>
+                        <span class="material-symbols-outlined checkmark">check</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
