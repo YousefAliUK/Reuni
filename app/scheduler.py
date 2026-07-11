@@ -74,7 +74,7 @@ def purge_old_notifications(app):
 def purge_old_messages(app):
     """
     Nightly background task:
-    Purge messaging logs associated with transactions completed or cancelled more than 30 days ago.
+    Purge messaging logs associated with transactions completed or soft-deleted more than 90 days ago.
     """
     with app.app_context():
         from app import db
@@ -82,21 +82,21 @@ def purge_old_messages(app):
         from sqlalchemy import or_
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
-        thirty_days_ago = now - timedelta(days=30)
+        ninety_days_ago = now - timedelta(days=90)
 
         try:
-            # Delete messages older than 30 days associated with sold or cancelled claims
+            # Delete messages older than 90 days associated with sold or soft-deleted items
             deleted_messages = Message.query.filter(
-                Message.created_at <= thirty_days_ago
+                Message.created_at <= ninety_days_ago
             ).filter(
                 Message.item_id.in_(
-                    db.session.query(Item.id).filter(or_(Item.is_sold == True, Item.buyer_id == None))
+                    db.session.query(Item.id).filter(or_(Item.is_sold == True, Item.is_deleted == True))
                 )
             ).delete(synchronize_session=False)
 
             db.session.commit()
             if deleted_messages:
-                app.logger.info(f"Message Nightly Clean: Purged {deleted_messages} message(s) older than 30 days from completed/inactive transactions.")
+                app.logger.info(f"Message Nightly Clean: Purged {deleted_messages} message(s) older than 90 days from completed/deleted transactions.")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Scheduler error during message purge: {e}", exc_info=True)
@@ -253,7 +253,6 @@ def run_weekly_leaderboard_reset(app):
         from app import db, cache
         from app.models import UniversityConfig
         import zoneinfo
-        from datetime import datetime, timezone, timedelta
 
         now_utc = datetime.now(timezone.utc)
 
@@ -281,14 +280,21 @@ def run_weekly_leaderboard_reset(app):
                 week_start_utc = week_start_local.astimezone(timezone.utc).replace(tzinfo=None)
                 week_end_utc = week_end_local.astimezone(timezone.utc).replace(tzinfo=None)
 
-                winners = _archive_weekly_snapshot(app, cfg.domain, week_start_utc, week_end_utc)
+                # Commit database changes for this university before triggering external side-effects
+                try:
+                    winners = _archive_weekly_snapshot(app, cfg.domain, week_start_utc, week_end_utc)
+                    db.session.commit()
+                except Exception as commit_err:
+                    db.session.rollback()
+                    app.logger.error(f"Failed to commit weekly snapshot for {cfg.domain}: {commit_err}", exc_info=True)
+                    continue
+
                 day_num = week_start_utc.day
                 period_label = f"week of {day_num} {week_start_utc.strftime('%b %Y')}"
                 _notify_winners(app, winners, period_label)
                 # Invalidate cache so next page load reflects final standings
                 cache.delete(f"leaderboard_weekly_{cfg.domain}_{week_start_utc.date()}")
 
-            db.session.commit()
             app.logger.info("Weekly leaderboard check completed.")
         except Exception as e:
             db.session.rollback()
@@ -306,7 +312,6 @@ def run_seasonal_leaderboard_reset(app):
     with app.app_context():
         from app import db, cache
         from app.models import Season
-        from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         try:
@@ -318,17 +323,23 @@ def run_seasonal_leaderboard_reset(app):
             ).all()
 
             for season in ending_seasons:
-                winners = _archive_seasonal_snapshot(app, season)
-                season.is_active = False
-                season.is_complete = True
+                # Commit database changes for this season before triggering external side-effects
+                try:
+                    winners = _archive_seasonal_snapshot(app, season)
+                    season.is_active = False
+                    season.is_complete = True
+                    db.session.commit()
+                except Exception as commit_err:
+                    db.session.rollback()
+                    app.logger.error(f"Failed to commit seasonal snapshot for season {season.id}: {commit_err}", exc_info=True)
+                    continue
+
                 period_label = season.name
                 _notify_winners(app, winners, period_label)
                 # Invalidate seasonal and cross-uni cache
                 cache.delete(f"leaderboard_seasonal_{season.university_domain}_{season.id}")
                 cache.delete(f"leaderboard_crossuni_{season.id}")
                 app.logger.info(f"Seasonal reset completed for season {season.id} ({season.name}).")
-
-            db.session.commit()
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Seasonal leaderboard reset error: {e}", exc_info=True)

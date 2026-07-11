@@ -156,6 +156,8 @@ def cancel_claim(item):
 def detail(item_id):
     """Display the full detail page for an item."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
     has_cancelled_before = False
     if current_user.is_authenticated:
         has_cancelled_before = CancellationRecord.query.filter_by(
@@ -273,6 +275,8 @@ def list_item():
 def edit_item(item_id):
     """Edit an existing item listing."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if item.seller_id != current_user.id:
         flash("You can only edit your own items.", "danger")
@@ -384,6 +388,8 @@ def edit_item(item_id):
 def delete_item(item_id):
     """Delete a listing (only by the seller, only if not sold)."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if item.seller_id != current_user.id:
         flash("You can only delete your own items.", "danger")
@@ -398,7 +404,8 @@ def delete_item(item_id):
         return redirect(url_for("items.detail", item_id=item.id))
 
     image_filename = item.image_filename
-    db.session.delete(item)
+    item.is_deleted = True
+    item.image_filename = None
     try:
         db.session.commit()
     except Exception as e:
@@ -407,12 +414,13 @@ def delete_item(item_id):
         flash("A database error occurred. The item could not be deleted. Please try again.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    try:
-        _delete_image(image_filename)
-    except Exception as cleanup_err:
-        current_app.logger.warning(
-            f"Failed to delete image for deleted item {item_id}: {cleanup_err}"
-        )
+    if image_filename:
+        try:
+            _delete_image(image_filename)
+        except Exception as cleanup_err:
+            current_app.logger.warning(
+                f"Failed to delete image for deleted item {item_id}: {cleanup_err}"
+            )
 
     flash("Item deleted.", "success")
     return redirect(url_for("index"))
@@ -428,6 +436,8 @@ def delete_item(item_id):
 def buy_item(item_id):
     """Initiate a claim — generates a PIN for the handshake."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # Check if this user previously cancelled a claim on this item (anti-griefing)
     has_cancelled_before = CancellationRecord.query.filter_by(
@@ -454,7 +464,7 @@ def buy_item(item_id):
     pin = f"{secrets.randbelow(10000):04d}"
     try:
         rows = Item.query.filter_by(
-            id=item_id, buyer_id=None, is_sold=False
+            id=item_id, buyer_id=None, is_sold=False, is_deleted=False
         ).update({
             "buyer_id": current_user.id,
             "pin_code": pin,
@@ -510,6 +520,8 @@ def buy_item(item_id):
 def pin_page(item_id):
     """Display the PIN handshake page."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # Only buyer or seller can see this page
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:
@@ -575,7 +587,11 @@ def pin_page(item_id):
 @login_required
 def confirm_pin(item_id):
     """Validate the PIN and complete the transaction."""
-    item = db.get_or_404(Item, item_id)
+    item = db.session.query(Item).filter_by(id=item_id).with_for_update().first()
+    if not item:
+        abort(404)
+    if item.is_deleted:
+        abort(404)
 
     # Only the entering party can confirm
     if item.is_free:
@@ -682,6 +698,8 @@ def confirm_pin(item_id):
 def cancel_claim_route(item_id):
     """Cancel a pending claim — either buyer or seller can do this."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # 1. Check the item is actually in a claimed/pending state
     if item.is_sold:
@@ -817,6 +835,8 @@ def cancel_claim_route(item_id):
 def resend_pin(item_id):
     """Regenerate and email a new transaction PIN to the authorized holder."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:
         abort(403)

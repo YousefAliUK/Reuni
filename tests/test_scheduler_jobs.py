@@ -190,9 +190,8 @@ def test_run_weekly_leaderboard_reset(app, db_session):
 
         # Mock datetime inside run_weekly_leaderboard_reset to return our mocked now_utc
         from unittest.mock import patch
-        with patch('datetime.datetime') as mock_datetime:
+        with patch('app.scheduler.datetime') as mock_datetime:
             mock_datetime.now.return_value = now_utc
-            # Mock ZoneInfo or let it execute standard
             run_weekly_leaderboard_reset(app)
 
         # Weekly snapshot should have been created since yesterday was Sunday in Dubai

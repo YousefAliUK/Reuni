@@ -21,6 +21,8 @@ messaging_bp = Blueprint("messaging", __name__, url_prefix="/api")
 def send_message(item_id):
     """Send a message to the other party of a claimed item."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # 1. Authorisation: Must be buyer or seller
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:
@@ -123,6 +125,8 @@ def send_message(item_id):
 def poll_messages(item_id):
     """Retrieve all messages for a thread and mark incoming ones as read."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # Authorisation: Must be buyer or seller
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:

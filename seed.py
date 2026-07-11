@@ -86,17 +86,8 @@ def cleanup_r2_uploads():
                     # 1. seed_*.webp
                     # 2. uuid.webp (32 hex characters + .webp)
                     is_seed = key.startswith("seed_") and key.endswith(".webp")
-                    is_uuid = False
-                    if key.endswith(".webp"):
-                        base = key[:-5]
-                        if len(base) == 32:
-                            try:
-                                int(base, 16)
-                                is_uuid = True
-                            except ValueError:
-                                pass
                     
-                    if is_seed or is_uuid:
+                    if is_seed:
                         delete_keys.append({'Key': key})
         
         if delete_keys:
@@ -1695,6 +1686,8 @@ def seed():
             is_free=True,
             kg_saved=1.5,
             seller_id=cam_student1.id,
+            buyer_id=cam_student2.id,
+            claimed_at=now - timedelta(days=2, hours=4),
             university_domain="cam.ac.uk",
             is_sold=True,
             sold_at=now - timedelta(days=2),
@@ -1709,6 +1702,8 @@ def seed():
             is_free=True,
             kg_saved=0.8,
             seller_id=cam_student2.id,
+            buyer_id=cam_student1.id,
+            claimed_at=now - timedelta(days=3, hours=4),
             university_domain="cam.ac.uk",
             is_sold=True,
             sold_at=now - timedelta(days=3),
@@ -1722,7 +1717,9 @@ def seed():
         ox_student3 = users["a.turing@ox.ac.uk"]
         
         # Add current week transactions for existing Oxford students
-        for i, u in enumerate([ox_student1, ox_student2, ox_student3], start=1):
+        ox_students = [ox_student1, ox_student2, ox_student3]
+        for i, u in enumerate(ox_students, start=1):
+            buyer = ox_students[(i) % len(ox_students)]
             item_ox = Item(
                 title=f"Oxford Study Guide {i}",
                 description="Study materials for the term.",
@@ -1732,6 +1729,8 @@ def seed():
                 is_free=True,
                 kg_saved=4.0 + i,
                 seller_id=u.id,
+                buyer_id=buyer.id,
+                claimed_at=now - timedelta(days=2, hours=4),
                 university_domain="ox.ac.uk",
                 is_sold=True,
                 sold_at=now - timedelta(days=2),
@@ -1767,6 +1766,8 @@ def seed():
                 is_free=True,
                 kg_saved=1.0 + (i * 0.2),
                 seller_id=ox_u.id,
+                buyer_id=ox_student1.id,
+                claimed_at=now - timedelta(days=2, hours=4),
                 university_domain="ox.ac.uk",
                 is_sold=True,
                 sold_at=now - timedelta(days=2),
@@ -1805,6 +1806,8 @@ def seed():
                 is_free=True,
                 kg_saved=kg,
                 seller_id=b_u.id,
+                buyer_id=users["student@brookes.ac.uk"].id,
+                claimed_at=now - timedelta(days=1, hours=4),
                 university_domain="brookes.ac.uk",
                 is_sold=True,
                 sold_at=now - timedelta(days=1),
@@ -1833,17 +1836,18 @@ def seed():
             db.session.add(record)
             print(f"  Created cancellation record: {c_data['tier']} - {c_data['item_title']}")
 
-        # Update kg_saved_total on each user
-        seller_kg_totals = {}
-        for i_data in SAMPLE_ITEMS:
-            if i_data["is_sold"]:
-                email = i_data["seller_email"]
-                kg = CATEGORY_WEIGHTS.get(i_data["category"], 1.0)
-                seller_kg_totals[email] = seller_kg_totals.get(email, 0.0) + kg
+        # Update kg_saved_total on each user dynamically from DB sold items (Anti-drift)
+        all_sold_items = Item.query.filter_by(is_sold=True).all()
+        user_kg_totals = {}
+        for item in all_sold_items:
+            user_kg_totals[item.seller_id] = user_kg_totals.get(item.seller_id, 0.0) + float(item.kg_saved)
 
-        for email, total_kg in seller_kg_totals.items():
-            users[email].kg_saved_total = round(total_kg, 2)
-            print(f"  Updated kg_saved_total for {email}: {round(total_kg, 2)} kg")
+        all_users = User.query.all()
+        for u in all_users:
+            total_kg = user_kg_totals.get(u.id, 0.0)
+            u.kg_saved_total = round(total_kg, 2)
+            if total_kg > 0:
+                print(f"  Updated kg_saved_total for {u.email}: {u.kg_saved_total} kg")
 
         # Seed completed season & historical snapshots for Hall of Fame demonstration
         print("Seeding completed seasons and snapshots for Hall of Fame...")
@@ -2123,22 +2127,22 @@ def seed():
         db.session.commit()
         print("\n[SUCCESS] Database committed successfully.")
 
-        # Count stats for summary
-        total_users = len(SAMPLE_USERS)
-        student_count = sum(1 for u in SAMPLE_USERS if u["role"] == "student")
-        sold_count = sum(1 for i in SAMPLE_ITEMS if i["is_sold"])
-        active_count = sum(1 for i in SAMPLE_ITEMS if not i["is_sold"])
-        total_kg = sum(
-            CATEGORY_WEIGHTS.get(i["category"], 1.0)
-            for i in SAMPLE_ITEMS if i["is_sold"]
-        )
+        # Count stats for summary directly from DB (Anti-drift)
+        total_users = User.query.count()
+        student_count = User.query.filter_by(role="student").count()
+        partner_count = User.query.filter_by(role="partner").count()
+        admin_count = User.query.filter_by(role="admin").count()
+        sold_count = Item.query.filter_by(is_sold=True).count()
+        active_count = Item.query.filter_by(is_sold=False, is_deleted=False).count()
+        total_items = Item.query.filter_by(is_deleted=False).count()
+        total_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
 
         print()
         print("=" * 60)
         print("  REUNI DEMO SEED - COMPLETE")
         print("=" * 60)
-        print(f"  Users:                {total_users} total ({student_count} students, 1 admin, 1 partner)")
-        print(f"  Items:                {len(SAMPLE_ITEMS)} total ({active_count} active, {sold_count} sold)")
+        print(f"  Users:                {total_users} total ({student_count} students, {admin_count} admin, {partner_count} partner)")
+        print(f"  Items:                {total_items} total ({active_count} active, {sold_count} sold)")
         print(f"  Cancellation records: {len(SAMPLE_CANCELLATIONS)}")
         print(f"  Total kg saved:       {round(total_kg, 1)} kg (from sold items)")
         print()

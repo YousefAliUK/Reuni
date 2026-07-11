@@ -183,7 +183,7 @@ class TestBuyItem:
 
         resp = auth_client.get("/dashboard")
         assert resp.status_code == 200
-        assert b"Pending Handshakes" in resp.data
+        assert b"Active Claims" in resp.data
         assert b"Awaiting PIN" in resp.data
 
     def test_kg_saved_not_double_awarded(self, auth_client, sample_item, second_user, db_session):

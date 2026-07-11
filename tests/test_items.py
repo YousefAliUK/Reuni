@@ -219,7 +219,9 @@ class TestDeleteItem:
             f"/items/{item_id}/delete", follow_redirects=True
         )
         assert b"deleted" in resp.data
-        assert db_session.session.get(Item, item_id) is None
+        deleted_item = db_session.session.get(Item, item_id)
+        assert deleted_item.is_deleted is True
+        assert deleted_item.image_filename is None
 
     def test_delete_item_by_non_owner(self, second_auth_client, sample_item, db_session):
         """Non-owner should be denied deletion."""
