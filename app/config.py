@@ -13,8 +13,14 @@ class Config:
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
     # Database Configuration
     _db_url = os.environ.get("DATABASE_URL")
-    if _db_url and _db_url.startswith("postgres://"):
-        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    if _db_url:
+        # Strip any surrounding quotes from Render/Railway dashboard copies
+        _db_url = _db_url.strip().strip("'").strip('"')
+        # Map dialect to use the installed psycopg v3 driver rather than psycopg2
+        if _db_url.startswith("postgres://"):
+            _db_url = _db_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif _db_url.startswith("postgresql://"):
+            _db_url = _db_url.replace("postgresql://", "postgresql+psycopg://", 1)
         
     SQLALCHEMY_DATABASE_URI = _db_url or (
         "sqlite:///" + os.path.join(basedir, "..", "instance", "reuni.db")
