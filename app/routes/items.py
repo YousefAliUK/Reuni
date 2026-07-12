@@ -148,6 +148,58 @@ def cancel_claim(item):
     item.pin_attempts = 0
 
 
+def create_auto_cancellation_record(item, reason="expiry"):
+    """
+    Creates and persists a CancellationRecord for automatic/system-driven cancellations.
+    For expiry: attributed to the buyer (failed to show up/complete).
+    For wrong attempts: attributed to the user who entered incorrect PINs (non-holder).
+    """
+    if not item.claimed_at or not item.buyer_id:
+        return
+        
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    delta = now - item.claimed_at
+    hours_held = delta.total_seconds() / 3600.0
+    
+    # Determine the canceller and other party
+    if reason == "expiry":
+        cancelled_by_id = item.buyer_id
+        other_party_id = item.seller_id
+        cancelled_by_role = "buyer"
+        tier = "severe"  # 72 hours held is always > 48 hours
+    else:  # wrong_attempts
+        # Non-holder is the one entering (and failing) PINs
+        if item.is_free:
+            # Free item: seller holds PIN, buyer enters and fails
+            cancelled_by_id = item.buyer_id
+            other_party_id = item.seller_id
+            cancelled_by_role = "buyer"
+        else:
+            # Paid item: buyer holds PIN, seller enters and fails
+            cancelled_by_id = item.seller_id
+            other_party_id = item.buyer_id
+            cancelled_by_role = "seller"
+        
+        # Tier based on hours held
+        if hours_held <= 24:
+            tier = "clean"
+        elif hours_held <= 48:
+            tier = "warn"
+        else:
+            tier = "severe"
+
+    record = CancellationRecord(
+        item_id=item.id,
+        cancelled_by_id=cancelled_by_id,
+        other_party_id=other_party_id,
+        claimed_at=item.claimed_at,
+        hours_held=hours_held,
+        tier=tier,
+        cancelled_by_role=cancelled_by_role
+    )
+    db.session.add(record)
+
+
 # ──────────────────────────────────────────────
 # Detail Page
 # ──────────────────────────────────────────────
@@ -540,6 +592,7 @@ def pin_page(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
+            create_auto_cancellation_record(item, "expiry")
             cancel_claim(item)
             db.session.commit()
             session.pop(f"pin_{item.id}", None)
@@ -557,8 +610,8 @@ def pin_page(item_id):
     else:
         is_holder = (current_user.id == item.buyer_id)
 
-    # Get plaintext PIN if cached in session
-    pin_code = session.get(f"pin_{item.id}")
+    # Get plaintext PIN only if current user is the authorized holder
+    pin_code = item.pin_code if is_holder else None
 
     # Determine partner user
     if current_user.id == item.seller_id:
@@ -611,6 +664,7 @@ def confirm_pin(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
+            create_auto_cancellation_record(item, "expiry")
             cancel_claim(item)
             db.session.commit()
             session.pop(f"pin_{item.id}", None)
@@ -628,6 +682,7 @@ def confirm_pin(item_id):
         try:
             item.pin_attempts += 1
             if item.pin_attempts >= 3:
+                create_auto_cancellation_record(item, "wrong_attempts")
                 cancel_claim(item)
                 db.session.commit()
                 session.pop(f"pin_{item.id}", None)
@@ -819,7 +874,9 @@ def cancel_claim_route(item_id):
             html_content=email_html
         )
     except Exception as mail_err:
-        current_app.logger.warning(f"Failed to send cancellation email notification to {other_party.email}: {mail_err}")
+        import hashlib
+        hashed_email = hashlib.sha256(other_party.email.strip().lower().encode('utf-8')).hexdigest()[:16]
+        current_app.logger.warning(f"Failed to send cancellation email notification to email_hash={hashed_email}: {mail_err}")
 
     # 10. Flash the appropriate tier message to the canceller
     flash_msg = get_tier_message_for_canceller(tier, cancelled_by_role)
@@ -854,6 +911,20 @@ def resend_pin(item_id):
 
     if not is_holder:
         abort(403)
+
+    # Check if the claim has expired
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if item.pin_expires_at and now > item.pin_expires_at:
+        try:
+            create_auto_cancellation_record(item, "expiry")
+            cancel_claim(item)
+            db.session.commit()
+            session.pop(f"pin_{item.id}", None)
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during auto-cancel in resend_pin: {e}")
+        flash("The claim has expired. The item is available again.", "info")
+        return redirect(url_for("items.detail", item_id=item.id))
 
     pin = f"{secrets.randbelow(10000):04d}"
     item.pin_code = pin

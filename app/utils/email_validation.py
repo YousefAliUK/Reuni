@@ -12,8 +12,11 @@ def extract_university_domain(email: str) -> str | None:
     # Strip leading/trailing whitespace and lowercase the entire email
     cleaned_email = email.strip().lower()
     
-    # Match non-empty local part before @, and a domain ending in .ac.uk
-    match = re.match(r"^([^@]+)@([a-zA-Z0-9.-]+\.ac\.uk)$", cleaned_email)
+    # Match non-empty local part before @, and a DNS-valid domain ending in .ac.uk
+    match = re.fullmatch(
+        r"([^@\s]+)@((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+ac\.uk)",
+        cleaned_email,
+    )
     if match:
         return match.group(2)
     
@@ -31,8 +34,13 @@ def is_domain_allowed(domain: str, allowed_domains: set) -> bool:
     # Clean the domain just in case
     cleaned_domain = domain.strip().lower()
     
+    # Enforce DNS-valid structure for .ac.uk domain
+    domain_match = re.fullmatch(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+ac\.uk$", cleaned_domain)
+    if not domain_match:
+        return False
+        
     if not allowed_domains:
-        return cleaned_domain.endswith(".ac.uk")
+        return True
         
     normalized_allowed = {d.strip().lower() for d in allowed_domains}
     return cleaned_domain in normalized_allowed

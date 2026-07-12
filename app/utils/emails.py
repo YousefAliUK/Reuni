@@ -241,13 +241,42 @@ def send_message_notification_email(recipient, sender, item, message_content):
     safe_item_title = escape(item.title)
     safe_preview = escape(message_content[:100] + ("..." if len(message_content) > 100 else ""))
     
-    host = request.host if has_request_context() else current_app.config.get("SERVER_NAME") or "localhost:5000"
+    # Construct host and scheme securely from BASE_URL to prevent Host Header Injection in emails
+    base_url = current_app.config.get("BASE_URL") or "http://localhost:5000"
+    from urllib.parse import urlsplit
+    base_parsed = urlsplit(base_url)
+    scheme = base_parsed.scheme or "http"
+    base_host = base_parsed.netloc or "localhost:5000"
+
+    # Prepend subdomain of recipient if available
+    uni_domain = recipient.university_domain
+    subdomain = None
+    if uni_domain:
+        uni_map = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        rev_map = {v: k for k, v in uni_map.items()}
+        subdomain = rev_map.get(uni_domain)
+
+    if subdomain and base_host != "localhost:5000" and not base_host.endswith(".localhost"):
+        parts = base_host.split('.')
+        if len(parts) >= 3 and (
+            (parts[-2] == "ac" and parts[-1] == "uk") or 
+            (parts[-2] == "co" and parts[-1] == "uk")
+        ):
+            base_domain = '.'.join(parts[-3:])
+        elif len(parts) >= 2:
+            base_domain = '.'.join(parts[-2:])
+        else:
+            base_domain = base_host
+        host = f"{subdomain}.{base_domain}"
+    else:
+        host = base_host
+
     email_html = f"""<p>Hi {escape(recipient.name)},</p>
 <p>You have a new message from <strong>{safe_sender_name}</strong> regarding the item "<strong>{safe_item_title}</strong>" on Reuni:</p>
 <blockquote style="border-left: 4px solid #0F766E; padding-left: 16px; margin: 16px 0; color: #44403C; font-style: italic;">
     {safe_preview}
 </blockquote>
-    <a href="{current_app.config.get('PREFERRED_URL_SCHEME', 'http')}://{host}/items/{item.id}/pin" class="btn-primary">
+    <a href="{scheme}://{host}/items/{item.id}/pin" class="btn-primary">
         Reply in Chat
     </a>
 <p>— The Reuni team</p>"""

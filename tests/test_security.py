@@ -173,12 +173,26 @@ def test_notifications_api_requires_login(client):
     assert res2.status_code == 302 or res2.status_code == 401
 
 
-def test_host_header_injection_redirect_prevention(client):
+def test_host_header_injection_redirect_prevention(client, db_session):
     """Verify that absolute redirect targets are validated and external redirects are rejected."""
-    response = client.get("/auth/login?next=https://evil.com", follow_redirects=False)
-    if response.status_code == 302:
-        location = response.headers.get("Location")
-        assert "evil.com" not in location
+    user = User(
+        email="redirect@brookes.ac.uk",
+        name="Redirect User",
+        is_verified=True,
+        university_domain="brookes.ac.uk"
+    )
+    user.set_password("SecurePassword123")
+    db_session.session.add(user)
+    db_session.session.commit()
+
+    response = client.post("/auth/login?next=https://evil.com", data={
+        "email": "redirect@brookes.ac.uk",
+        "password": "SecurePassword123"
+    }, follow_redirects=False)
+    
+    assert response.status_code == 302
+    location = response.headers.get("Location")
+    assert "evil.com" not in location
 
 
 def test_cross_university_standings_idor_prevention(client, db_session):
