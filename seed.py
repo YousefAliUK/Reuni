@@ -1779,6 +1779,9 @@ def seed():
             
         # 3. Brookes (Large list: 50+ users to show pagination and podium)
         # Generate 45 additional Brookes students with transactions this week
+        brookes_buyer_pool = [
+            u for email, u in users.items() if email.endswith("@brookes.ac.uk") and u.role == "student"
+        ]
         for i in range(1, 46):
             name = get_unique_name()
             first, last = name.split()[0], name.split()[1]
@@ -1808,7 +1811,7 @@ def seed():
                 is_free=True,
                 kg_saved=kg,
                 seller_id=b_u.id,
-                buyer_id=users["student@brookes.ac.uk"].id,
+                buyer_id=random.choice(brookes_buyer_pool).id,
                 claimed_at=now - timedelta(days=1, hours=4),
                 university_domain="brookes.ac.uk",
                 is_sold=True,

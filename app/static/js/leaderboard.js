@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!stickyBar) return;
 
-        if (userRow) {
+        if (userRow && stickyBtn) {
             // Setup intersection observer to hide bar when user's row is visible
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
