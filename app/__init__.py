@@ -181,10 +181,10 @@ def create_app(config_class=None):
                 g.current_uni_domain = None
 
         # Redirect logged-in users to their own subdomain for account-scoped pages
-        if not app.testing and current_user.is_authenticated and g.current_uni_domain:
+        if not app.testing and current_user.is_authenticated:
             if current_user.university_domain and g.current_uni_domain != current_user.university_domain:
                 # Blueprints and endpoints that must belong to the user's university
-                if (request.blueprint in ['partner', 'admin'] or 
+                if (request.blueprint in ['partner', 'admin', 'leaderboard', 'items', 'messaging'] or 
                     request.endpoint in ['dashboard', 'profile', 'settings', 'enforce_session_rules']):
                     
                     rev_map = {v: k for k, v in uni_map.items()}

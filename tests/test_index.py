@@ -214,4 +214,43 @@ class TestProfilePage:
         recycled_label_after = soup_after.find(string=re.compile("Items recycled"))
         assert recycled_label_after is not None, "Items recycled label not found after sale"
         recycled_value_after = recycled_label_after.find_next().text.strip()
-        assert recycled_value_after == "0", f"Expected recycled count to be 0, got {recycled_value_after}"
+        assert recycled_value_after == "0", f"Expected recycled count to be 0, got recycled_value_after"
+
+
+class TestSubdomainRedirect:
+
+    def test_dashboard_redirects_root_to_subdomain_for_logged_in(self, client, db_session):
+        """Authenticated user on root domain accessing dashboard should be redirected to their subdomain."""
+        from app.models import User, UniversityConfig
+        cfg = UniversityConfig(
+            domain="brookes.ac.uk",
+            subdomain_slug="brookes",
+            display_name="Oxford Brookes University",
+        )
+        user = User(
+            email="student@brookes.ac.uk",
+            name="Brookes Student",
+            role="student",
+            is_verified=True,
+            university_domain="brookes.ac.uk",
+        )
+        user.set_password("Password123!")
+        db_session.session.add_all([cfg, user])
+        db_session.session.commit()
+
+        # Log in
+        client.post("/auth/login", data={
+            "email": "student@brookes.ac.uk",
+            "password": "Password123!",
+        })
+
+        # Temporarily enable testing bypass override
+        original_testing = client.application.testing
+        client.application.testing = False
+        try:
+            resp = client.get("/dashboard", headers={"Host": "reuni.uk"})
+            assert resp.status_code == 302
+            assert "brookes.reuni.uk/dashboard" in resp.headers["Location"]
+        finally:
+            client.application.testing = original_testing
+
