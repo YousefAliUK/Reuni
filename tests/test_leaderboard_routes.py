@@ -79,6 +79,7 @@ def test_leaderboard_routes_success(client, db_session):
 
 def test_universities_api_endpoint(client, db_session):
     """Test the AJAX universities standings endpoint."""
+    client.application.config["FEATURE_MULTI_UNIVERSITY"] = True
     cfg1 = UniversityConfig(
         domain="brookes.ac.uk",
         subdomain_slug="brookes",
