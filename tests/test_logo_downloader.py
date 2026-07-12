@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from app.models import UniversityLogo
+from app.models import UniversityConfig
 from app.utils.logo_downloader import (
     _download_and_save,
     _fallback_google_favicon,
@@ -85,13 +85,13 @@ def test_bg_fetch_logo_success_updates_db(mock_fetch, app, db_session):
     domain = "test-success.ac.uk"
     
     # Create pending record
-    logo_rec = UniversityLogo(domain=domain, logo_status='pending')
+    logo_rec = UniversityConfig(domain=domain, logo_status='pending')
     db_session.session.add(logo_rec)
     db_session.session.commit()
     
     bg_fetch_logo(app, domain)
     
-    updated_rec = UniversityLogo.query.filter_by(domain=domain).first()
+    updated_rec = UniversityConfig.query.filter_by(domain=domain).first()
     assert updated_rec.logo_status == 'fetched'
 
 @patch('app.utils.logo_downloader.fetch_university_logo')
@@ -100,13 +100,13 @@ def test_bg_fetch_logo_failure_sets_no_logo(mock_fetch, app, db_session):
     domain = "test-fail.ac.uk"
     
     # Create pending record
-    logo_rec = UniversityLogo(domain=domain, logo_status='pending')
+    logo_rec = UniversityConfig(domain=domain, logo_status='pending')
     db_session.session.add(logo_rec)
     db_session.session.commit()
     
     bg_fetch_logo(app, domain)
     
-    updated_rec = UniversityLogo.query.filter_by(domain=domain).first()
+    updated_rec = UniversityConfig.query.filter_by(domain=domain).first()
     assert updated_rec.logo_status == 'no_logo'
 
 @patch('app.utils.logo_downloader._is_safe_url', return_value=True)

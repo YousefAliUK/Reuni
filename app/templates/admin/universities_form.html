@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{% if config %}Edit{% else %}Add{% endif %} University Configuration — Reuni{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+
+    <!-- Header Row -->
+    <div class="admin-header">
+        <div class="admin-title-block">
+            <h1 class="admin-title">{% if config %}Edit{% else %}Add{% endif %} University</h1>
+            <span class="admin-badge">Admin Panel</span>
+        </div>
+        <a href="{{ url_for('admin.admin_universities') }}" class="btn btn--outline admin-back-btn">
+            <span class="material-symbols-outlined admin-back-btn-icon" aria-hidden="true">arrow_back</span>
+            <span>Back to list</span>
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="admin-card">
+        <h2 class="admin-card-title">
+            <span class="material-symbols-outlined admin-card-icon" aria-hidden="true">school</span>
+            <span>University Settings</span>
+        </h2>
+        
+        <form method="POST" class="admin-invite-form-vertical">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- Row 1: Domain & Brand Background -->
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="domain" class="form-label">Primary Domain (e.g. brookes.ac.uk)</label>
+                    <input type="text" id="domain" name="domain" value="{{ config.domain if config else '' }}" required class="form-input admin-input-field {% if config %}admin-input-readonly{% endif %}" {% if config %}readonly{% endif %}>
+                    {% if config %}
+                        <span class="admin-help-text">Primary domain cannot be modified after creation.</span>
+                    {% endif %}
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="brand_color" class="form-label">Brand Background CSS Color (Optional)</label>
+                    <input type="text" id="brand_color" name="brand_color" value="{{ config.brand_color if config else '' }}" placeholder="var(--color-primary-muted)" class="form-input admin-input-field">
+                </div>
+            </div>
+
+            <!-- Row 2: Subdomain Slug & Brand Text -->
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="subdomain_slug" class="form-label">Subdomain Slug (e.g. brookes)</label>
+                    <input type="text" id="subdomain_slug" name="subdomain_slug" value="{{ config.subdomain_slug if config else '' }}" required class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="brand_text_color" class="form-label">Brand Text CSS Color (Optional)</label>
+                    <input type="text" id="brand_text_color" name="brand_text_color" value="{{ config.brand_text_color if config else '' }}" placeholder="var(--color-primary)" class="form-input admin-input-field">
+                </div>
+            </div>
+
+            <!-- Row 3: Display Name & Timezone -->
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="display_name" class="form-label">Display Name</label>
+                    <input type="text" id="display_name" name="display_name" value="{{ config.display_name if config else '' }}" required class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="timezone" class="form-label">Local Timezone</label>
+                    <select id="timezone" name="timezone" class="form-input admin-select-timezone">
+                        {% set tz_list = ['Europe/London', 'UTC', 'Asia/Dubai', 'America/New_York', 'Asia/Singapore', 'Europe/Paris'] %}
+                        {% for tz in tz_list %}
+                            <option value="{{ tz }}" {% if config and config.timezone == tz %}selected{% elif not config and tz == 'Europe/London' %}selected{% endif %}>{{ tz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 4: Email Domain Matcher & Spacer -->
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="email_domain" class="form-label">Email Domain Matcher (e.g. brookes.ac.uk)</label>
+                    <input type="text" id="email_domain" name="email_domain" value="{{ config.email_domain if config else '' }}" required class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <!-- Empty grid cell to preserve layout alignment on desktop -->
+                </div>
+            </div>
+
+            <!-- Term Dates Section -->
+            <div class="admin-section-divider"></div>
+            <h3 class="admin-subsection-title">Academic Term Dates</h3>
+            
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="autumn_term_start" class="form-label">Autumn Term Start</label>
+                    <input type="date" id="autumn_term_start" name="autumn_term_start" value="{{ config.autumn_term_start.strftime('%Y-%m-%d') if config and config.autumn_term_start else '' }}" class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="autumn_term_end" class="form-label">Autumn Term End</label>
+                    <input type="date" id="autumn_term_end" name="autumn_term_end" value="{{ config.autumn_term_end.strftime('%Y-%m-%d') if config and config.autumn_term_end else '' }}" class="form-input admin-input-field">
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="spring_term_start" class="form-label">Spring Term Start</label>
+                    <input type="date" id="spring_term_start" name="spring_term_start" value="{{ config.spring_term_start.strftime('%Y-%m-%d') if config and config.spring_term_start else '' }}" class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="spring_term_end" class="form-label">Spring Term End</label>
+                    <input type="date" id="spring_term_end" name="spring_term_end" value="{{ config.spring_term_end.strftime('%Y-%m-%d') if config and config.spring_term_end else '' }}" class="form-input admin-input-field">
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="summer_term_start" class="form-label">Summer Term Start (Optional)</label>
+                    <input type="date" id="summer_term_start" name="summer_term_start" value="{{ config.summer_term_start.strftime('%Y-%m-%d') if config and config.summer_term_start else '' }}" class="form-input admin-input-field">
+                </div>
+                <div class="admin-form-group admin-form-group-vertical">
+                    <label for="summer_term_end" class="form-label">Summer Term End (Optional)</label>
+                    <input type="date" id="summer_term_end" name="summer_term_end" value="{{ config.summer_term_end.strftime('%Y-%m-%d') if config and config.summer_term_end else '' }}" class="form-input admin-input-field">
+                </div>
+            </div>
+            
+            <div class="admin-section-divider"></div>
+
+            <button type="submit" class="btn btn--primary admin-form-submit-btn">
+                {% if config %}Save Changes{% else %}Create Configuration{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -4,6 +4,19 @@
 {% block content %}
 <div class="admin-container">
 
+    <!-- Admin Navigation Tabs -->
+    <div class="admin-nav-tabs">
+        <a href="{{ url_for('admin.admin_partners') }}" class="admin-tab-link admin-tab-link--active">
+            Partners
+        </a>
+        <a href="{{ url_for('admin.admin_universities') }}" class="admin-tab-link">
+            Universities
+        </a>
+        <a href="{{ url_for('admin.admin_seasons') }}" class="admin-tab-link">
+            Seasons
+        </a>
+    </div>
+
     <!-- ─── Page Header Row ─── -->
     <div class="admin-header">
         <div class="admin-title-block">
@@ -11,16 +24,16 @@
             <h1 class="admin-title">Partner Management</h1>
             <span class="admin-badge">Admin Panel</span>
         </div>
-        <button type="button" id="btn-toggle-invite" class="btn btn--primary" style="height: 40px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;" data-action="toggle-invite-form">
-            <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">add</span>
+        <button type="button" id="btn-toggle-invite" class="btn btn--primary admin-back-btn" data-action="toggle-invite-form">
+            <span class="material-symbols-outlined admin-icon-sm" aria-hidden="true">add</span>
             <span>Invite partner university</span>
         </button>
     </div>
 
     <!-- ─── INVITE FORM (Expandable Panel, Hidden by Default) ─── -->
-    <div id="invite-form-panel" class="admin-card" style="{% if not invite_url %}display: none;{% endif %}">
+    <div id="invite-form-panel" class="admin-card {% if not invite_url %}admin-hide-invite{% endif %}">
         <h2 class="admin-card-title">
-            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;" aria-hidden="true">mail</span>
+            <span class="material-symbols-outlined admin-card-icon" aria-hidden="true">mail</span>
             <span>Generate Partner Invitation Link</span>
         </h2>
         
@@ -28,11 +41,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="admin-form-group">
-                <label for="university_domain" class="form-label" style="margin-bottom: var(--space-1);">University Domain</label>
-                <input type="text" id="university_domain" name="university_domain" placeholder="e.g. brookes.ac.uk" required class="form-input" style="background: var(--color-surface);">
+                <label for="university_domain" class="form-label admin-label-margin">University Domain</label>
+                <input type="text" id="university_domain" name="university_domain" placeholder="e.g. brookes.ac.uk" required class="form-input admin-input-field">
             </div>
             
-            <button type="submit" class="btn btn--primary" style="height: 48px; border-radius: var(--radius-md); padding: 0 var(--space-6); font-weight: 600; cursor: pointer;">
+            <button type="submit" class="btn btn--primary admin-submit-invite-btn">
                 Generate invite link
             </button>
         </form>
@@ -46,16 +59,16 @@
                 <div class="admin-invite-link-wrapper">
                     <code id="invite-link-code" class="admin-invite-link-code">{{ invite_url }}</code>
                     <button type="button" id="copy-invite-btn" class="admin-invite-link-copy" data-action="copy-invite-link" data-invite-url="{{ invite_url }}" title="Copy link">
-                        <span class="material-symbols-outlined" style="font-size: 20px;" aria-hidden="true">content_copy</span>
+                        <span class="material-symbols-outlined admin-icon-sm" aria-hidden="true">content_copy</span>
                     </button>
                 </div>
-                <span style="font-size: 11px; color: var(--color-ink-tertiary);">Expires in 48 hours</span>
+                <span class="admin-help-text">Expires in 48 hours</span>
             </div>
         {% endif %}
     </div>
 
     <!-- ─── PARTNERS TABLE ─── -->
-    <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="admin-card admin-card-full-table">
         <div class="admin-table-wrapper">
             <table class="admin-table">
                 <thead>
@@ -64,7 +77,7 @@
                         <th>Partner Email</th>
                         <th>Status</th>
                         <th>Created</th>
-                        <th style="text-align: center;">Actions</th>
+                        <th class="admin-text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -73,13 +86,13 @@
                             <tr id="row-{{ partner.id }}">
                                 <!-- Normal State Cells -->
                                 <td class="normal-cell-{{ partner.id }}">
-                                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                                    <div class="admin-cell-flex">
                                         <img src="{{ get_logo_url(partner.partner_university) }}" alt="{{ partner.partner_university }}" class="admin-table-logo">
                                         <span class="admin-table-initials">{{ partner.partner_university[:2].upper() }}</span>
-                                        <span style="font-size: 14px; font-weight: 500; color: var(--color-ink-primary);">{{ partner.partner_university }}</span>
+                                        <span class="admin-cell-display-name">{{ partner.partner_university }}</span>
                                     </div>
                                 </td>
-                                <td class="normal-cell-{{ partner.id }}" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-secondary);">
+                                <td class="normal-cell-{{ partner.id }} admin-cell-mono">
                                     {{ partner.email }}
                                 </td>
                                 <td class="normal-cell-{{ partner.id }}">
@@ -89,36 +102,36 @@
                                         <span class="admin-status-badge admin-status-badge--inactive">Deactivated</span>
                                     {% endif %}
                                 </td>
-                                <td class="normal-cell-{{ partner.id }}" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-tertiary);">
+                                <td class="normal-cell-{{ partner.id }} admin-cell-mono">
                                     {{ partner.created_at.strftime('%Y-%m-%d') }}
                                 </td>
-                                <td class="normal-cell-{{ partner.id }}" style="text-align: center;">
+                                <td class="normal-cell-{{ partner.id }} admin-text-center">
                                     {% if partner.is_active %}
                                         <button type="button" class="admin-deactivate-btn" data-action="toggle-deactivate-confirm" data-partner-id="{{ partner.id }}" data-show-confirm="true">Deactivate</button>
                                     {% else %}
-                                        <span style="color: var(--color-ink-tertiary); font-size: 13px;">Disabled</span>
+                                        <span class="admin-cell-muted">Disabled</span>
                                     {% endif %}
                                 </td>
                                 
                                 <!-- Confirm State Cell -->
-                                <td class="confirm-cell-{{ partner.id }} admin-confirm-cell" colspan="5" style="display: none;">
+                                <td class="confirm-cell-{{ partner.id }} admin-confirm-cell" colspan="5">
                                     <div class="admin-confirm-wrapper">
                                         <span class="admin-confirm-text">Confirm deactivate partner {{ partner.email }}?</span>
                                         <div class="admin-confirm-actions">
-                                            <form method="POST" action="{{ url_for('admin.deactivate_partner', user_id=partner.id) }}" style="margin: 0; padding: 0; display: inline;">
+                                            <form method="POST" action="{{ url_for('admin.deactivate_partner', user_id=partner.id) }}" class="admin-form-inline">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn--danger btn--sm" style="padding: 4px 12px; font-size: 12px; height: auto;">Yes, deactivate</button>
+                                                <button type="submit" class="btn btn--danger btn--sm admin-btn-edit">Yes, deactivate</button>
                                             </form>
-                                            <button type="button" class="btn btn--outline btn--sm" data-action="toggle-deactivate-confirm" data-partner-id="{{ partner.id }}" data-show-confirm="false" style="padding: 4px 12px; font-size: 12px; height: auto;">Cancel</button>
+                                            <button type="button" class="btn btn--outline btn--sm admin-btn-edit" data-action="toggle-deactivate-confirm" data-partner-id="{{ partner.id }}" data-show-confirm="false">Cancel</button>
                                         </div>
                                     </div>
                                 </td>
                             </tr>
                         {% endfor %}
                     {% else %}
-                        <tr style="height: 120px;">
-                            <td colspan="5" style="text-align: center; vertical-align: middle; color: var(--color-ink-tertiary); font-size: var(--type-body);">
-                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: var(--space-2); color: var(--color-ink-tertiary);" aria-hidden="true">group</span>
+                        <tr class="admin-empty-table-row">
+                            <td colspan="5" class="admin-empty-table-cell">
+                                <span class="material-symbols-outlined admin-empty-table-icon" aria-hidden="true">group</span>
                                 <span>No partners yet. Invite your first university.</span>
                             </td>
                         </tr>

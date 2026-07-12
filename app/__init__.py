@@ -31,11 +31,33 @@ limiter = Limiter(
     storage_uri=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
 )
 
-# Thread-safe in-memory cache for aggregate database stats (TTL: 5 mins)
-import threading
-import time
-_stats_cache = {}
-_stats_cache_lock = threading.Lock()
+from flask_caching import Cache
+cache = Cache()
+
+
+def get_subdomain_map():
+    """
+    Returns the subdomain → domain mapping, loaded from UniversityConfig table.
+    Falls back to config.py hardcoded map if DB is unavailable (e.g. during migrations).
+    Result is cached via Flask-Caching with a 60-second TTL to support multi-worker environments.
+    """
+    from flask import current_app
+    cached = cache.get("subdomain_map")
+    if cached is not None:
+        return cached
+    try:
+        from app.models import UniversityConfig
+        rows = UniversityConfig.query.with_entities(
+            UniversityConfig.subdomain_slug, UniversityConfig.domain
+        ).all()
+        result = {row.subdomain_slug: row.domain for row in rows}
+        if not result:
+            result = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        else:
+            cache.set("subdomain_map", result, timeout=60)
+    except Exception:
+        result = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+    return result
 
 
 def create_app(config_class=None):
@@ -58,7 +80,7 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
 
     # Disable rate limits during local pentests if env var is True
-    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True":
+    if os.environ.get("DISABLE_RATE_LIMITS_FOR_PENTEST") == "True" and (app.config.get("DEBUG") or app.config.get("TESTING")):
         app.config["RATELIMIT_ENABLED"] = False
 
     # Trust reverse proxy headers (Railway, Nginx) in non-debug/non-testing modes
@@ -107,8 +129,18 @@ def create_app(config_class=None):
     # Initialize rate limiter
     limiter.init_app(app)
 
+    # Configure Flask-Caching (SimpleCache for single-process; swap to RedisCache via CACHE_TYPE env var)
+    cache_config = {
+        "CACHE_TYPE": os.environ.get("CACHE_TYPE", "SimpleCache"),
+        "CACHE_DEFAULT_TIMEOUT": 300,  # 5 minutes
+    }
+    if os.environ.get("CACHE_TYPE") == "RedisCache":
+        cache_config["CACHE_REDIS_URL"] = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    app.config.from_mapping(cache_config)
+    cache.init_app(app)
+
     # User loader for Flask-Login
-    from app.models import User, Item, CancellationRecord, Message, Notification, UniversityLogo
+    from app.models import User, Item, CancellationRecord, Message, Notification, UniversityConfig
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -136,7 +168,7 @@ def create_app(config_class=None):
         if len(parts) >= 3:
             subdomain = parts[0]
             
-        uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        uni_map = get_subdomain_map()
         if subdomain and subdomain != 'www':
             if subdomain not in uni_map:
                 # Early rejection for unrecognized subdomains
@@ -214,6 +246,7 @@ def create_app(config_class=None):
     from app.routes.partner import partner_bp
     from app.routes.admin import admin_bp
     from app.routes.messaging import messaging_bp
+    from app.routes.leaderboard import leaderboard_bp
     from app.utils.decorators import verified_required
 
     app.register_blueprint(auth_bp)
@@ -221,6 +254,7 @@ def create_app(config_class=None):
     app.register_blueprint(partner_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(messaging_bp)
+    app.register_blueprint(leaderboard_bp)
 
 
 
@@ -235,7 +269,7 @@ def create_app(config_class=None):
             from flask_login import current_user
             selected_uni = None
             if current_user.is_authenticated and current_user.university_domain:
-                uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+                uni_map = get_subdomain_map()
                 rev_map = {v: k for k, v in uni_map.items()}
                 selected_uni = rev_map.get(current_user.university_domain)
 
@@ -243,7 +277,7 @@ def create_app(config_class=None):
                 selected_uni = request.cookies.get("selected_uni")
 
             if selected_uni and not request.args.get("noredirect"):
-                uni_map = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+                uni_map = get_subdomain_map()
                 if selected_uni in uni_map:
                     # Redirect to subdomain
                     from urllib.parse import urlsplit
@@ -261,63 +295,102 @@ def create_app(config_class=None):
                     return redirect(f"{request.scheme}://{new_host}/")
             
             # Fetch aggregates for landing page
-            from app import db
-            from app.models import Item, User
-            
-            # 1. Total saved (all campuses)
-            total_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
-            total_co2 = total_saved * 2.5
-            
-            # 2. Campus specific saved
-            brookes_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
-                Item.is_sold == True, Item.university_domain == "brookes.ac.uk"
-            ).scalar() or 0.0
-            
-            oxford_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
-                Item.is_sold == True, Item.university_domain == "oxford.ac.uk"
-            ).scalar() or 0.0
-            
-            # 3. Active listing counts (for selector buttons)
-            brookes_active = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain="brookes.ac.uk").count()
-            oxford_active = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain="oxford.ac.uk").count()
-            
-            # 4. Total items circulated (sold + active)
-            brookes_circulated = Item.query.filter(Item.university_domain == "brookes.ac.uk").count()
-            oxford_circulated = Item.query.filter(Item.university_domain == "oxford.ac.uk").count()
-            
-            # 5. Active students (verified users)
-            brookes_students = User.query.filter_by(university_domain="brookes.ac.uk", is_verified=True).count()
-            oxford_students = User.query.filter_by(university_domain="oxford.ac.uk", is_verified=True).count()
-            
-            # Dynamic university list for bento cards
-            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-            from app.routes.partner import get_uni_name, get_uni_initials
-            universities = []
-            for slug, domain in mapping.items():
-                active_count = Item.query.filter_by(is_sold=False, buyer_id=None, university_domain=domain).count()
-                name = get_uni_name(domain)
-                initials = get_uni_initials(name)
-                universities.append({
-                    "slug": slug,
-                    "domain": domain,
-                    "name": name,
-                    "initials": initials,
-                    "active_count": active_count
-                })
+            landing_stats = cache.get("landing_stats")
+            if landing_stats is None:
+                from app.models import Item, User, UniversityConfig
+                configs = UniversityConfig.query.all()
+                universities = []
+                def calculate_initials(name):
+                    words = [w for w in name.split() if w.lower() not in ["university", "of", "and", "the"]]
+                    if len(words) >= 2:
+                        return (words[0][0] + words[1][0]).upper()
+                    elif len(words) == 1:
+                        return words[0][:2].upper()
+                    return name[:2].upper()
+
+                if not configs:
+                    fallback_map = get_subdomain_map()
+                    for slug, domain in fallback_map.items():
+                        from app.routes.partner import get_uni_name
+                        name = get_uni_name(domain)
+                        active_count = Item.query.filter_by(
+                            is_sold=False, buyer_id=None, is_deleted=False, university_domain=domain
+                        ).count()
+                        kg_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
+                            Item.is_sold == True, Item.university_domain == domain
+                        ).scalar() or 0.0
+                        students = User.query.filter_by(
+                            university_domain=domain, is_verified=True
+                        ).count()
+                        circulated = Item.query.filter(Item.university_domain == domain, Item.is_deleted == False).count()
+                        universities.append({
+                            "slug": slug,
+                            "domain": domain,
+                            "name": name,
+                            "initials": calculate_initials(name),
+                            "active_count": active_count,
+                            "kg_saved": float(kg_saved),
+                            "students": students,
+                            "circulated": circulated,
+                        })
+                else:
+                    for cfg in configs:
+                        active_count = Item.query.filter_by(
+                            is_sold=False, buyer_id=None, is_deleted=False, university_domain=cfg.domain
+                        ).count()
+                        kg_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
+                            Item.is_sold == True, Item.university_domain == cfg.domain
+                        ).scalar() or 0.0
+                        students = User.query.filter_by(
+                            university_domain=cfg.domain, is_verified=True
+                        ).count()
+                        circulated = Item.query.filter(Item.university_domain == cfg.domain, Item.is_deleted == False).count()
+                        name = cfg.short_name or cfg.display_name
+                        universities.append({
+                            "slug": cfg.subdomain_slug,
+                            "domain": cfg.domain,
+                            "name": cfg.display_name,
+                            "initials": calculate_initials(name),
+                            "active_count": active_count,
+                            "kg_saved": float(kg_saved),
+                            "students": students,
+                            "circulated": circulated,
+                        })
+
+                total_saved = db.session.query(db.func.sum(Item.kg_saved)).filter(
+                    Item.is_sold == True
+                ).scalar() or 0.0
+
+                landing_stats = {
+                    "total_saved": float(total_saved),
+                    "total_co2": float(total_saved) * 2.5,
+                    "universities": universities,
+                }
+                cache.set("landing_stats", landing_stats, timeout=300)
+
+            # Resolve showcase university dynamically (defaults to Brookes, falls back to first available config)
+            uni_stats = {u["domain"]: u for u in landing_stats["universities"]}
+            showcase = uni_stats.get("brookes.ac.uk")
+            if not showcase and landing_stats["universities"]:
+                showcase = landing_stats["universities"][0]
+            if not showcase:
+                showcase = {
+                    "name": "Oxford Brookes University",
+                    "kg_saved": 0.0,
+                    "active_count": 0,
+                    "circulated": 0,
+                    "students": 0
+                }
 
             return render_template(
                 "landing.html",
-                total_saved_kg=total_saved,
-                total_co2_saved=total_co2,
-                brookes_saved_kg=brookes_saved,
-                oxford_saved_kg=oxford_saved,
-                brookes_active_count=brookes_active,
-                oxford_active_count=oxford_active,
-                brookes_circulated=brookes_circulated,
-                oxford_circulated=oxford_circulated,
-                brookes_students=brookes_students,
-                oxford_students=oxford_students,
-                universities=universities
+                total_saved_kg=landing_stats["total_saved"],
+                total_co2_saved=landing_stats["total_co2"],
+                showcase_name=showcase["name"],
+                showcase_saved_kg=showcase["kg_saved"],
+                showcase_circulated=showcase["circulated"],
+                showcase_students=showcase["students"],
+                universities=landing_stats["universities"]
             )
 
         active_category = request.args.get("category", "")
@@ -332,10 +405,11 @@ def create_app(config_class=None):
             from sqlalchemy import or_
             query = Item.query.filter(
                 Item.is_sold == False,
+                Item.is_deleted == False,
                 or_(Item.university_domain == g.current_uni_domain, Item.university_domain.is_(None))
             )
         else:
-            query = Item.query.filter_by(is_sold=False, university_domain=g.current_uni_domain)
+            query = Item.query.filter_by(is_sold=False, is_deleted=False, university_domain=g.current_uni_domain)
 
         # Apply Category Filter
         if active_category and active_category in CATEGORIES:
@@ -415,14 +489,10 @@ def create_app(config_class=None):
 
         current_uni_domain = getattr(g, "current_uni_domain", None)
         domain_key = current_uni_domain or "global"
-        global _stats_cache, _stats_cache_lock
-        now = time.time()
-
-        # Check cache under lock
-        with _stats_cache_lock:
-            cached_item = _stats_cache.get(domain_key)
-            if cached_item and cached_item['expires_at'] > now:
-                return cached_item['data']
+        cache_key = f"global_stats_{domain_key}"
+        stats_data = cache.get(cache_key)
+        if stats_data is not None:
+            return stats_data
 
         # Cache miss, fetch database
         try:
@@ -451,13 +521,7 @@ def create_app(config_class=None):
             subdomain_total_users=sub_users
         )
 
-        # Update cache under lock
-        with _stats_cache_lock:
-            _stats_cache[domain_key] = {
-                'data': stats_data,
-                'expires_at': now + 300  # Expires in 5 minutes (300 seconds)
-            }
-
+        cache.set(cache_key, stats_data, timeout=300)
         return stats_data
 
     # ── Dashboard ──
@@ -468,7 +532,7 @@ def create_app(config_class=None):
 
         my_listings = (
             Item.query
-            .filter_by(seller_id=current_user.id)
+            .filter_by(seller_id=current_user.id, is_deleted=False)
             .order_by(Item.created_at.desc())
             .all()
         )
@@ -480,7 +544,7 @@ def create_app(config_class=None):
         )
         my_claims = (
             Item.query
-            .filter_by(buyer_id=current_user.id, is_sold=False)
+            .filter_by(buyer_id=current_user.id, is_sold=False, is_deleted=False)
             .order_by(Item.created_at.desc())
             .all()
         )
@@ -497,13 +561,13 @@ def create_app(config_class=None):
     def profile():
         from app.models import Item
 
-        total_listed = Item.query.filter_by(seller_id=current_user.id).count()
+        total_listed = Item.query.filter_by(seller_id=current_user.id, is_deleted=False).count()
         total_sold = Item.query.filter_by(
             seller_id=current_user.id, is_sold=True
         ).count()
         total_bought = Item.query.filter_by(buyer_id=current_user.id, is_sold=True).count()
         active_listings = Item.query.filter_by(
-            seller_id=current_user.id, is_sold=False, buyer_id=None
+            seller_id=current_user.id, is_sold=False, buyer_id=None, is_deleted=False
         ).all()
 
         return render_template(
@@ -515,10 +579,16 @@ def create_app(config_class=None):
         )
     
     # ── Settings Routes ──
-    @app.route("/settings", methods=["GET"])
+    @app.route("/settings", methods=["GET", "POST"])
     @login_required
     @verified_required
     def settings():
+        if request.method == "POST":
+            show_on_leaderboard = request.form.get("show_on_leaderboard") == "on"
+            current_user.show_on_leaderboard = show_on_leaderboard
+            db.session.commit()
+            flash("Privacy settings updated successfully.", "success")
+            return redirect(url_for("settings"))
         return render_template("settings.html")
 
 
@@ -619,6 +689,7 @@ def create_app(config_class=None):
         from datetime import datetime, timezone, timedelta
 
         # 4. Cancel Claims with Email Notifications to Other Parties
+        emails_to_send = []
         # Active claims where the user is the buyer:
         buyer_claims = Item.query.filter_by(buyer_id=user_id, is_sold=False).all()
         for item in buyer_claims:
@@ -630,24 +701,21 @@ def create_app(config_class=None):
             item.pin_attempts = 0
             
             # Notify the seller
-            try:
-                seller = item.seller
-                if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
-                    email_html = (
-                        f"<p>Hello {html_escape(seller.name)},</p>"
-                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
-                        f"because the buyer's account has been deactivated for deletion.</p>"
-                        f"<p>The item is now available back on the marketplace.</p>"
-                        f"<p>— The Reuni team</p>"
-                    )
-                    send_email(
-                        to_email=seller.email,
-                        to_name=seller.name,
-                        subject=f"A claim on {item.title} has been cancelled",
-                        html_content=email_html
-                    )
-            except Exception as mail_err:
-                app.logger.warning(f"Failed to send deletion claim cancellation email to seller: {mail_err}")
+            seller = item.seller
+            if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
+                email_html = (
+                    f"<p>Hello {html_escape(seller.name)},</p>"
+                    f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
+                    f"because the buyer's account has been deactivated for deletion.</p>"
+                    f"<p>The item is now available back on the marketplace.</p>"
+                    f"<p>— The Reuni team</p>"
+                )
+                emails_to_send.append({
+                    "to_email": seller.email,
+                    "to_name": seller.name,
+                    "subject": f"A claim on {item.title} has been cancelled",
+                    "html_content": email_html
+                })
 
         # Active claims where the user is the seller:
         seller_claims = Item.query.filter(Item.seller_id == user_id, Item.buyer_id.is_not(None), Item.is_sold == False).all()
@@ -661,33 +729,29 @@ def create_app(config_class=None):
             item.pin_attempts = 0
             
             # Notify the buyer
-            try:
-                if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
-                    email_html = (
-                        f"<p>Hello {html_escape(buyer.name)},</p>"
-                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
-                        f"because the seller's account has been deactivated for deletion.</p>"
-                        f"<p>— The Reuni team</p>"
-                    )
-                    send_email(
-                        to_email=buyer.email,
-                        to_name=buyer.name,
-                        subject=f"A claim on {item.title} has been cancelled",
-                        html_content=email_html
-                    )
-            except Exception as mail_err:
-                app.logger.warning(f"Failed to send deletion claim cancellation email to buyer: {mail_err}")
+            if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
+                email_html = (
+                    f"<p>Hello {html_escape(buyer.name)},</p>"
+                    f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
+                    f"because the seller's account has been deactivated for deletion.</p>"
+                    f"<p>— The Reuni team</p>"
+                )
+                emails_to_send.append({
+                    "to_email": buyer.email,
+                    "to_name": buyer.name,
+                    "subject": f"A claim on {item.title} has been cancelled",
+                    "html_content": email_html
+                })
 
-        # 5. Remove Active Listings (Unsold Items)
+        # 5. Soft-delete Active Listings (Unsold Items)
         active_listings = Item.query.filter_by(seller_id=user_id, is_sold=False).all()
         
         # Deletion ordering guard: read image filenames from memory before deleting row
         image_filenames_to_delete = [item.image_filename for item in active_listings if item.image_filename]
         
         for item in active_listings:
-            # Delete cancellation records of unsold items
-            CancellationRecord.query.filter_by(item_id=item.id).delete()
-            db.session.delete(item)
+            item.is_deleted = True
+            item.image_filename = None
 
         # 6. Deactivate and Queue Deletion
         user.is_active = False
@@ -699,14 +763,25 @@ def create_app(config_class=None):
         try:
             db.session.commit()
             
-            # Delete image files from static/uploads ONLY after successful DB transaction
+            # Send emails ONLY after successful DB transaction
+            for mail in emails_to_send:
+                try:
+                    send_email(
+                        to_email=mail["to_email"],
+                        to_name=mail["to_name"],
+                        subject=mail["subject"],
+                        html_content=mail["html_content"]
+                    )
+                except Exception as mail_err:
+                    app.logger.warning(f"Failed to send deletion claim cancellation email: {mail_err}")
+
+            # Delete image files ONLY after successful DB transaction
+            from app.routes.items import _delete_image
             for img_filename in image_filenames_to_delete:
-                img_path = os.path.join(app.static_folder, "uploads", img_filename)
-                if os.path.isfile(img_path):
-                    try:
-                        os.remove(img_path)
-                    except Exception as img_err:
-                        app.logger.warning(f"Failed to delete image file {img_filename} from disk during user deletion: {img_err}")
+                try:
+                    _delete_image(img_filename)
+                except Exception as img_err:
+                    app.logger.warning(f"Failed to delete image file {img_filename} during user deletion: {img_err}")
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"Database error during account deletion queue for user {user_id}: {e}")
@@ -749,7 +824,7 @@ def create_app(config_class=None):
         from app.routes.partner import get_uni_name, get_uni_initials
         def get_logo_status(domain):
             # 1. Determine local file existence
-            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            mapping = get_subdomain_map()
             reverse_map = {v: k for k, v in mapping.items()}
             slug = reverse_map.get(domain, domain.split('.')[0])
             
@@ -759,8 +834,8 @@ def create_app(config_class=None):
                     return 'fetched'
                 
             # 2. Check database status
-            from app.models import UniversityLogo
-            logo_rec = UniversityLogo.query.filter_by(domain=domain).first()
+            from app.models import UniversityConfig
+            logo_rec = UniversityConfig.query.filter_by(domain=domain).first()
             if logo_rec:
                 if logo_rec.logo_status == 'no_logo':
                     return 'no_logo'
@@ -772,21 +847,23 @@ def create_app(config_class=None):
             return 'pending'
             
         def get_brand_color(domain):
-            colors = {
-                "brookes.ac.uk": "#002855",
-                "oxford.ac.uk": "#002147"
-            }
-            return colors.get(domain, "var(--color-primary-muted)")
+            if not domain:
+                return "var(--color-primary-muted)"
+            from app.models import UniversityConfig
+            config = UniversityConfig.query.filter_by(domain=domain).first()
+            return config.brand_color if config else "var(--color-primary-muted)"
             
         def get_brand_text_color(domain):
-            if domain in ["brookes.ac.uk", "oxford.ac.uk"]:
-                return "#ffffff"
-            return "var(--color-primary)"
+            if not domain:
+                return "var(--color-primary)"
+            from app.models import UniversityConfig
+            config = UniversityConfig.query.filter_by(domain=domain).first()
+            return config.brand_text_color if config else "var(--color-primary)"
             
         def get_logo_url(domain):
             if not domain:
                 return ""
-            mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            mapping = get_subdomain_map()
             reverse_map = {v: k for k, v in mapping.items()}
             slug = reverse_map.get(domain, domain.split('.')[0])
             

@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from app import db
-from app.models import UniversityLogo
+from app.models import UniversityConfig
 
 def _is_safe_url(url: str) -> bool:
     """Validate that the URL resolves to a public, global IP address to prevent SSRF."""
@@ -37,9 +37,15 @@ def _is_safe_url(url: str) -> bool:
         return False
 
 def get_slug_from_domain(app, domain):
-    mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-    reverse_map = {v: k for k, v in mapping.items()}
-    return reverse_map.get(domain, domain.split('.')[0])
+    try:
+        from app import get_subdomain_map
+        mapping = get_subdomain_map()
+        reverse_map = {v: k for k, v in mapping.items()}
+        if domain in reverse_map:
+            return reverse_map[domain]
+    except Exception:
+        pass
+    return domain.split('.')[0]
 
 DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
 
@@ -197,9 +203,9 @@ def bg_fetch_logo(app, domain):
     """Background worker task to fetch and save a university PNG logo."""
     with app.app_context():
         app.logger.info(f"Background logo fetch started for domain: {domain}")
-        logo_record = UniversityLogo.query.filter_by(domain=domain).first()
+        logo_record = UniversityConfig.query.filter_by(domain=domain).first()
         if not logo_record:
-            logo_record = UniversityLogo(domain=domain, logo_status='pending')
+            logo_record = UniversityConfig(domain=domain, logo_status='pending')
             db.session.add(logo_record)
             db.session.commit()
             
@@ -237,9 +243,9 @@ def start_logo_fetch_job(app, domain):
     """Thread launcher to start the logo fetch task asynchronously or synchronously."""
     # Ensure a pending record is in the DB before starting the thread to avoid race conditions
     with app.app_context():
-        logo_record = UniversityLogo.query.filter_by(domain=domain).first()
+        logo_record = UniversityConfig.query.filter_by(domain=domain).first()
         if not logo_record:
-            logo_record = UniversityLogo(domain=domain, logo_status='pending')
+            logo_record = UniversityConfig(domain=domain, logo_status='pending')
             db.session.add(logo_record)
             try:
                 db.session.commit()

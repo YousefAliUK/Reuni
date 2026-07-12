@@ -446,7 +446,7 @@
                     <div class="esg-dashboard-card">
                         <div class="esg-dashboard-inner">
                             <div class="esg-card-header">
-                                <span class="esg-uni-context">Oxford Brookes · 2025–26</span>
+                                <span class="esg-uni-context">{{ showcase_name }} · 2025–26</span>
                                 <span class="esg-partner-badge">Partner Dashboard</span>
                             </div>
 
@@ -456,21 +456,21 @@
                                         <span class="material-symbols-outlined esg-icon-teal" aria-hidden="true">eco</span>
                                         <span>Total kg saved</span>
                                     </div>
-                                    <span class="esg-metric-value esg-value-teal font-numeric">{{ "%.1f"|format(brookes_saved_kg) }}&nbsp;kg</span>
+                                    <span class="esg-metric-value esg-value-teal font-numeric">{{ "%.1f"|format(showcase_saved_kg) }}&nbsp;kg</span>
                                 </div>
                                 <div class="esg-metric-row">
                                     <div class="esg-metric-label">
                                         <span class="material-symbols-outlined" aria-hidden="true">inventory</span>
                                         <span>Items circulated</span>
                                     </div>
-                                    <span class="esg-metric-value font-numeric">{{ brookes_circulated }}</span>
+                                    <span class="esg-metric-value font-numeric">{{ showcase_circulated }}</span>
                                 </div>
                                 <div class="esg-metric-row">
                                     <div class="esg-metric-label">
                                         <span class="material-symbols-outlined" aria-hidden="true">people</span>
                                         <span>Active students</span>
                                     </div>
-                                    <span class="esg-metric-value font-numeric">{{ brookes_students }}</span>
+                                    <span class="esg-metric-value font-numeric">{{ showcase_students }}</span>
                                 </div>
                             </div>
 

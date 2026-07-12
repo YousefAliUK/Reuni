@@ -148,6 +148,58 @@ def cancel_claim(item):
     item.pin_attempts = 0
 
 
+def create_auto_cancellation_record(item, reason="expiry"):
+    """
+    Creates and persists a CancellationRecord for automatic/system-driven cancellations.
+    For expiry: attributed to the buyer (failed to show up/complete).
+    For wrong attempts: attributed to the user who entered incorrect PINs (non-holder).
+    """
+    if not item.claimed_at or not item.buyer_id:
+        return
+        
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    delta = now - item.claimed_at
+    hours_held = delta.total_seconds() / 3600.0
+    
+    # Determine the canceller and other party
+    if reason == "expiry":
+        cancelled_by_id = item.buyer_id
+        other_party_id = item.seller_id
+        cancelled_by_role = "buyer"
+        tier = "severe"  # 72 hours held is always > 48 hours
+    else:  # wrong_attempts
+        # Non-holder is the one entering (and failing) PINs
+        if item.is_free:
+            # Free item: seller holds PIN, buyer enters and fails
+            cancelled_by_id = item.buyer_id
+            other_party_id = item.seller_id
+            cancelled_by_role = "buyer"
+        else:
+            # Paid item: buyer holds PIN, seller enters and fails
+            cancelled_by_id = item.seller_id
+            other_party_id = item.buyer_id
+            cancelled_by_role = "seller"
+        
+        # Tier based on hours held
+        if hours_held <= 24:
+            tier = "clean"
+        elif hours_held <= 48:
+            tier = "warn"
+        else:
+            tier = "severe"
+
+    record = CancellationRecord(
+        item_id=item.id,
+        cancelled_by_id=cancelled_by_id,
+        other_party_id=other_party_id,
+        claimed_at=item.claimed_at,
+        hours_held=hours_held,
+        tier=tier,
+        cancelled_by_role=cancelled_by_role
+    )
+    db.session.add(record)
+
+
 # ──────────────────────────────────────────────
 # Detail Page
 # ──────────────────────────────────────────────
@@ -156,6 +208,8 @@ def cancel_claim(item):
 def detail(item_id):
     """Display the full detail page for an item."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
     has_cancelled_before = False
     if current_user.is_authenticated:
         has_cancelled_before = CancellationRecord.query.filter_by(
@@ -273,6 +327,8 @@ def list_item():
 def edit_item(item_id):
     """Edit an existing item listing."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if item.seller_id != current_user.id:
         flash("You can only edit your own items.", "danger")
@@ -384,6 +440,8 @@ def edit_item(item_id):
 def delete_item(item_id):
     """Delete a listing (only by the seller, only if not sold)."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if item.seller_id != current_user.id:
         flash("You can only delete your own items.", "danger")
@@ -398,7 +456,8 @@ def delete_item(item_id):
         return redirect(url_for("items.detail", item_id=item.id))
 
     image_filename = item.image_filename
-    db.session.delete(item)
+    item.is_deleted = True
+    item.image_filename = None
     try:
         db.session.commit()
     except Exception as e:
@@ -407,12 +466,13 @@ def delete_item(item_id):
         flash("A database error occurred. The item could not be deleted. Please try again.", "danger")
         return redirect(url_for("items.detail", item_id=item.id))
 
-    try:
-        _delete_image(image_filename)
-    except Exception as cleanup_err:
-        current_app.logger.warning(
-            f"Failed to delete image for deleted item {item_id}: {cleanup_err}"
-        )
+    if image_filename:
+        try:
+            _delete_image(image_filename)
+        except Exception as cleanup_err:
+            current_app.logger.warning(
+                f"Failed to delete image for deleted item {item_id}: {cleanup_err}"
+            )
 
     flash("Item deleted.", "success")
     return redirect(url_for("index"))
@@ -428,6 +488,8 @@ def delete_item(item_id):
 def buy_item(item_id):
     """Initiate a claim — generates a PIN for the handshake."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # Check if this user previously cancelled a claim on this item (anti-griefing)
     has_cancelled_before = CancellationRecord.query.filter_by(
@@ -454,7 +516,7 @@ def buy_item(item_id):
     pin = f"{secrets.randbelow(10000):04d}"
     try:
         rows = Item.query.filter_by(
-            id=item_id, buyer_id=None, is_sold=False
+            id=item_id, buyer_id=None, is_sold=False, is_deleted=False
         ).update({
             "buyer_id": current_user.id,
             "pin_code": pin,
@@ -510,6 +572,8 @@ def buy_item(item_id):
 def pin_page(item_id):
     """Display the PIN handshake page."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # Only buyer or seller can see this page
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:
@@ -528,6 +592,7 @@ def pin_page(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
+            create_auto_cancellation_record(item, "expiry")
             cancel_claim(item)
             db.session.commit()
             session.pop(f"pin_{item.id}", None)
@@ -545,8 +610,8 @@ def pin_page(item_id):
     else:
         is_holder = (current_user.id == item.buyer_id)
 
-    # Get plaintext PIN if cached in session
-    pin_code = session.get(f"pin_{item.id}")
+    # Get plaintext PIN only if current user is the authorized holder
+    pin_code = item.pin_code if is_holder else None
 
     # Determine partner user
     if current_user.id == item.seller_id:
@@ -575,7 +640,11 @@ def pin_page(item_id):
 @login_required
 def confirm_pin(item_id):
     """Validate the PIN and complete the transaction."""
-    item = db.get_or_404(Item, item_id)
+    item = db.session.query(Item).filter_by(id=item_id).with_for_update().first()
+    if not item:
+        abort(404)
+    if item.is_deleted:
+        abort(404)
 
     # Only the entering party can confirm
     if item.is_free:
@@ -595,6 +664,7 @@ def confirm_pin(item_id):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if item.pin_expires_at and now > item.pin_expires_at:
         try:
+            create_auto_cancellation_record(item, "expiry")
             cancel_claim(item)
             db.session.commit()
             session.pop(f"pin_{item.id}", None)
@@ -612,6 +682,7 @@ def confirm_pin(item_id):
         try:
             item.pin_attempts += 1
             if item.pin_attempts >= 3:
+                create_auto_cancellation_record(item, "wrong_attempts")
                 cancel_claim(item)
                 db.session.commit()
                 session.pop(f"pin_{item.id}", None)
@@ -635,11 +706,13 @@ def confirm_pin(item_id):
 
     # PIN is correct — complete the transaction
     try:
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         item.is_sold = True
+        item.sold_at = now_utc          # ← NEW: permanent completion timestamp
         seller = item.seller
         seller.kg_saved_total += item.kg_saved
 
-        # Clear PIN fields
+        # Clear PIN fields (claimed_at tracks active claim state — clear it after sale)
         item.pin_code = None
         item.pin_expires_at = None
         item.claimed_at = None
@@ -680,6 +753,8 @@ def confirm_pin(item_id):
 def cancel_claim_route(item_id):
     """Cancel a pending claim — either buyer or seller can do this."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     # 1. Check the item is actually in a claimed/pending state
     if item.is_sold:
@@ -799,7 +874,9 @@ def cancel_claim_route(item_id):
             html_content=email_html
         )
     except Exception as mail_err:
-        current_app.logger.warning(f"Failed to send cancellation email notification to {other_party.email}: {mail_err}")
+        import hashlib
+        hashed_email = hashlib.sha256(other_party.email.strip().lower().encode('utf-8')).hexdigest()[:16]
+        current_app.logger.warning(f"Failed to send cancellation email notification to email_hash={hashed_email}: {mail_err}")
 
     # 10. Flash the appropriate tier message to the canceller
     flash_msg = get_tier_message_for_canceller(tier, cancelled_by_role)
@@ -815,6 +892,8 @@ def cancel_claim_route(item_id):
 def resend_pin(item_id):
     """Regenerate and email a new transaction PIN to the authorized holder."""
     item = db.get_or_404(Item, item_id)
+    if item.is_deleted:
+        abort(404)
 
     if current_user.id != item.buyer_id and current_user.id != item.seller_id:
         abort(403)
@@ -832,6 +911,20 @@ def resend_pin(item_id):
 
     if not is_holder:
         abort(403)
+
+    # Check if the claim has expired
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if item.pin_expires_at and now > item.pin_expires_at:
+        try:
+            create_auto_cancellation_record(item, "expiry")
+            cancel_claim(item)
+            db.session.commit()
+            session.pop(f"pin_{item.id}", None)
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error during auto-cancel in resend_pin: {e}")
+        flash("The claim has expired. The item is available again.", "info")
+        return redirect(url_for("items.detail", item_id=item.id))
 
     pin = f"{secrets.randbelow(10000):04d}"
     item.pin_code = pin

@@ -22,10 +22,22 @@ from datetime import datetime, timezone, timedelta
 from PIL import Image as PILImage, ImageDraw, ImageFont
 
 from app import create_app, db
-from app.models import User, Item, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES
+from app.models import User, Item, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES, UniversityConfig, Season, WeeklySnapshot, SeasonalSnapshot
 from app.utils.email_validation import extract_university_domain
 
 app = create_app()
+
+FIRST_NAMES = [
+    "Alex", "Emma", "Liam", "Olivia", "Noah", "Ava", "Oliver", "Sophia", "Elijah", "Isabella",
+    "James", "Mia", "Benjamin", "Charlotte", "Lucas", "Amelia", "Henry", "Harper", "Alexander", "Evelyn",
+    "Daniel", "Abigail", "Matthew", "Emily", "Michael", "Elizabeth", "William", "Sofia", "David", "Avery",
+    "Joseph", "Ella", "Carter", "Madison", "Owen", "Scarlett", "Wyatt", "Victoria", "John", "Aria"
+]
+LAST_NAMES = [
+    "Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Robinson", "Wright",
+    "Thompson", "Evans", "Walker", "White", "Roberts", "Green", "Hall", "Wood", "Harris", "Martin",
+    "Jackson", "Clark", "Cooper", "Harrison", "Ward", "Turner", "Carter", "Phillips", "Mitchell", "Patel"
+]
 
 # ── Directory paths ──
 UPLOAD_DIR = os.path.join(app.static_folder, "uploads")
@@ -74,17 +86,10 @@ def cleanup_r2_uploads():
                     # 1. seed_*.webp
                     # 2. uuid.webp (32 hex characters + .webp)
                     is_seed = key.startswith("seed_") and key.endswith(".webp")
-                    is_uuid = False
-                    if key.endswith(".webp"):
-                        base = key[:-5]
-                        if len(base) == 32:
-                            try:
-                                int(base, 16)
-                                is_uuid = True
-                            except ValueError:
-                                pass
+                    import re
+                    is_uuid_webp = re.fullmatch(r"[0-9a-f]{32}\.webp", key.lower()) is not None
                     
-                    if is_seed or is_uuid:
+                    if is_seed or is_uuid_webp:
                         delete_keys.append({'Key': key})
         
         if delete_keys:
@@ -302,39 +307,68 @@ SAMPLE_USERS = [
     },
     # ── Oxford Demo Users ──
     {
-        "email": "w.churchill@oxford.ac.uk",
+        "email": "w.churchill@ox.ac.uk",
         "name": "Winston Churchill",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "m.thatcher@oxford.ac.uk",
+        "email": "m.thatcher@ox.ac.uk",
         "name": "Margaret Thatcher",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "a.turing@oxford.ac.uk",
+        "email": "a.turing@ox.ac.uk",
         "name": "Alan Turing",
         "password": "OxfordDemo1",
         "role": "student",
         "partner_university": None,
     },
     {
-        "email": "admin@oxford.ac.uk",
+        "email": "admin@ox.ac.uk",
         "name": "Oxford Admin",
         "password": "OxfordDemo1",
         "role": "admin",
         "partner_university": None,
     },
     {
-        "email": "sustainability@oxford.ac.uk",
+        "email": "sustainability@ox.ac.uk",
         "name": "Oxford Sustainability Office",
         "password": "OxfordDemo1",
         "role": "partner",
-        "partner_university": "oxford.ac.uk",
+        "partner_university": "ox.ac.uk",
+    },
+    # ── Cambridge Demo Users ──
+    {
+        "email": "i.newton@cam.ac.uk",
+        "name": "Isaac Newton",
+        "password": "BrookesDemo1",
+        "role": "student",
+        "partner_university": None,
+    },
+    {
+        "email": "c.darwin@cam.ac.uk",
+        "name": "Charles Darwin",
+        "password": "BrookesDemo1",
+        "role": "student",
+        "partner_university": None,
+    },
+    {
+        "email": "admin@cam.ac.uk",
+        "name": "Cambridge Admin",
+        "password": "BrookesDemo1",
+        "role": "admin",
+        "partner_university": None,
+    },
+    {
+        "email": "sustainability@cam.ac.uk",
+        "name": "Cambridge Sustainability Office",
+        "password": "BrookesDemo1",
+        "role": "partner",
+        "partner_university": "cam.ac.uk",
     },
 ]
 
@@ -967,7 +1001,7 @@ SAMPLE_ITEMS = [
         "condition": "Good",
         "price": 20.00,
         "is_free": False,
-        "seller_email": "w.churchill@oxford.ac.uk",
+        "seller_email": "w.churchill@ox.ac.uk",
         "image_file": "oxford_chair.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -985,7 +1019,7 @@ SAMPLE_ITEMS = [
         "condition": "New",
         "price": 15.00,
         "is_free": False,
-        "seller_email": "a.turing@oxford.ac.uk",
+        "seller_email": "a.turing@ox.ac.uk",
         "image_file": "clrs_book.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -1003,10 +1037,10 @@ SAMPLE_ITEMS = [
         "condition": "Like New",
         "price": 30.00,
         "is_free": False,
-        "seller_email": "a.turing@oxford.ac.uk",
+        "seller_email": "a.turing@ox.ac.uk",
         "image_file": "keychron_keyboard.jpg",
         "is_sold": True,
-        "buyer_email": "m.thatcher@oxford.ac.uk",
+        "buyer_email": "m.thatcher@ox.ac.uk",
         "days_ago_claimed": 3,
         "days_active_before_claim": 5,
         "days_ago_listed": 8,
@@ -1022,7 +1056,7 @@ SAMPLE_ITEMS = [
         "condition": "Like New",
         "price": 0.00,
         "is_free": True,
-        "seller_email": "m.thatcher@oxford.ac.uk",
+        "seller_email": "m.thatcher@ox.ac.uk",
         "image_file": "gown_bundle.jpg",
         "is_sold": False,
         "buyer_email": None,
@@ -1040,13 +1074,377 @@ SAMPLE_ITEMS = [
         "condition": "Good",
         "price": 10.00,
         "is_free": False,
-        "seller_email": "w.churchill@oxford.ac.uk",
+        "seller_email": "w.churchill@ox.ac.uk",
         "image_file": "tea_set.jpg",
         "is_sold": False,
         "buyer_email": None,
         "days_ago_claimed": None,
         "days_active_before_claim": None,
         "days_ago_listed": 5,
+    },
+    # ── Cambridge Active Season Item ──
+    {
+        "title": "Cambridge Science Lab Coat",
+        "description": "Clean white lab coat, size L. Essential for physics and chemistry labs.",
+        "category": "Clothing",
+        "condition": "Like New",
+        "price": 0.00,
+        "is_free": True,
+        "seller_email": "i.newton@cam.ac.uk",
+        "image_file": "labcoat.jpg",
+        "is_sold": True,
+        "buyer_email": "c.darwin@cam.ac.uk",
+        "days_ago_claimed": 12,
+        "days_active_before_claim": 2,
+        "days_ago_listed": None,
+    },
+    # ── Spring Term 2026 Past Season Items (between 31 and 120 days ago) ──
+    {
+        "title": "Organic Chemistry Textbook",
+        "description": "Standard study guide for first year courses. Very neat.",
+        "category": "Books",
+        "condition": "Good",
+        "price": 15.00,
+        "is_free": False,
+        "seller_email": "a.rahman@brookes.ac.uk",
+        "image_file": "chemistry_book.jpg",
+        "is_sold": True,
+        "buyer_email": "j.whitfield@brookes.ac.uk",
+        "days_ago_claimed": 45,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Solid Oak Dining Chair",
+        "description": "Sturdy student desk chair. Dark oak finish.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 20.00,
+        "is_free": False,
+        "seller_email": "w.churchill@ox.ac.uk",
+        "image_file": "oak_chair.jpg",
+        "is_sold": True,
+        "buyer_email": "m.thatcher@ox.ac.uk",
+        "days_ago_claimed": 50,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Optics Lab Prism Kit",
+        "description": "Refraction glass prisms in a protective velvet box.",
+        "category": "Electronics",
+        "condition": "Like New",
+        "price": 10.00,
+        "is_free": False,
+        "seller_email": "i.newton@cam.ac.uk",
+        "image_file": "prism_kit.jpg",
+        "is_sold": True,
+        "buyer_email": "c.darwin@cam.ac.uk",
+        "days_ago_claimed": 60,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    # ── Spring Term 2026 Additional Items for Standings Balance ──
+    {
+        "title": "Spring Wardrobe Brookes 1",
+        "description": "Large wooden wardrobe.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "a.rahman@brookes.ac.uk",
+        "image_file": "wardrobe.jpg",
+        "is_sold": True,
+        "buyer_email": "j.whitfield@brookes.ac.uk",
+        "days_ago_claimed": 50,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Desk Brookes 2",
+        "description": "Wooden writing desk.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "j.whitfield@brookes.ac.uk",
+        "image_file": "desk.jpg",
+        "is_sold": True,
+        "buyer_email": "a.rahman@brookes.ac.uk",
+        "days_ago_claimed": 52,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Sofa Brookes 3",
+        "description": "Two-seater fabric sofa.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "p.nair@brookes.ac.uk",
+        "image_file": "sofa.jpg",
+        "is_sold": True,
+        "buyer_email": "c.fraser@brookes.ac.uk",
+        "days_ago_claimed": 54,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Bookshelf Brookes 4",
+        "description": "Tall wooden bookshelf.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "c.fraser@brookes.ac.uk",
+        "image_file": "bookshelf.jpg",
+        "is_sold": True,
+        "buyer_email": "p.nair@brookes.ac.uk",
+        "days_ago_claimed": 56,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Armchair Brookes 5",
+        "description": "Comfortable reading armchair.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "m.zhou@brookes.ac.uk",
+        "image_file": "armchair.jpg",
+        "is_sold": True,
+        "buyer_email": "t.keller@brookes.ac.uk",
+        "days_ago_claimed": 58,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Microwave Brookes 6",
+        "description": "Digital microwave oven.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "t.keller@brookes.ac.uk",
+        "image_file": "microwave.jpg",
+        "is_sold": True,
+        "buyer_email": "m.zhou@brookes.ac.uk",
+        "days_ago_claimed": 48,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Monitor Brookes 7",
+        "description": "24 inch HD monitor.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "f.alamin@brookes.ac.uk",
+        "image_file": "monitor.jpg",
+        "is_sold": True,
+        "buyer_email": "s.osei@brookes.ac.uk",
+        "days_ago_claimed": 51,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Vacuum Brookes 8",
+        "description": "Cordless vacuum cleaner.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "s.osei@brookes.ac.uk",
+        "image_file": "vacuum.jpg",
+        "is_sold": True,
+        "buyer_email": "f.alamin@brookes.ac.uk",
+        "days_ago_claimed": 53,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Coffee Table Brookes 9",
+        "description": "Small wooden coffee table.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "i.constantin@brookes.ac.uk",
+        "image_file": "coffee_table.jpg",
+        "is_sold": True,
+        "buyer_email": "r.marsh@brookes.ac.uk",
+        "days_ago_claimed": 55,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Dining Table Brookes 10",
+        "description": "Dining table with four chairs.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "r.marsh@brookes.ac.uk",
+        "image_file": "dining_table.jpg",
+        "is_sold": True,
+        "buyer_email": "i.constantin@brookes.ac.uk",
+        "days_ago_claimed": 57,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Study Chair Oxford 1",
+        "description": "Comfortable computer chair.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "m.thatcher@ox.ac.uk",
+        "image_file": "study_chair.jpg",
+        "is_sold": True,
+        "buyer_email": "w.churchill@ox.ac.uk",
+        "days_ago_claimed": 52,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Spring Desk Lamp Oxford 2",
+        "description": "Adjustable LED desk lamp.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "a.turing@ox.ac.uk",
+        "image_file": "desk_lamp.jpg",
+        "is_sold": True,
+        "buyer_email": "m.thatcher@ox.ac.uk",
+        "days_ago_claimed": 54,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    # ── Autumn Term 2025 Past Season Items (between 210 and 300 days ago) ──
+    {
+        "title": "Autumn Wardrobe Brookes 1",
+        "description": "Large double wardrobe.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "a.rahman@brookes.ac.uk",
+        "image_file": "wardrobe_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "j.whitfield@brookes.ac.uk",
+        "days_ago_claimed": 230,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Writing Desk Brookes 2",
+        "description": "Solid pine writing desk.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "j.whitfield@brookes.ac.uk",
+        "image_file": "desk_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "a.rahman@brookes.ac.uk",
+        "days_ago_claimed": 232,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Chest of Drawers Brookes 3",
+        "description": "3-drawer chest for clothing storage.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "p.nair@brookes.ac.uk",
+        "image_file": "drawers_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "c.fraser@brookes.ac.uk",
+        "days_ago_claimed": 234,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Bedside Table Brookes 4",
+        "description": "Small bedside table with drawer.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "c.fraser@brookes.ac.uk",
+        "image_file": "table_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "p.nair@brookes.ac.uk",
+        "days_ago_claimed": 236,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Kettle Brookes 5",
+        "description": "Electric water kettle.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "m.zhou@brookes.ac.uk",
+        "image_file": "kettle_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "t.keller@brookes.ac.uk",
+        "days_ago_claimed": 238,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Toaster Brookes 6",
+        "description": "2-slice bread toaster.",
+        "category": "Electronics",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "t.keller@brookes.ac.uk",
+        "image_file": "toaster_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "m.zhou@brookes.ac.uk",
+        "days_ago_claimed": 240,
+        "days_active_before_claim": 3,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Bookcase Oxford 1",
+        "description": "Medium size oak bookcase.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "w.churchill@ox.ac.uk",
+        "image_file": "bookcase_ox_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "m.thatcher@ox.ac.uk",
+        "days_ago_claimed": 235,
+        "days_active_before_claim": 5,
+        "days_ago_listed": None,
+    },
+    {
+        "title": "Autumn Study Table Cambridge 1",
+        "description": "Foldable study table.",
+        "category": "Furniture",
+        "condition": "Good",
+        "price": 0.0,
+        "is_free": True,
+        "seller_email": "i.newton@cam.ac.uk",
+        "image_file": "table_cam_autumn.jpg",
+        "is_sold": True,
+        "buyer_email": "c.darwin@cam.ac.uk",
+        "days_ago_claimed": 242,
+        "days_active_before_claim": 4,
+        "days_ago_listed": None,
     },
 ]
 
@@ -1104,6 +1502,65 @@ def seed():
                     print(f"  [WARN] Failed to delete {file_path}: {e}")
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        # Create default university configs
+        print("Seeding university configs...")
+        brookes_cfg = UniversityConfig(
+            domain="brookes.ac.uk",
+            subdomain_slug="brookes",
+            display_name="Oxford Brookes University",
+            short_name="Brookes",
+            email_domain="brookes.ac.uk",
+            timezone="Europe/London",
+            logo_status="fetched"
+        )
+        oxford_cfg = UniversityConfig(
+            domain="ox.ac.uk",
+            subdomain_slug="oxford",
+            display_name="Oxford University",
+            short_name="Oxford",
+            email_domain="ox.ac.uk",
+            timezone="Europe/London",
+            logo_status="fetched"
+        )
+        cambridge_cfg = UniversityConfig(
+            domain="cam.ac.uk",
+            subdomain_slug="cambridge",
+            display_name="Cambridge University",
+            short_name="Cambridge",
+            email_domain="cam.ac.uk",
+            timezone="Europe/London",
+            logo_status="fetched"
+        )
+        db.session.add_all([brookes_cfg, oxford_cfg, cambridge_cfg])
+
+        # Create active seasons
+        print("Seeding active seasons...")
+        brookes_season = Season(
+            university_domain="brookes.ac.uk",
+            name="Autumn Term 2026",
+            start_date=now - timedelta(days=30),
+            end_date=now + timedelta(days=60),
+            is_active=True,
+            is_complete=False
+        )
+        oxford_season = Season(
+            university_domain="ox.ac.uk",
+            name="Autumn Term 2026",
+            start_date=now - timedelta(days=30),
+            end_date=now + timedelta(days=60),
+            is_active=True,
+            is_complete=False
+        )
+        cambridge_season = Season(
+            university_domain="cam.ac.uk",
+            name="Autumn Term 2026",
+            start_date=now - timedelta(days=30),
+            end_date=now + timedelta(days=60),
+            is_active=True,
+            is_complete=False
+        )
+        db.session.add_all([brookes_season, oxford_season, cambridge_season])
 
         # Create users
         users = {}  # dict mapping email -> User object
@@ -1194,6 +1651,7 @@ def seed():
                 is_sold=i_data["is_sold"],
                 buyer_id=buyer_id,
                 claimed_at=claimed_at,
+                sold_at=claimed_at if i_data["is_sold"] else None,
                 created_at=item_created_at,
             )
             db.session.add(item)
@@ -1204,6 +1662,165 @@ def seed():
         # Flush to assign item IDs
         db.session.flush()
         print(f"Flushed {len(items_by_title)} items.")
+
+        # ── Dynamic Seeding for Leaderboard Edge Cases ──
+        print("Dynamically seeding leaderboard test cases...")
+        
+        used_names = {u["name"] for u in SAMPLE_USERS}
+        def get_unique_name():
+            for _ in range(200):
+                name = f"{random.choice(FIRST_NAMES)} {random.choice(LAST_NAMES)}"
+                if name not in used_names:
+                    used_names.add(name)
+                    return name
+            return f"Student {random.randint(1000, 9999)}"
+
+        # 1. Cambridge (Small list: 2 users to suppress podium)
+        cam_student1 = users["i.newton@cam.ac.uk"]
+        cam_student2 = users["c.darwin@cam.ac.uk"]
+        
+        item_cam1 = Item(
+            title="Physics Lab Ruler",
+            description="30cm steel ruler.",
+            category="Stationery",
+            condition="Good",
+            price=0.0,
+            is_free=True,
+            kg_saved=1.5,
+            seller_id=cam_student1.id,
+            buyer_id=cam_student2.id,
+            claimed_at=now - timedelta(days=2, hours=4),
+            university_domain="cam.ac.uk",
+            is_sold=True,
+            sold_at=now - timedelta(days=2),
+            created_at=now - timedelta(days=5)
+        )
+        item_cam2 = Item(
+            title="Biology Notebook",
+            description="A4 spiral notebook.",
+            category="Stationery",
+            condition="Like New",
+            price=0.0,
+            is_free=True,
+            kg_saved=0.8,
+            seller_id=cam_student2.id,
+            buyer_id=cam_student1.id,
+            claimed_at=now - timedelta(days=3, hours=4),
+            university_domain="cam.ac.uk",
+            is_sold=True,
+            sold_at=now - timedelta(days=3),
+            created_at=now - timedelta(days=5)
+        )
+        db.session.add_all([item_cam1, item_cam2])
+        
+        # 2. Oxford (Medium list: 5 users to show podium and short list)
+        ox_student1 = users["w.churchill@ox.ac.uk"]
+        ox_student2 = users["m.thatcher@ox.ac.uk"]
+        ox_student3 = users["a.turing@ox.ac.uk"]
+        
+        # Add current week transactions for existing Oxford students
+        ox_students = [ox_student1, ox_student2, ox_student3]
+        for i, u in enumerate(ox_students, start=1):
+            buyer = ox_students[(i) % len(ox_students)]
+            item_ox = Item(
+                title=f"Oxford Study Guide {i}",
+                description="Study materials for the term.",
+                category="Books",
+                condition="Good",
+                price=0.0,
+                is_free=True,
+                kg_saved=4.0 + i,
+                seller_id=u.id,
+                buyer_id=buyer.id,
+                claimed_at=now - timedelta(days=2, hours=4),
+                university_domain="ox.ac.uk",
+                is_sold=True,
+                sold_at=now - timedelta(days=2),
+                created_at=now - timedelta(days=5)
+            )
+            db.session.add(item_ox)
+            
+        # Dynamically create 2 more Oxford students and transactions
+        for i in range(4, 6):
+            name = get_unique_name()
+            first, last = name.split()[0], name.split()[1]
+            email = f"{first.lower()}.{last.lower()}{random.randint(10,99)}@ox.ac.uk"
+            
+            ox_u = User(
+                email=email,
+                name=name,
+                university_domain="ox.ac.uk",
+                is_verified=True,
+                role="student",
+                is_active=True,
+                created_at=now - timedelta(days=40)
+            )
+            ox_u.set_password("BrookesDemo1")
+            db.session.add(ox_u)
+            db.session.flush()
+            
+            item_ox = Item(
+                title=f"Oxford Study Accessory {i}",
+                description="Stationery item.",
+                category="Stationery",
+                condition="Good",
+                price=0.0,
+                is_free=True,
+                kg_saved=1.0 + (i * 0.2),
+                seller_id=ox_u.id,
+                buyer_id=ox_student1.id,
+                claimed_at=now - timedelta(days=2, hours=4),
+                university_domain="ox.ac.uk",
+                is_sold=True,
+                sold_at=now - timedelta(days=2),
+                created_at=now - timedelta(days=5)
+            )
+            db.session.add(item_ox)
+            
+        # 3. Brookes (Large list: 50+ users to show pagination and podium)
+        # Generate 45 additional Brookes students with transactions this week
+        brookes_buyer_pool = [
+            u for email, u in users.items() if email.endswith("@brookes.ac.uk") and u.role == "student"
+        ]
+        for i in range(1, 46):
+            name = get_unique_name()
+            first, last = name.split()[0], name.split()[1]
+            email = f"{first.lower()}.{last.lower()}{random.randint(10,99)}@brookes.ac.uk"
+            
+            b_u = User(
+                email=email,
+                name=name,
+                university_domain="brookes.ac.uk",
+                is_verified=True,
+                role="student",
+                is_active=True,
+                created_at=now - timedelta(days=40)
+            )
+            b_u.set_password("BrookesDemo1")
+            db.session.add(b_u)
+            db.session.flush()
+            
+            # Save between 1.5 and 5.0 kg
+            kg = round(1.5 + (i * 0.08), 2)
+            item_b = Item(
+                title=f"Brookes Generated Item {i}",
+                description="Household item from student dorm.",
+                category="Kitchenware",
+                condition="Good",
+                price=0.0,
+                is_free=True,
+                kg_saved=kg,
+                seller_id=b_u.id,
+                buyer_id=random.choice(brookes_buyer_pool).id,
+                claimed_at=now - timedelta(days=1, hours=4),
+                university_domain="brookes.ac.uk",
+                is_sold=True,
+                sold_at=now - timedelta(days=1),
+                created_at=now - timedelta(days=5)
+            )
+            db.session.add(item_b)
+
+        db.session.flush()
 
         # Create cancellation records
         for c_data in SAMPLE_CANCELLATIONS:
@@ -1224,37 +1841,313 @@ def seed():
             db.session.add(record)
             print(f"  Created cancellation record: {c_data['tier']} - {c_data['item_title']}")
 
-        # Update kg_saved_total on each user
-        seller_kg_totals = {}
-        for i_data in SAMPLE_ITEMS:
-            if i_data["is_sold"]:
-                email = i_data["seller_email"]
-                kg = CATEGORY_WEIGHTS.get(i_data["category"], 1.0)
-                seller_kg_totals[email] = seller_kg_totals.get(email, 0.0) + kg
+        # Update kg_saved_total on each user dynamically from DB sold items (Anti-drift)
+        all_sold_items = Item.query.filter_by(is_sold=True).all()
+        user_kg_totals = {}
+        for item in all_sold_items:
+            user_kg_totals[item.seller_id] = user_kg_totals.get(item.seller_id, 0.0) + float(item.kg_saved)
 
-        for email, total_kg in seller_kg_totals.items():
-            users[email].kg_saved_total = round(total_kg, 2)
-            print(f"  Updated kg_saved_total for {email}: {round(total_kg, 2)} kg")
+        all_users = User.query.all()
+        for u in all_users:
+            total_kg = user_kg_totals.get(u.id, 0.0)
+            u.kg_saved_total = round(total_kg, 2)
+            if total_kg > 0:
+                print(f"  Updated kg_saved_total for {u.email}: {u.kg_saved_total} kg")
+
+        # Seed completed season & historical snapshots for Hall of Fame demonstration
+        print("Seeding completed seasons and snapshots for Hall of Fame...")
+        past_season = Season(
+            university_domain="brookes.ac.uk",
+            name="Spring Term 2026",
+            start_date=now - timedelta(days=120),
+            end_date=now - timedelta(days=31),
+            is_active=False,
+            is_complete=True
+        )
+        past_season_ox = Season(
+            university_domain="ox.ac.uk",
+            name="Spring Term 2026",
+            start_date=now - timedelta(days=120),
+            end_date=now - timedelta(days=31),
+            is_active=False,
+            is_complete=True
+        )
+        past_season_cam = Season(
+            university_domain="cam.ac.uk",
+            name="Spring Term 2026",
+            start_date=now - timedelta(days=120),
+            end_date=now - timedelta(days=31),
+            is_active=False,
+            is_complete=True
+        )
+        # Autumn Term 2025 (Previous academic year)
+        past_season_autumn = Season(
+            university_domain="brookes.ac.uk",
+            name="Autumn Term 2025",
+            start_date=now - timedelta(days=300),
+            end_date=now - timedelta(days=210),
+            is_active=False,
+            is_complete=True
+        )
+        past_season_autumn_ox = Season(
+            university_domain="ox.ac.uk",
+            name="Autumn Term 2025",
+            start_date=now - timedelta(days=300),
+            end_date=now - timedelta(days=210),
+            is_active=False,
+            is_complete=True
+        )
+        past_season_autumn_cam = Season(
+            university_domain="cam.ac.uk",
+            name="Autumn Term 2025",
+            start_date=now - timedelta(days=300),
+            end_date=now - timedelta(days=210),
+            is_active=False,
+            is_complete=True
+        )
+        db.session.add_all([
+            past_season, past_season_ox, past_season_cam,
+            past_season_autumn, past_season_autumn_ox, past_season_autumn_cam
+        ])
+        db.session.flush()
+
+        # Seed seasonal snapshots for Spring Term 2026
+        s_snap1 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=84.5,
+            transaction_count=12,
+            rank=1
+        )
+        s_snap2 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=62.0,
+            transaction_count=8,
+            rank=2
+        )
+        s_snap3 = SeasonalSnapshot(
+            season_id=past_season.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["a.rahman@brookes.ac.uk"].id,
+            display_name=users["a.rahman@brookes.ac.uk"].name,
+            kg_saved=48.2,
+            transaction_count=6,
+            rank=3
+        )
+
+        # Seed seasonal snapshots for Autumn Term 2025
+        s_snap_autumn1 = SeasonalSnapshot(
+            season_id=past_season_autumn.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["p.nair@brookes.ac.uk"].id,
+            display_name=users["p.nair@brookes.ac.uk"].name,
+            kg_saved=82.1,
+            transaction_count=15,
+            rank=1
+        )
+        s_snap_autumn2 = SeasonalSnapshot(
+            season_id=past_season_autumn.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["a.rahman@brookes.ac.uk"].id,
+            display_name=users["a.rahman@brookes.ac.uk"].name,
+            kg_saved=59.4,
+            transaction_count=10,
+            rank=2
+        )
+        s_snap_autumn3 = SeasonalSnapshot(
+            season_id=past_season_autumn.id,
+            university_domain="brookes.ac.uk",
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=41.0,
+            transaction_count=6,
+            rank=3
+        )
+        db.session.add_all([
+            s_snap1, s_snap2, s_snap3,
+            s_snap_autumn1, s_snap_autumn2, s_snap_autumn3
+        ])
+
+        # Seed weekly snapshots for Oxford Brookes (Multiple weeks)
+        # Week 1: 7 days ago (June 29 - July 05)
+        w_date = now - timedelta(days=7)
+        w_start = w_date - timedelta(days=w_date.weekday())
+        w_start = w_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        w_end = w_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        w_snap1 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=18.4,
+            transaction_count=3,
+            rank=1
+        )
+        w_snap2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=12.2,
+            transaction_count=2,
+            rank=2
+        )
+        w_snap3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start,
+            week_end=w_end,
+            user_id=users["c.fraser@brookes.ac.uk"].id,
+            display_name=users["c.fraser@brookes.ac.uk"].name,
+            kg_saved=8.5,
+            transaction_count=1,
+            rank=3
+        )
+
+        # Week 2: 14 days ago (June 22 - June 28)
+        w_date2 = now - timedelta(days=14)
+        w_start2 = w_date2 - timedelta(days=w_date2.weekday())
+        w_start2 = w_start2.replace(hour=0, minute=0, second=0, microsecond=0)
+        w_end2 = w_start2 + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        w_snap_w2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start2,
+            week_end=w_end2,
+            user_id=users["a.rahman@brookes.ac.uk"].id,
+            display_name=users["a.rahman@brookes.ac.uk"].name,
+            kg_saved=21.5,
+            transaction_count=4,
+            rank=1
+        )
+        w_snap_w2_2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start2,
+            week_end=w_end2,
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=15.2,
+            transaction_count=2,
+            rank=2
+        )
+        w_snap_w2_3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start2,
+            week_end=w_end2,
+            user_id=users["c.fraser@brookes.ac.uk"].id,
+            display_name=users["c.fraser@brookes.ac.uk"].name,
+            kg_saved=10.0,
+            transaction_count=1,
+            rank=3
+        )
+
+        # Week 3: 21 days ago (June 15 - June 21)
+        w_date3 = now - timedelta(days=21)
+        w_start3 = w_date3 - timedelta(days=w_date3.weekday())
+        w_start3 = w_start3.replace(hour=0, minute=0, second=0, microsecond=0)
+        w_end3 = w_start3 + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        w_snap_w3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start3,
+            week_end=w_end3,
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=17.2,
+            transaction_count=3,
+            rank=1
+        )
+        w_snap_w3_2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start3,
+            week_end=w_end3,
+            user_id=users["p.nair@brookes.ac.uk"].id,
+            display_name=users["p.nair@brookes.ac.uk"].name,
+            kg_saved=13.5,
+            transaction_count=2,
+            rank=2
+        )
+        w_snap_w3_3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start3,
+            week_end=w_end3,
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=9.2,
+            transaction_count=1,
+            rank=3
+        )
+
+        # Week 4: 28 days ago (June 08 - June 14)
+        w_date4 = now - timedelta(days=28)
+        w_start4 = w_date4 - timedelta(days=w_date4.weekday())
+        w_start4 = w_start4.replace(hour=0, minute=0, second=0, microsecond=0)
+        w_end4 = w_start4 + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        w_snap_w4 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start4,
+            week_end=w_end4,
+            user_id=users["p.nair@brookes.ac.uk"].id,
+            display_name=users["p.nair@brookes.ac.uk"].name,
+            kg_saved=14.0,
+            transaction_count=2,
+            rank=1
+        )
+        w_snap_w4_2 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start4,
+            week_end=w_end4,
+            user_id=users["j.whitfield@brookes.ac.uk"].id,
+            display_name=users["j.whitfield@brookes.ac.uk"].name,
+            kg_saved=11.0,
+            transaction_count=1,
+            rank=2
+        )
+        w_snap_w4_3 = WeeklySnapshot(
+            university_domain="brookes.ac.uk",
+            week_start=w_start4,
+            week_end=w_end4,
+            user_id=users["s.osei@brookes.ac.uk"].id,
+            display_name=users["s.osei@brookes.ac.uk"].name,
+            kg_saved=8.0,
+            transaction_count=1,
+            rank=3
+        )
+
+        db.session.add_all([
+            w_snap1, w_snap2, w_snap3,
+            w_snap_w2, w_snap_w2_2, w_snap_w2_3,
+            w_snap_w3, w_snap_w3_2, w_snap_w3_3,
+            w_snap_w4, w_snap_w4_2, w_snap_w4_3
+        ])
 
         db.session.commit()
         print("\n[SUCCESS] Database committed successfully.")
 
-        # Count stats for summary
-        total_users = len(SAMPLE_USERS)
-        student_count = sum(1 for u in SAMPLE_USERS if u["role"] == "student")
-        sold_count = sum(1 for i in SAMPLE_ITEMS if i["is_sold"])
-        active_count = sum(1 for i in SAMPLE_ITEMS if not i["is_sold"])
-        total_kg = sum(
-            CATEGORY_WEIGHTS.get(i["category"], 1.0)
-            for i in SAMPLE_ITEMS if i["is_sold"]
-        )
+        # Count stats for summary directly from DB (Anti-drift)
+        total_users = User.query.count()
+        student_count = User.query.filter_by(role="student").count()
+        partner_count = User.query.filter_by(role="partner").count()
+        admin_count = User.query.filter_by(role="admin").count()
+        sold_count = Item.query.filter_by(is_sold=True).count()
+        active_count = Item.query.filter_by(is_sold=False, is_deleted=False).count()
+        total_items = Item.query.filter_by(is_deleted=False).count()
+        total_kg = db.session.query(db.func.sum(Item.kg_saved)).filter(Item.is_sold == True).scalar() or 0.0
 
         print()
         print("=" * 60)
         print("  REUNI DEMO SEED - COMPLETE")
         print("=" * 60)
-        print(f"  Users:                {total_users} total ({student_count} students, 1 admin, 1 partner)")
-        print(f"  Items:                {len(SAMPLE_ITEMS)} total ({active_count} active, {sold_count} sold)")
+        print(f"  Users:                {total_users} total ({student_count} students, {admin_count} admin, {partner_count} partner)")
+        print(f"  Items:                {total_items} total ({active_count} active, {sold_count} sold)")
         print(f"  Cancellation records: {len(SAMPLE_CANCELLATIONS)}")
         print(f"  Total kg saved:       {round(total_kg, 1)} kg (from sold items)")
         print()

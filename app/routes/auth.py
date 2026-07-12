@@ -257,7 +257,8 @@ def login():
 
         correct_subdomain = None
         if user.university_domain:
-            uni_map = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            from app import get_subdomain_map
+            uni_map = get_subdomain_map()
             rev_map = {v: k for k, v in uni_map.items()}
             correct_subdomain = rev_map.get(user.university_domain)
 
@@ -272,15 +273,35 @@ def login():
             return redirect(next_page)
         elif correct_subdomain:
             # Redirect directly to their university subdomain marketplace
-            from urllib.parse import urlsplit
-            parsed = urlsplit(request.host_url)
-            host = parsed.hostname.lower() if parsed.hostname else ""
-            parts = host.split('.')
-            if host == "localhost" or host.endswith(".localhost"):
+            from urllib.parse import urlsplit, urlparse
+            base_url = current_app.config.get("BASE_URL") or "http://localhost:5000"
+            base_parsed = urlsplit(base_url)
+            trusted_host = base_parsed.hostname.lower() if base_parsed.hostname else "localhost"
+            
+            req_parsed = urlsplit(request.host_url)
+            req_host = req_parsed.hostname.lower() if req_parsed.hostname else ""
+            
+            # Verify if request host matches or is a subdomain of the trusted base domain
+            if (req_host == "localhost" or req_host.endswith(".localhost")) and (trusted_host == "localhost" or trusted_host.endswith(".localhost")):
                 base_domain = "localhost"
+            elif req_host == trusted_host or req_host.endswith("." + trusted_host):
+                parts = trusted_host.split('.')
+                if len(parts) >= 3 and parts[-2:] == ['ac', 'uk']:
+                    base_domain = '.'.join(parts[-3:])
+                elif len(parts) >= 3 and parts[-2:] == ['co', 'uk']:
+                    base_domain = '.'.join(parts[-3:])
+                else:
+                    base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else trusted_host
             else:
-                base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
-            port = parsed.port
+                parts = trusted_host.split('.')
+                if len(parts) >= 3 and parts[-2:] == ['ac', 'uk']:
+                    base_domain = '.'.join(parts[-3:])
+                elif len(parts) >= 3 and parts[-2:] == ['co', 'uk']:
+                    base_domain = '.'.join(parts[-3:])
+                else:
+                    base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else trusted_host
+
+            port = req_parsed.port or base_parsed.port
             new_host = f"{correct_subdomain}.{base_domain}"
             if port:
                 new_host = f"{new_host}:{port}"

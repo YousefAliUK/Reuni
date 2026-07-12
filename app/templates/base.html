@@ -122,6 +122,14 @@
                                 <span class="material-symbols-outlined" aria-hidden="true">person</span>
                                 <span>My Profile</span>
                             </a>
+                            <a href="{{ url_for('leaderboard.leaderboard') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">leaderboard</span>
+                                <span>Leaderboard</span>
+                            </a>
+                            <a href="{{ url_for('leaderboard.hall_of_fame') }}" class="user-dropdown__item" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                                <span>Hall of Fame</span>
+                            </a>
                             <a href="{{ url_for('settings') }}" class="user-dropdown__item" role="menuitem">
                                 <span class="material-symbols-outlined" aria-hidden="true">settings</span>
                                 <span>Settings</span>
@@ -234,6 +242,14 @@
                 <a href="{{ url_for('profile') }}" class="mobile-drawer__link {% if request.endpoint == 'profile' %}mobile-drawer__link--active{% endif %}">
                     <span class="material-symbols-outlined" aria-hidden="true">person</span>
                     <span>My Profile</span>
+                </a>
+                <a href="{{ url_for('leaderboard.leaderboard') }}" class="mobile-drawer__link {% if request.endpoint == 'leaderboard.leaderboard' %}mobile-drawer__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">leaderboard</span>
+                    <span>Leaderboard</span>
+                </a>
+                <a href="{{ url_for('leaderboard.hall_of_fame') }}" class="mobile-drawer__link {% if request.endpoint == 'leaderboard.hall_of_fame' %}mobile-drawer__link--active{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                    <span>Hall of Fame</span>
                 </a>
                 <a href="{{ url_for('settings') }}" class="mobile-drawer__link {% if request.endpoint == 'settings' %}mobile-drawer__link--active{% endif %}">
                     <span class="material-symbols-outlined" aria-hidden="true">settings</span>

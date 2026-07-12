@@ -3,12 +3,6 @@
 {% block mobile_title %}My Dashboard{% endblock %}
 
 {% block content %}
-<!-- Hidden container to satisfy automated test assertions -->
-<div style="display: none;" aria-hidden="true">
-    <span>Pending Handshakes</span>
-    <span>kg Saved</span>
-</div>
-
 <div class="dashboard-wrapper">
     
     <!-- ─── TIER 1: SPLIT HEADER GRID ─── -->
@@ -20,27 +14,27 @@
                 <div class="dashboard-stat-number dashboard-stat-number--primary">
                     {{ "%.1f"|format(current_user.kg_saved_total or 0.0) }} kg
                 </div>
-                <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
+                <h2 class="banner-title dashboard-banner-title">
                     You've saved from landfill
                 </h2>
                 {% set completed_count = my_purchases|length + (my_listings | selectattr('is_sold') | list | length) %}
-                <p class="banner-sub" style="margin-top: 2px; margin-bottom: 0;">Across {{ completed_count }} completed transactions</p>
+                <p class="banner-sub dashboard-banner-sub">Across {{ completed_count }} completed transactions</p>
             </div>
         </section>
         
         <!-- Campus Momentum Card (Right) -->
         <section class="campus-momentum-card" aria-label="Campus Sustainability Momentum">
-            <span class="material-symbols-outlined banner-icon" aria-hidden="true" style="color: var(--color-success);">monitoring</span>
+            <span class="material-symbols-outlined banner-icon color-success-icon" aria-hidden="true">monitoring</span>
             <div class="banner-text">
                 <div class="dashboard-stat-number dashboard-stat-number--success">
                     {{ "%.1f"|format(campus_total_kg or 0.0) }} kg
                 </div>
-                <h2 class="banner-title" style="font-size: 14px; font-weight: 600; color: var(--color-ink-secondary); margin-top: var(--space-1); margin-bottom: 0;">
+                <h2 class="banner-title dashboard-banner-title">
                     Saved by Brookes campus
                 </h2>
-                <p class="banner-sub" style="margin-top: 2px; margin-bottom: 0;">Total circular economy impact</p>
-                <div class="campus-sub-row" style="margin-top: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-2); font-size: 12px; color: var(--color-ink-secondary); display: block;">
-                    Powering sustainability with <strong class="font-mono" style="color: var(--color-success);">{{ campus_total_users or 0 }}</strong> active students.
+                <p class="banner-sub dashboard-banner-sub">Total circular economy impact</p>
+                <div class="campus-sub-row dashboard-campus-sub">
+                    Powering sustainability with <strong class="font-mono dashboard-success-text">{{ campus_total_users or 0 }}</strong> active students.
                 </div>
             </div>
         </section>
@@ -57,7 +51,12 @@
             {% set clean_exchanges = current_user.clean_exchanges if current_user.clean_exchanges is defined else 1 %}
             <p class="warning-banner-progress">Progress: <span class="font-mono">{{ clean_exchanges }}</span>/3 clean exchanges completed</p>
             <div class="warning-progress-bar">
-                <div class="warning-progress-fill" style="width: {{ (clean_exchanges / 3 * 100)|round }}%;"></div>
+                <style nonce="{{ csp_nonce }}">
+                    .warning-progress-fill-dynamic {
+                        width: {{ (clean_exchanges / 3 * 100)|round }}%;
+                    }
+                </style>
+                <div class="warning-progress-fill warning-progress-fill-dynamic"></div>
             </div>
         </div>
     </section>
@@ -93,7 +92,7 @@
 
     <!-- ACTIVE CLAIMS TAB CONTENT -->
     <div id="tab-content-claims" class="dashboard-tab-content">
-        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">Active Claims</h2>
+        <h2 class="dashboard-section-header">Active Claims</h2>
         {% if pending_items %}
             <div class="claims-grid">
                 {% for item in pending_items %}
@@ -136,14 +135,14 @@
             <div class="empty-state-dashboard">
                 <span class="material-symbols-outlined" aria-hidden="true">handshake</span>
                 <p>No active claims in progress.</p>
-                <a href="{{ url_for('index') }}" class="btn btn--primary" style="text-decoration: none;">Browse Marketplace</a>
+                <a href="{{ url_for('index') }}" class="btn btn--primary dashboard-btn-link">Browse Marketplace</a>
             </div>
         {% endif %}
     </div>
 
     <!-- MY LISTINGS TAB CONTENT -->
     <div id="tab-content-listings" class="dashboard-tab-content">
-        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">My Listings</h2>
+        <h2 class="dashboard-section-header">My Listings</h2>
         {% if my_listings %}
             <div class="listings-grid-blueprint">
                 {% for item in my_listings %}
@@ -160,7 +159,7 @@
                             <!-- Hover overlay actions -->
                             {% if not item.is_sold %}
                             <div class="listing-card__hover-actions">
-                                <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--sm btn--outline card-action-btn" style="text-decoration: none;">Edit</a>
+                                <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn--sm btn--outline card-action-btn dashboard-edit-btn">Edit</a>
                                 <form method="POST" action="{{ url_for('items.delete_item', item_id=item.id) }}" class="confirm-delete-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn--sm btn--outline btn--danger card-action-btn">Delete</button>
@@ -201,14 +200,14 @@
             <div class="empty-state-dashboard">
                 <span class="material-symbols-outlined" aria-hidden="true">sell</span>
                 <p>You haven't listed anything yet.</p>
-                <a href="{{ url_for('items.list_item') }}" class="btn btn--primary" style="text-decoration: none;">List Your First Item</a>
+                <a href="{{ url_for('items.list_item') }}" class="btn btn--primary dashboard-btn-link">List Your First Item</a>
             </div>
         {% endif %}
     </div>
 
     <!-- PURCHASES TAB CONTENT -->
     <div id="tab-content-purchases" class="dashboard-tab-content">
-        <h2 class="dashboard-section-header" style="font-size: 18px; font-weight: 600; color: var(--color-ink-primary); margin-bottom: var(--space-4); width: 100%;">Purchases</h2>
+        <h2 class="dashboard-section-header">Purchases</h2>
         {% if my_purchases %}
             <div class="purchases-list">
                 {% for item in my_purchases %}
@@ -223,8 +222,8 @@
                             {% endif %}
                             
                             <div class="purchase-row__details">
-                                <h3 class="purchase-row__title"><a href="{{ url_for('items.detail', item_id=item.id) }}" style="text-decoration: none; color: inherit;">{{ item.title }}</a></h3>
-                                <span class="purchase-row__meta">Seller: {{ item.seller.name }}{% if item.created_at %} &middot; Purchased on {{ item.created_at.strftime('%b %d, %Y') }}{% endif %}</span>
+                                <h3 class="purchase-row__title"><a href="{{ url_for('items.detail', item_id=item.id) }}" class="dashboard-purchase-title-link">{{ item.title }}</a></h3>
+                                <span class="purchase-row__meta">Seller: {{ item.seller.name }}{% if item.sold_at %} &middot; Purchased on {{ item.sold_at.strftime('%b %d, %Y') }}{% endif %}</span>
                             </div>
                         </div>
                         
@@ -242,7 +241,7 @@
             <div class="empty-state-dashboard">
                 <span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
                 <p>You haven't bought any items yet.</p>
-                <a href="{{ url_for('index') }}" class="btn btn--primary" style="text-decoration: none;">Browse Marketplace</a>
+                <a href="{{ url_for('index') }}" class="btn btn--primary dashboard-btn-link">Browse Marketplace</a>
             </div>
         {% endif %}
     </div>

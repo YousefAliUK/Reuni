@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Hall of Fame — Reuni{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaderboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reuni-leaderboard-container reuni-leaderboard-container--widest" id="leaderboard-main-container">
+
+    <!-- Eyebrow + Page Title -->
+    <div class="reuni-page-header">
+        <div>
+            <div class="reuni-eyebrow" id="leaderboard-eyebrow">
+                {{ g.current_uni_domain.split('.')[0].upper() }} · ARCHIVE
+            </div>
+            <h1 class="reuni-heading">
+                Hall of Fame
+            </h1>
+        </div>
+        <div>
+            <a href="{{ url_for('leaderboard.leaderboard') }}" class="reuni-cross-link-pill">
+                <span>View Leaderboard</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Segmented Tab Control Navigation -->
+    <div class="reuni-segmented-control-wrapper">
+        <nav class="reuni-segmented-control" aria-label="Hall of Fame tabs">
+            <div class="reuni-tab-indicator"></div>
+            <button type="button" class="reuni-tab-btn active-tab" data-tab-target="seasonal" id="tab-btn-seasonal">
+                <span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+                <span>Seasonal</span>
+            </button>
+            <button type="button" class="reuni-tab-btn" data-tab-target="weekly" id="tab-btn-weekly">
+                <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+                <span>Weekly</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Content Area -->
+    <main style="width: 100%;">
+        
+        <!-- ─── 1. Seasonal Hall of Fame Tab ─── -->
+        <div id="tab-content-seasonal" class="leaderboard-tab-content" data-eyebrow="{{ g.current_uni_domain.split('.')[0].upper() }} · ARCHIVE" data-layout-class="reuni-leaderboard-container reuni-leaderboard-container--widest">
+            {% if seasonal_hof %}
+                <div class="reuni-hof-grid">
+                    {% for item in seasonal_hof %}
+                        {% if item.entries %}
+                            <!-- Card represents one completed term -->
+                            <div class="reuni-champion-card">
+                                <span class="material-symbols-outlined reuni-champion-card-trophy" aria-hidden="true">workspace_premium</span>
+                                <span class="reuni-champion-card-term">{{ item.season.name }}</span>
+                                <div class="reuni-champion-card-avatar">
+                                    {{ item.entries[0].initials }}
+                                </div>
+                                <h3 class="reuni-champion-card-name">{{ item.entries[0].display_name }}</h3>
+                                <div class="reuni-champion-card-kg">{{ "%.1f"|format(item.entries[0].kg_saved) }} kg</div>
+                                <span class="reuni-champion-card-desc">saved this term</span>
+                                
+                                <!-- Runner-up mention if term had >=3 participants -->
+                                {% if item.entries|length >= 3 %}
+                                    <div class="reuni-champion-card-runners">
+                                        2nd: {{ item.entries[1].display_name }} · 3rd: {{ item.entries[2].display_name }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="reuni-premium-card">
+                    <div class="leaderboard-empty-state">
+                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">history</span>
+                        <h3 class="leaderboard-empty-title">History starts soon</h3>
+                        <p class="leaderboard-empty-body" style="margin-bottom: 0;">Your first champion will appear here once this term wraps up.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ─── 2. Weekly Hall of Fame Tab ─── -->
+        <div id="tab-content-weekly" class="leaderboard-tab-content" style="display: none;" data-eyebrow="{{ g.current_uni_domain.split('.')[0].upper() }} · ARCHIVE" data-layout-class="reuni-leaderboard-container">
+            {% if weekly_hof %}
+                <div class="reuni-premium-card" style="padding: 0;">
+                    <div style="display: flex; flex-direction: column;">
+                        {% for week in weekly_hof %}
+                            {% if week.runners %}
+                                <details class="hof-week-row">
+                                    <summary class="hof-week-summary">
+                                        <span class="hof-week-date">
+                                            <span class="hof-week-date-full">{{ week.date_label }}</span>
+                                            <span class="hof-week-date-short" style="display: none;">{{ week.date_label.replace('Week of ', '') }}</span>
+                                        </span>
+                                        <span class="hof-week-avatar">{{ week.initials }}</span>
+                                        <span class="hof-week-name">{{ week.display_name }}</span>
+                                        <span class="hof-week-kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                                        <span class="hof-week-chevron material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                                    </summary>
+                                    <div class="hof-week-runnerups">
+                                        {% for r in week.runners %}
+                                            <div class="hof-runnerup-row">
+                                                <span class="rank-label">{{ '2nd' if r.rank == 2 else '3rd' }}</span>
+                                                <span class="avatar">{{ r.initials }}</span>
+                                                <span class="name">{{ r.display_name }}</span>
+                                                <span class="kg">{{ "%.1f"|format(r.kg_saved) }} kg</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                            {% else %}
+                                <div class="hof-week-row hof-week-row--no-runners">
+                                    <div class="hof-week-summary" style="cursor: default;">
+                                        <span class="hof-week-date">
+                                            <span class="hof-week-date-full">{{ week.date_label }}</span>
+                                            <span class="hof-week-date-short" style="display: none;">{{ week.date_label.replace('Week of ', '') }}</span>
+                                        </span>
+                                        <span class="hof-week-avatar">{{ week.initials }}</span>
+                                        <span class="hof-week-name">{{ week.display_name }}</span>
+                                        <span class="hof-week-kg">{{ "%.1f"|format(week.kg_saved) }} kg</span>
+                                        <span class="hof-week-chevron" style="opacity: 0;" aria-hidden="true"></span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="reuni-premium-card">
+                    <div class="leaderboard-empty-state">
+                        <span class="material-symbols-outlined leaderboard-empty-icon" aria-hidden="true">history</span>
+                        <h3 class="leaderboard-empty-title">History starts soon</h3>
+                        <p class="leaderboard-empty-body" style="margin-bottom: 0;">Your first champion will appear here once this week wraps up.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/leaderboard.js') }}"></script>
+{% endblock %}

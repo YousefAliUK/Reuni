@@ -274,10 +274,10 @@ def test_scheduler_purge_notifications_and_messages(client, second_user, active_
         notif_all_old = Notification(user_id=second_user.id, title="3", is_read=False, created_at=now - timedelta(days=91))
         
         # Setup messages
-        # Active claim & 31 days old -> Kept
-        msg_active_old = Message(item_id=active_claim_item.id, sender_id=active_claim_item.seller_id, recipient_id=second_user.id, content="Active", created_at=now - timedelta(days=31))
+        # Active claim & 91 days old -> Kept (not sold or deleted)
+        msg_active_old = Message(item_id=active_claim_item.id, sender_id=active_claim_item.seller_id, recipient_id=second_user.id, content="Active", created_at=now - timedelta(days=91))
         
-        # Inactive claim (item with no buyer) & 31 days old -> Deleted
+        # Inactive claim (deleted item) & 91 days old -> Deleted
         inactive_item = Item(
             title="Unclaimed Item",
             description="Desc",
@@ -287,12 +287,13 @@ def test_scheduler_purge_notifications_and_messages(client, second_user, active_
             category="Textbooks",
             condition="New",
             university_domain="university.ac.uk",
-            buyer_id=None
+            buyer_id=None,
+            is_deleted=True
         )
         db.session.add(inactive_item)
         db.session.commit()
 
-        msg_inactive_old = Message(item_id=inactive_item.id, sender_id=active_claim_item.seller_id, recipient_id=second_user.id, content="Inactive", created_at=now - timedelta(days=31))
+        msg_inactive_old = Message(item_id=inactive_item.id, sender_id=active_claim_item.seller_id, recipient_id=second_user.id, content="Inactive", created_at=now - timedelta(days=91))
 
         db.session.add_all([notif_read_old, notif_unread_old, notif_all_old, msg_active_old, msg_inactive_old])
         db.session.commit()

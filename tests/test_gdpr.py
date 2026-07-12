@@ -170,8 +170,10 @@ class TestGDPRDeletion:
         )
         assert resp.status_code == 200
 
-        # Unsold item row should be deleted
-        assert db_session.session.get(Item, sample_item.id) is None
+        # Unsold item row should be soft-deleted
+        item = db_session.session.get(Item, sample_item.id)
+        assert item.is_deleted is True
+        assert item.image_filename is None
 
         # Image file on disk should be deleted
         assert os.path.isfile(img_path) is False

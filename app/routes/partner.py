@@ -110,7 +110,8 @@ def partner_dashboard():
     if uni_domain and uni_domain not in PUBLIC_DOMAINS:
         from flask import current_app
         import os
-        mapping = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        from app import get_subdomain_map
+        mapping = get_subdomain_map()
         reverse_map = {v: k for k, v in mapping.items()}
         slug = reverse_map.get(uni_domain, uni_domain.split('.')[0])
         
@@ -118,8 +119,8 @@ def partner_dashboard():
         if os.path.exists(filepath):
             logo_url = f"img/logos/{slug}.png"
         else:
-            from app.models import UniversityLogo
-            logo_rec = UniversityLogo.query.filter_by(domain=uni_domain).first()
+            from app.models import UniversityConfig
+            logo_rec = UniversityConfig.query.filter_by(domain=uni_domain).first()
             if not logo_rec or logo_rec.logo_status == 'pending':
                 from app.utils.logo_downloader import start_logo_fetch_job
                 start_logo_fetch_job(current_app._get_current_object(), uni_domain)
@@ -173,7 +174,7 @@ def partner_dashboard():
     query_recent = db.session.query(Item).filter(Item.is_sold == True)
     if not is_global:
         query_recent = query_recent.filter(Item.university_domain == uni_domain)
-    recent_items = query_recent.order_by(Item.claimed_at.desc()).limit(5).all()
+    recent_items = query_recent.order_by(Item.sold_at.desc()).limit(5).all()
 
     recent_exchanges = []
     for item in recent_items:
@@ -181,7 +182,7 @@ def partner_dashboard():
             "title": item.title,
             "category": item.category,
             "kg_saved": float(item.kg_saved),
-            "time_ago": get_relative_time(item.claimed_at),
+            "time_ago": get_relative_time(item.sold_at),
             "icon": CATEGORY_ICONS.get(item.category, "extension")
         })
 

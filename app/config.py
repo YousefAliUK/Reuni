@@ -40,12 +40,22 @@ class Config:
             _session_domain = ".localhost"
         elif _base_host not in ["127.0.0.1", ""]:
             _parts = _base_host.split(".")
-            if len(_parts) >= 2:
+            if len(_parts) >= 3 and (
+                (_parts[-2] == "ac" and _parts[-1] == "uk") or 
+                (_parts[-2] == "co" and _parts[-1] == "uk") or
+                (_parts[-2] == "org" and _parts[-1] == "uk") or
+                (_parts[-2] == "sch" and _parts[-1] == "uk")
+            ):
+                _session_domain = f".{'.'.join(_parts[-3:])}"
+            elif len(_parts) >= 2:
                 _session_domain = f".{'.'.join(_parts[-2:])}"
     SESSION_COOKIE_DOMAIN = _session_domain
 
     # Limit file uploads to 5MB
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+
+    # Email client timeout
+    MAIL_TIMEOUT = os.environ.get("MAIL_TIMEOUT", "30")
 
     # Password policy
     MIN_PASSWORD_LENGTH = 8
@@ -60,11 +70,14 @@ class Config:
         d.strip().lower() for d in _raw_domains.split(",") if d.strip()
     )
 
-    # Subdomain to University Domain mapping
+    # FALLBACK ONLY — runtime routing reads from UniversityConfig DB table.
+    # This is used only if the DB is unavailable (e.g., during initial migration).
     SUBDOMAIN_UNIVERSITY_MAP = {
         "brookes": "brookes.ac.uk",
         "oxford": "oxford.ac.uk",
     }
+
+    FEATURE_MULTI_UNIVERSITY = os.environ.get("FEATURE_MULTI_UNIVERSITY", "false").lower() == "true"
 
     # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
@@ -118,6 +131,10 @@ class ProductionConfig(Config):
     """Production-specific settings."""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    
+    # Default to False in production to prevent duplicate schedulers in Gunicorn workers.
+    # Enable explicitly in a single dedicated task/process environment if needed.
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "false").lower() == "true"
 
     @classmethod
     def init_app(cls, app):
@@ -127,18 +144,34 @@ class ProductionConfig(Config):
                 "SECRET_KEY environment variable is not set. "
                 "Refusing to start in production without a secure secret key."
             )
-        if not cls.BASE_URL:
+        from urllib.parse import urlsplit
+        parsed_base = urlsplit(cls.BASE_URL.rstrip("/")) if cls.BASE_URL else None
+        if (
+            not parsed_base
+            or parsed_base.scheme != "https"
+            or parsed_base.hostname in {"localhost", "127.0.0.1", "::1"}
+        ):
             raise RuntimeError(
-                "BASE_URL environment variable is not set. "
-                "All email links (PIN notifications, cancellation emails, password resets) "
-                "will be broken without it. Set BASE_URL=https://your-domain.com in your "
-                "Railway environment variables."
+                "BASE_URL environment variable is required, must start with https://, "
+                "and cannot point to localhost or loopback in production. "
+                "Configure BASE_URL=https://your-domain.com in your production environment variables."
             )
         if not cls.BREVO_API_KEY:
             raise RuntimeError(
                 "BREVO_API_KEY environment variable is not set. "
                 "Email functionality (OTP verification, password resets, PIN notifications) "
                 "will be completely broken without it."
+            )
+        db_url = os.environ.get("DATABASE_URL")
+        if not db_url or "sqlite" in db_url:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is not set or points to SQLite. "
+                "SQLite is not supported in production to prevent data loss."
+            )
+        rl_uri = os.environ.get("RATELIMIT_STORAGE_URI")
+        if not rl_uri or rl_uri.strip().lower() == "memory://":
+            raise RuntimeError(
+                "RATELIMIT_STORAGE_URI environment variable is required and cannot be memory:// in production."
             )
         if cls.STORAGE_PROVIDER == "r2":
             missing_r2_vars = [
