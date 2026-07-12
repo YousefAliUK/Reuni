@@ -414,7 +414,7 @@
                     </div>
 
                     <!-- Semantic table for cross-university list -->
-                    <table class="reuni-table" id="universities-table" {% if cross_uni_standings|length <= 3 %}style="display: none;"{% endif %}>
+                    <table class="reuni-table" id="universities-table" {% if cross_uni_standings|length == 3 %}style="display: none;"{% endif %}>
                         <caption class="sr-only">Cross-university standings</caption>
                         <thead>
                             <tr class="sr-only">

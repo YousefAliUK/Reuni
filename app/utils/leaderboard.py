@@ -73,6 +73,7 @@ def get_live_leaderboard(university_domain, period_start, period_end, limit=10):
             func.sum(Item.kg_saved).desc(),
             func.count(Item.id).desc(),
             func.min(Item.sold_at).asc(),
+            User.id.asc(),
         )
         .limit(limit)
         .all()
@@ -114,6 +115,7 @@ def get_current_user_rank(user_id, university_domain, period_start, period_end):
             Item.university_domain == university_domain,
             Item.seller_id == user_id,
             User.is_active == True,
+            User.role == "student",
             User.show_on_leaderboard == True,
         )
         .first()
@@ -154,6 +156,12 @@ def get_current_user_rank(user_id, university_domain, period_start, period_end):
                     func.sum(Item.kg_saved) == user_kg,
                     func.count(Item.id) == user_tx,
                     func.min(Item.sold_at) < user_first,
+                ),
+                and_(
+                    func.sum(Item.kg_saved) == user_kg,
+                    func.count(Item.id) == user_tx,
+                    func.min(Item.sold_at) == user_first,
+                    User.id < user_id,
                 ),
             )
         )

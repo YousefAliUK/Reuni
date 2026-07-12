@@ -27,6 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function switchTab(targetId, updateHistory = false) {
+        const targetButton = document.querySelector(`[data-tab-target="${targetId}"]`);
+        const targetContent = document.getElementById(`tab-content-${targetId}`);
+        if (tabs.length && (!targetButton || !targetContent)) {
+            targetId = defaultScope;
+        }
+
         // Deactivate all tab buttons
         tabs.forEach(btn => btn.classList.remove("active-tab"));
 

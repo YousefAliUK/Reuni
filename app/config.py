@@ -131,6 +131,10 @@ class ProductionConfig(Config):
     """Production-specific settings."""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    
+    # Default to False in production to prevent duplicate schedulers in Gunicorn workers.
+    # Enable explicitly in a single dedicated task/process environment if needed.
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "false").lower() == "true"
 
     @classmethod
     def init_app(cls, app):
@@ -140,12 +144,17 @@ class ProductionConfig(Config):
                 "SECRET_KEY environment variable is not set. "
                 "Refusing to start in production without a secure secret key."
             )
-        if not cls.BASE_URL or cls.BASE_URL == "http://localhost:5000":
+        from urllib.parse import urlsplit
+        parsed_base = urlsplit(cls.BASE_URL.rstrip("/")) if cls.BASE_URL else None
+        if (
+            not parsed_base
+            or parsed_base.scheme != "https"
+            or parsed_base.hostname in {"localhost", "127.0.0.1", "::1"}
+        ):
             raise RuntimeError(
-                "BASE_URL environment variable is not set or defaults to localhost. "
-                "All email links (PIN notifications, cancellation emails, password resets) "
-                "will be broken without it. Set BASE_URL=https://your-domain.com in your "
-                "Railway environment variables."
+                "BASE_URL environment variable is required, must start with https://, "
+                "and cannot point to localhost or loopback in production. "
+                "Configure BASE_URL=https://your-domain.com in your production environment variables."
             )
         if not cls.BREVO_API_KEY:
             raise RuntimeError(
