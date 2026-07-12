@@ -3,7 +3,7 @@ import hashlib
 from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
-from app import db
+from app import db, cache
 from app.utils.emails import send_email
 from app.models import User, UniversityConfig, Season
 from app.utils.decorators import admin_required
@@ -143,7 +143,7 @@ def new_university():
         db.session.add(cfg)
         db.session.commit()
         # Invalidate subdomain cache
-        current_app.extensions.pop("_subdomain_map", None)
+        cache.delete("subdomain_map")
         flash("University configuration created successfully.", "success")
         return redirect(url_for("admin.admin_universities"))
 
@@ -189,7 +189,7 @@ def edit_university(domain):
 
         db.session.commit()
         # Invalidate subdomain cache
-        current_app.extensions.pop("_subdomain_map", None)
+        cache.delete("subdomain_map")
         flash("University configuration updated successfully.", "success")
         return redirect(url_for("admin.admin_universities"))
 
@@ -253,10 +253,14 @@ def new_season():
 @login_required
 @admin_required
 def activate_season(season_id):
-    season = db.session.get(Season, season_id)
+    # Lock the season row to start with
+    season = db.session.query(Season).filter_by(id=season_id).with_for_update().first()
     if not season or season.is_complete:
         flash("Season not found or already complete.", "danger")
         return redirect(url_for("admin.admin_seasons"))
+
+    # Lock parent UniversityConfig row to serialize activations for this university
+    uni_cfg = db.session.query(UniversityConfig).filter_by(domain=season.university_domain).with_for_update().first()
 
     # Deactivate other active seasons for the same university domain
     active_seasons = Season.query.filter_by(
@@ -267,7 +271,13 @@ def activate_season(season_id):
         s.is_active = False
 
     season.is_active = True
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error activating season {season_id}: {e}")
+        flash("Failed to activate season due to a database error.", "danger")
+        return redirect(url_for("admin.admin_seasons"))
     flash(f"Season '{season.name}' activated successfully.", "success")
     return redirect(url_for("admin.admin_seasons"))
 

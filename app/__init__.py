@@ -121,9 +121,9 @@ def create_app(config_class=None):
         """
         Returns the subdomain → domain mapping, loaded from UniversityConfig table.
         Falls back to config.py hardcoded map if DB is unavailable (e.g. during migrations).
-        Result is cached in app context for the lifetime of the process.
+        Result is cached via Flask-Caching with a 60-second TTL to support multi-worker environments.
         """
-        cached = app.extensions.get("_subdomain_map")
+        cached = cache.get("subdomain_map")
         if cached is not None:
             return cached
         try:
@@ -134,9 +134,10 @@ def create_app(config_class=None):
             result = {row.subdomain_slug: row.domain for row in rows}
             if not result:
                 result = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+            else:
+                cache.set("subdomain_map", result, timeout=60)
         except Exception:
             result = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-        app.extensions["_subdomain_map"] = result
         return result
 
     @login_manager.user_loader
@@ -670,6 +671,7 @@ def create_app(config_class=None):
         from datetime import datetime, timezone, timedelta
 
         # 4. Cancel Claims with Email Notifications to Other Parties
+        emails_to_send = []
         # Active claims where the user is the buyer:
         buyer_claims = Item.query.filter_by(buyer_id=user_id, is_sold=False).all()
         for item in buyer_claims:
@@ -681,24 +683,21 @@ def create_app(config_class=None):
             item.pin_attempts = 0
             
             # Notify the seller
-            try:
-                seller = item.seller
-                if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
-                    email_html = (
-                        f"<p>Hello {html_escape(seller.name)},</p>"
-                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
-                        f"because the buyer's account has been deactivated for deletion.</p>"
-                        f"<p>The item is now available back on the marketplace.</p>"
-                        f"<p>— The Reuni team</p>"
-                    )
-                    send_email(
-                        to_email=seller.email,
-                        to_name=seller.name,
-                        subject=f"A claim on {item.title} has been cancelled",
-                        html_content=email_html
-                    )
-            except Exception as mail_err:
-                app.logger.warning(f"Failed to send deletion claim cancellation email to seller: {mail_err}")
+            seller = item.seller
+            if seller and seller.email and not seller.email.endswith("@deleted.reuni"):
+                email_html = (
+                    f"<p>Hello {html_escape(seller.name)},</p>"
+                    f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
+                    f"because the buyer's account has been deactivated for deletion.</p>"
+                    f"<p>The item is now available back on the marketplace.</p>"
+                    f"<p>— The Reuni team</p>"
+                )
+                emails_to_send.append({
+                    "to_email": seller.email,
+                    "to_name": seller.name,
+                    "subject": f"A claim on {item.title} has been cancelled",
+                    "html_content": email_html
+                })
 
         # Active claims where the user is the seller:
         seller_claims = Item.query.filter(Item.seller_id == user_id, Item.buyer_id.is_not(None), Item.is_sold == False).all()
@@ -712,22 +711,19 @@ def create_app(config_class=None):
             item.pin_attempts = 0
             
             # Notify the buyer
-            try:
-                if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
-                    email_html = (
-                        f"<p>Hello {html_escape(buyer.name)},</p>"
-                        f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
-                        f"because the seller's account has been deactivated for deletion.</p>"
-                        f"<p>— The Reuni team</p>"
-                    )
-                    send_email(
-                        to_email=buyer.email,
-                        to_name=buyer.name,
-                        subject=f"A claim on {item.title} has been cancelled",
-                        html_content=email_html
-                    )
-            except Exception as mail_err:
-                app.logger.warning(f"Failed to send deletion claim cancellation email to buyer: {mail_err}")
+            if buyer and buyer.email and not buyer.email.endswith("@deleted.reuni"):
+                email_html = (
+                    f"<p>Hello {html_escape(buyer.name)},</p>"
+                    f"<p>The claim on the item \"<strong>{html_escape(item.title)}</strong>\" has been cancelled "
+                    f"because the seller's account has been deactivated for deletion.</p>"
+                    f"<p>— The Reuni team</p>"
+                )
+                emails_to_send.append({
+                    "to_email": buyer.email,
+                    "to_name": buyer.name,
+                    "subject": f"A claim on {item.title} has been cancelled",
+                    "html_content": email_html
+                })
 
         # 5. Soft-delete Active Listings (Unsold Items)
         active_listings = Item.query.filter_by(seller_id=user_id, is_sold=False).all()
@@ -749,6 +745,18 @@ def create_app(config_class=None):
         try:
             db.session.commit()
             
+            # Send emails ONLY after successful DB transaction
+            for mail in emails_to_send:
+                try:
+                    send_email(
+                        to_email=mail["to_email"],
+                        to_name=mail["to_name"],
+                        subject=mail["subject"],
+                        html_content=mail["html_content"]
+                    )
+                except Exception as mail_err:
+                    app.logger.warning(f"Failed to send deletion claim cancellation email: {mail_err}")
+
             # Delete image files ONLY after successful DB transaction
             from app.routes.items import _delete_image
             for img_filename in image_filenames_to_delete:

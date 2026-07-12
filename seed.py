@@ -86,8 +86,10 @@ def cleanup_r2_uploads():
                     # 1. seed_*.webp
                     # 2. uuid.webp (32 hex characters + .webp)
                     is_seed = key.startswith("seed_") and key.endswith(".webp")
+                    import re
+                    is_uuid_webp = re.fullmatch(r"[0-9a-f]{32}\.webp", key.lower()) is not None
                     
-                    if is_seed:
+                    if is_seed or is_uuid_webp:
                         delete_keys.append({'Key': key})
         
         if delete_keys:
