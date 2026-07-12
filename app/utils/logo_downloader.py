@@ -38,15 +38,14 @@ def _is_safe_url(url: str) -> bool:
 
 def get_slug_from_domain(app, domain):
     try:
-        from app.models import UniversityConfig
-        config = UniversityConfig.query.filter_by(domain=domain).first()
-        if config:
-            return config.subdomain_slug
+        from app import get_subdomain_map
+        mapping = get_subdomain_map()
+        reverse_map = {v: k for k, v in mapping.items()}
+        if domain in reverse_map:
+            return reverse_map[domain]
     except Exception:
         pass
-    mapping = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-    reverse_map = {v: k for k, v in mapping.items()}
-    return reverse_map.get(domain, domain.split('.')[0])
+    return domain.split('.')[0]
 
 DEFAULT_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; compatible; Reuni/1.0)"}
 

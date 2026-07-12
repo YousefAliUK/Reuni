@@ -252,7 +252,8 @@ def send_message_notification_email(recipient, sender, item, message_content):
     uni_domain = recipient.university_domain
     subdomain = None
     if uni_domain:
-        uni_map = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        from app import get_subdomain_map
+        uni_map = get_subdomain_map()
         rev_map = {v: k for k, v in uni_map.items()}
         subdomain = rev_map.get(uni_domain)
 

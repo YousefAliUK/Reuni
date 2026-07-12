@@ -35,6 +35,31 @@ from flask_caching import Cache
 cache = Cache()
 
 
+def get_subdomain_map():
+    """
+    Returns the subdomain → domain mapping, loaded from UniversityConfig table.
+    Falls back to config.py hardcoded map if DB is unavailable (e.g. during migrations).
+    Result is cached via Flask-Caching with a 60-second TTL to support multi-worker environments.
+    """
+    from flask import current_app
+    cached = cache.get("subdomain_map")
+    if cached is not None:
+        return cached
+    try:
+        from app.models import UniversityConfig
+        rows = UniversityConfig.query.with_entities(
+            UniversityConfig.subdomain_slug, UniversityConfig.domain
+        ).all()
+        result = {row.subdomain_slug: row.domain for row in rows}
+        if not result:
+            result = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        else:
+            cache.set("subdomain_map", result, timeout=60)
+    except Exception:
+        result = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+    return result
+
+
 def create_app(config_class=None):
     """Application factory — creates and configures the Flask app."""
 
@@ -116,29 +141,6 @@ def create_app(config_class=None):
 
     # User loader for Flask-Login
     from app.models import User, Item, CancellationRecord, Message, Notification, UniversityConfig
-
-    def get_subdomain_map():
-        """
-        Returns the subdomain → domain mapping, loaded from UniversityConfig table.
-        Falls back to config.py hardcoded map if DB is unavailable (e.g. during migrations).
-        Result is cached via Flask-Caching with a 60-second TTL to support multi-worker environments.
-        """
-        cached = cache.get("subdomain_map")
-        if cached is not None:
-            return cached
-        try:
-            from app.models import UniversityConfig
-            rows = UniversityConfig.query.with_entities(
-                UniversityConfig.subdomain_slug, UniversityConfig.domain
-            ).all()
-            result = {row.subdomain_slug: row.domain for row in rows}
-            if not result:
-                result = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-            else:
-                cache.set("subdomain_map", result, timeout=60)
-        except Exception:
-            result = app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
-        return result
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -298,6 +300,14 @@ def create_app(config_class=None):
                 from app.models import Item, User, UniversityConfig
                 configs = UniversityConfig.query.all()
                 universities = []
+                def calculate_initials(name):
+                    words = [w for w in name.split() if w.lower() not in ["university", "of", "and", "the"]]
+                    if len(words) >= 2:
+                        return (words[0][0] + words[1][0]).upper()
+                    elif len(words) == 1:
+                        return words[0][:2].upper()
+                    return name[:2].upper()
+
                 if not configs:
                     fallback_map = get_subdomain_map()
                     for slug, domain in fallback_map.items():
@@ -317,6 +327,7 @@ def create_app(config_class=None):
                             "slug": slug,
                             "domain": domain,
                             "name": name,
+                            "initials": calculate_initials(name),
                             "active_count": active_count,
                             "kg_saved": float(kg_saved),
                             "students": students,
@@ -334,10 +345,12 @@ def create_app(config_class=None):
                             university_domain=cfg.domain, is_verified=True
                         ).count()
                         circulated = Item.query.filter(Item.university_domain == cfg.domain, Item.is_deleted == False).count()
+                        name = cfg.short_name or cfg.display_name
                         universities.append({
                             "slug": cfg.subdomain_slug,
                             "domain": cfg.domain,
                             "name": cfg.display_name,
+                            "initials": calculate_initials(name),
                             "active_count": active_count,
                             "kg_saved": float(kg_saved),
                             "students": students,
@@ -355,23 +368,28 @@ def create_app(config_class=None):
                 }
                 cache.set("landing_stats", landing_stats, timeout=300)
 
-            # Map dynamically to support legacy variables in landing.html
+            # Resolve showcase university dynamically (defaults to Brookes, falls back to first available config)
             uni_stats = {u["domain"]: u for u in landing_stats["universities"]}
-            brookes = uni_stats.get("brookes.ac.uk", {"kg_saved": 0.0, "active_count": 0, "circulated": 0, "students": 0})
-            oxford = uni_stats.get("oxford.ac.uk", {"kg_saved": 0.0, "active_count": 0, "circulated": 0, "students": 0})
+            showcase = uni_stats.get("brookes.ac.uk")
+            if not showcase and landing_stats["universities"]:
+                showcase = landing_stats["universities"][0]
+            if not showcase:
+                showcase = {
+                    "name": "Oxford Brookes University",
+                    "kg_saved": 0.0,
+                    "active_count": 0,
+                    "circulated": 0,
+                    "students": 0
+                }
 
             return render_template(
                 "landing.html",
                 total_saved_kg=landing_stats["total_saved"],
                 total_co2_saved=landing_stats["total_co2"],
-                brookes_saved_kg=brookes["kg_saved"],
-                oxford_saved_kg=oxford["kg_saved"],
-                brookes_active_count=brookes["active_count"],
-                oxford_active_count=oxford["active_count"],
-                brookes_circulated=brookes["circulated"],
-                oxford_circulated=oxford["circulated"],
-                brookes_students=brookes["students"],
-                oxford_students=oxford["students"],
+                showcase_name=showcase["name"],
+                showcase_saved_kg=showcase["kg_saved"],
+                showcase_circulated=showcase["circulated"],
+                showcase_students=showcase["students"],
                 universities=landing_stats["universities"]
             )
 

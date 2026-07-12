@@ -118,8 +118,34 @@ def new_university():
         brand_text_color = request.form.get("brand_text_color", "").strip() or "var(--color-primary)"
         timezone_str = request.form.get("timezone", "").strip() or "Europe/London"
 
+        def parse_date(field_name):
+            val = request.form.get(field_name, "").strip()
+            if not val:
+                return None
+            try:
+                return datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
+                return None
+
+        autumn_term_start = parse_date("autumn_term_start")
+        autumn_term_end = parse_date("autumn_term_end")
+        spring_term_start = parse_date("spring_term_start")
+        spring_term_end = parse_date("spring_term_end")
+        summer_term_start = parse_date("summer_term_start")
+        summer_term_end = parse_date("summer_term_end")
+
         if not domain or not subdomain_slug or not display_name or not email_domain:
             flash("All required fields must be filled.", "danger")
+            return render_template("admin/universities_form.html", config=None)
+
+        if autumn_term_start and autumn_term_end and autumn_term_start >= autumn_term_end:
+            flash("Autumn Term start date must be before end date.", "danger")
+            return render_template("admin/universities_form.html", config=None)
+        if spring_term_start and spring_term_end and spring_term_start >= spring_term_end:
+            flash("Spring Term start date must be before end date.", "danger")
+            return render_template("admin/universities_form.html", config=None)
+        if summer_term_start and summer_term_end and summer_term_start >= summer_term_end:
+            flash("Summer Term start date must be before end date.", "danger")
             return render_template("admin/universities_form.html", config=None)
 
         # Check if domain or subdomain slug already exists
@@ -139,6 +165,12 @@ def new_university():
             brand_color=brand_color,
             brand_text_color=brand_text_color,
             timezone=timezone_str,
+            autumn_term_start=autumn_term_start,
+            autumn_term_end=autumn_term_end,
+            spring_term_start=spring_term_start,
+            spring_term_end=spring_term_end,
+            summer_term_start=summer_term_start,
+            summer_term_end=summer_term_end,
         )
         db.session.add(cfg)
         db.session.commit()
@@ -167,8 +199,34 @@ def edit_university(domain):
         brand_text_color = request.form.get("brand_text_color", "").strip() or "var(--color-primary)"
         timezone_str = request.form.get("timezone", "").strip() or "Europe/London"
 
+        def parse_date(field_name):
+            val = request.form.get(field_name, "").strip()
+            if not val:
+                return None
+            try:
+                return datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
+                return None
+
+        autumn_term_start = parse_date("autumn_term_start")
+        autumn_term_end = parse_date("autumn_term_end")
+        spring_term_start = parse_date("spring_term_start")
+        spring_term_end = parse_date("spring_term_end")
+        summer_term_start = parse_date("summer_term_start")
+        summer_term_end = parse_date("summer_term_end")
+
         if not subdomain_slug or not display_name or not email_domain:
             flash("All required fields must be filled.", "danger")
+            return render_template("admin/universities_form.html", config=cfg)
+
+        if autumn_term_start and autumn_term_end and autumn_term_start >= autumn_term_end:
+            flash("Autumn Term start date must be before end date.", "danger")
+            return render_template("admin/universities_form.html", config=cfg)
+        if spring_term_start and spring_term_end and spring_term_start >= spring_term_end:
+            flash("Spring Term start date must be before end date.", "danger")
+            return render_template("admin/universities_form.html", config=cfg)
+        if summer_term_start and summer_term_end and summer_term_start >= summer_term_end:
+            flash("Summer Term start date must be before end date.", "danger")
             return render_template("admin/universities_form.html", config=cfg)
 
         # Check duplicate subdomain slug (exclude self)
@@ -186,6 +244,12 @@ def edit_university(domain):
         cfg.brand_color = brand_color
         cfg.brand_text_color = brand_text_color
         cfg.timezone = timezone_str
+        cfg.autumn_term_start = autumn_term_start
+        cfg.autumn_term_end = autumn_term_end
+        cfg.spring_term_start = spring_term_start
+        cfg.spring_term_end = spring_term_end
+        cfg.summer_term_start = summer_term_start
+        cfg.summer_term_end = summer_term_end
 
         db.session.commit()
         # Invalidate subdomain cache

@@ -4,6 +4,19 @@
 {% block content %}
 <div class="admin-container">
 
+    <!-- Admin Navigation Tabs -->
+    <div class="admin-nav-tabs">
+        <a href="{{ url_for('admin.admin_partners') }}" class="admin-tab-link">
+            Partners
+        </a>
+        <a href="{{ url_for('admin.admin_universities') }}" class="admin-tab-link">
+            Universities
+        </a>
+        <a href="{{ url_for('admin.admin_seasons') }}" class="admin-tab-link admin-tab-link--active">
+            Seasons
+        </a>
+    </div>
+
     <!-- Header Row -->
     <div class="admin-header">
         <div class="admin-title-block">

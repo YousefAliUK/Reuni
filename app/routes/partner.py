@@ -110,18 +110,8 @@ def partner_dashboard():
     if uni_domain and uni_domain not in PUBLIC_DOMAINS:
         from flask import current_app
         import os
-        # Get subdomain map from process cache or DB
-        mapping = current_app.extensions.get("_subdomain_map")
-        if mapping is None:
-            try:
-                from app.models import UniversityConfig
-                rows = UniversityConfig.query.with_entities(
-                    UniversityConfig.subdomain_slug, UniversityConfig.domain
-                ).all()
-                mapping = {row.subdomain_slug: row.domain for row in rows}
-                current_app.extensions["_subdomain_map"] = mapping
-            except Exception:
-                mapping = current_app.config.get("SUBDOMAIN_UNIVERSITY_MAP", {})
+        from app import get_subdomain_map
+        mapping = get_subdomain_map()
         reverse_map = {v: k for k, v in mapping.items()}
         slug = reverse_map.get(uni_domain, uni_domain.split('.')[0])
         
