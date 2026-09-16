@@ -46,6 +46,12 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
 
+    if current_app.config.get("DEMO_MODE"):
+        if request.method == "POST":
+            flash("Registration is disabled in demo mode. Please log in with a demo account.", "info")
+            return redirect(url_for("auth.login"))
+        flash("Portfolio Demo Mode: Account registration is disabled. Please log in using one of the demo accounts provided in the repository.", "info")
+
     if request.method == "POST":
         # --- Turnstile validation ---
         turnstile_token = request.form.get("cf-turnstile-response", "")

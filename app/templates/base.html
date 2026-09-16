@@ -452,6 +452,10 @@
                 <a href="{{ url_for('privacy') }}" class="footer__link">Privacy Policy</a>
                 <span class="footer__dot" aria-hidden="true">&middot;</span>
                 <span class="footer__copy">© 2026 Reuni</span>
+                {% if config.get('DEMO_MODE') %}
+                    <span class="footer__dot" aria-hidden="true">&middot;</span>
+                    <span class="footer__copy">Portfolio Demo &middot; Sample Data &middot; <a href="https://github.com/YousefAliUK/Reuni" class="footer__link" target="_blank" rel="noopener noreferrer">Source on GitHub &rarr;</a></span>
+                {% endif %}
             </div>
         </div>
     </footer>
