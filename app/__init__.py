@@ -164,8 +164,21 @@ def create_app(config_class=None):
         host = parsed.hostname.lower() if parsed.hostname else ""
         parts = host.split('.')
         
+        base_url = app.config.get("BASE_URL") or "http://localhost:5000"
+        base_parsed = urlsplit(base_url)
+        base_host = base_parsed.hostname.lower() if base_parsed.hostname else ""
+
         subdomain = None
-        if len(parts) >= 3:
+        if base_host and host == base_host:
+            subdomain = None
+        elif base_host and host.endswith("." + base_host):
+            subdomain = host[: -len("." + base_host)]
+        elif host.endswith(".localhost"):
+            subdomain = host.split(".localhost")[0]
+        elif host.endswith(".onrender.com") and len(parts) == 3:
+            # Primary service root on Render (e.g. reuni.onrender.com)
+            subdomain = None
+        elif len(parts) >= 3:
             subdomain = parts[0]
             
         uni_map = get_subdomain_map()
@@ -192,13 +205,17 @@ def create_app(config_class=None):
                     if correct_subdomain:
                         if host == "localhost" or host.endswith(".localhost"):
                             base_domain = "localhost"
+                        elif host.endswith(".onrender.com"):
+                            # Render hobby/single-service does not support wildcards on *.onrender.com
+                            base_domain = None
                         else:
                             base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else host
-                        port = parsed.port
-                        new_host = f"{correct_subdomain}.{base_domain}"
-                        if port:
-                            new_host = f"{new_host}:{port}"
-                        return redirect(f"{request.scheme}://{new_host}{request.full_path}")
+                        if base_domain:
+                            port = parsed.port
+                            new_host = f"{correct_subdomain}.{base_domain}"
+                            if port:
+                                new_host = f"{new_host}:{port}"
+                            return redirect(f"{request.scheme}://{new_host}{request.full_path}")
 
     @app.before_request
     def enforce_session_rules():

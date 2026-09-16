@@ -26,6 +26,10 @@ class Config:
         "sqlite:///" + os.path.join(basedir, "..", "instance", "reuni.db")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
 
     # Background Scheduler Config
     SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "true").lower() == "true"
@@ -84,6 +88,7 @@ class Config:
     }
 
     FEATURE_MULTI_UNIVERSITY = os.environ.get("FEATURE_MULTI_UNIVERSITY", "false").lower() == "true"
+    DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"
 
     # Brevo Configuration
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
@@ -162,7 +167,7 @@ class ProductionConfig(Config):
                 "and cannot point to localhost or loopback in production. "
                 "Configure BASE_URL=https://your-domain.com in your production environment variables."
             )
-        if not cls.BREVO_API_KEY:
+        if not cls.DEMO_MODE and not cls.BREVO_API_KEY:
             raise RuntimeError(
                 "BREVO_API_KEY environment variable is not set. "
                 "Email functionality (OTP verification, password resets, PIN notifications) "

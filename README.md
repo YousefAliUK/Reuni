@@ -6,15 +6,55 @@
   <h3>Preventing campus waste, one transaction at a time.</h3>
   
   <p size="4">
-    Reuni connects students and staff on campus to trade, donate, and recycle goods. By replacing shipping with face-to-face handoffs and measuring impact in real kilograms saved, Reuni turns sustainability into a tangible, campus-wide habit.
+    Reuni connects university students and sustainability teams to trade, donate, and recycle goods. By replacing shipping logistics with face-to-face handoffs and measuring impact in verified kilograms saved, Reuni turns circular economy into a tangible, campus-wide habit.
   </p>
 
   <br />
 
   <img src="app/static/img/readme_badges.svg" alt="Reuni Status Badges" width="550" />
+
+  <br /><br />
+
+  [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+  &nbsp;
+  [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+  &nbsp;
+  [![Flask: 3.1](https://img.shields.io/badge/Flask-3.1-black.svg?logo=flask&logoColor=white)](https://palletsprojects.com/p/flask/)
+  &nbsp;
+  [![Tests: Pytest](https://img.shields.io/badge/Tests-265%20Passed-success.svg)](tests/)
 </div>
 
 <br /><br />
+
+> [!NOTE]
+> **Portfolio Project Showcase**: Reuni was architected and built as a full-stack campus circular-economy platform designed for UK higher education institutions. It eliminates delivery emissions through hyper-local, face-to-face transactions and measures ecological impact in verified kilograms of waste diverted from landfills. This repository is preserved as an open portfolio piece demonstrating production Flask architecture, anti-IDOR access control, strict CSP security hardening, and relational data modeling.
+
+<br />
+
+## Live Interactive Demo
+
+A live showcase instance is deployed on Render:
+- **Primary Domain:** [https://reuni.uk](https://reuni.uk)
+- **Fallback URL:** [https://reuni.onrender.com](https://reuni.onrender.com)
+
+The hosted demo operates in read-only showcase mode with automated sample data pre-seeded. Visitors can explore the marketplace, campus leaderboards, Hall of Fame, in-app messaging, and sustainability dashboards without entering credentials:
+
+- **1-Click Persona Access:** On the login page, select any pre-configured demo persona (`Oxford Brookes Student`, `Sustainability Officer`, `Oxford Student`, or `Cambridge Student`) to authenticate immediately.
+- **Tenant Isolation:** Switch between student and sustainability partner roles to inspect how permissions, moderation, and ESG carbon metrics are segmented by institution.
+- **Read-Only Guard:** Modifying state, publishing new listings, and sending messages are sandboxed in demo mode to keep the demonstration environment consistent.
+
+<br />
+
+<details>
+<summary><strong>Interface &amp; Feature Walkthrough Animation</strong> (Click to expand)</summary>
+<br />
+
+<div align="center">
+  <img src="app/static/img/demo.gif" alt="Reuni Interface Walkthrough" width="340" />
+</div>
+
+<br />
+</details>
 
 <hr />
 <br /><br />
@@ -32,10 +72,10 @@
         <img src="https://api.iconify.design/mdi:map-marker-outline.svg?color=%230D9488" width="28" height="28" alt="Map Pin" />
       </picture>
       <br /><br />
-      <small style="color: #0D9488; letter-spacing: 2px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">SINGLE NODE FIRST</small>
+      <small style="color: #0D9488; letter-spacing: 2px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">CAMPUS TENANCY</small>
       <br /><br />
-      <h4 align="center">Single Node Deployment</h4>
-      <p align="center">Launched exclusively at Oxford Brookes University (<code>brookes.ac.uk</code>). High density eliminates shipping logistics, packaging, and delivery emissions—all handoffs are face-to-face on campus.</p>
+      <h4 align="center">Hyper-Local Nodes</h4>
+      <p align="center">Architected for UK higher education institutions. High campus density eliminates shipping logistics, packaging, and delivery emissions—all handoffs are face-to-face on campus.</p>
       <br />
     </td>
     <td width="50%" align="center" valign="top">
@@ -121,32 +161,32 @@
 
 ### Backend Core
 
-- **Runtime &amp; Core Framework:** `Python 3.x` &amp; `Flask 3.1`
-  <br />Handles environment setup, routing configurations, and the request lifecycle.
-- **Database &amp; Migrations:** `Flask-SQLAlchemy` &amp; `Flask-Migrate`
-  <br />Relational schema mapping, parameterized SQL query structures, and Alembic database migration logs.
+- **Runtime &amp; Core Framework:** `Python 3.10+` &amp; `Flask 3.1`
+  <br />Application factory pattern, blueprints, request lifecycle management, and custom decorators.
+- **Database &amp; Migrations:** `Flask-SQLAlchemy` &amp; `Flask-Migrate` (PostgreSQL / SQLite)
+  <br />Relational schema mapping, parameterized queries, and Alembic database migration logs.
 - **Security &amp; Auth Guardrails:** `Flask-Login` &amp; `Flask-Limiter` &amp; `Werkzeug (scrypt)`
-  <br />User session logic, request rate-limiting blocks, and secure cryptographic password hashing.
+  <br />Session regeneration, rate-limiting, timing-safe cryptographic comparisons, and anti-IDOR filters.
 
 <br />
 
 ### Image &amp; Integrations
 
 - **Image Validation Pipeline:** `Pillow (PIL)`
-  <br />Exif data and metadata removal, listing dimensions compression, and upload validation guards.
+  <br />EXIF stripping, resizing to web dimensions, WebP compression, and validation guards.
 - **Email &amp; Communication:** `Brevo API SDK`
-  <br />Dispatches transactional sign-up OTP verification codes, password reset sequences, and cancellation alerts.
+  <br />Transactional sign-up OTP verification codes, password resets, and PIN notifications.
 - **Background Jobs:** `APScheduler`
-  <br />Orchestrates background tasks, scheduling the nightly GDPR user data anonymization cron at 2:00 AM.
+  <br />Automated cron schedules for weekly leaderboard snapshot archival and GDPR anonymization routines.
 
 <br />
 
 ### Frontend &amp; Testing
 
 - **Rendering Engine:** `Jinja2` &amp; `Vanilla CSS / JS`
-  <br />Buildless page compilation, layout structures styled with CSS Custom Properties, and modular script patterns.
-- **Auditing &amp; Testing:** `pytest` &amp; `beautifulsoup4`
-  <br />Validates authentication contexts, marketplace transaction steps, settings modifications, and GDPR anonymization loops across 218 test assertions.
+  <br />Zero-framework, buildless frontend architecture, styled with CSS Custom Properties and zero inline JavaScript (strict CSP).
+- **Automated Verification:** `pytest` &amp; `beautifulsoup4`
+  <br />261 automated assertions validating auth flows, security headers, marketplace operations, and cancellation tiers.
 
 <br /><br />
 
@@ -158,7 +198,7 @@
 <br />
 
 <details>
-<summary>🔄 <strong>Transaction Verification Flow (PIN Handshake)</strong> (Click to expand)</summary>
+<summary><strong>Transaction Verification Flow (PIN Handshake)</strong> (Click to expand)</summary>
 <br />
 
 The physical handoff is verified using a secure 4-digit PIN exchange. The protocol shifts verification roles based on the price configuration to align completion incentives:
@@ -194,43 +234,44 @@ sequenceDiagram
 <br />
 
 <details>
-<summary>📁 <strong>Project Architecture &amp; File Map</strong> (Click to expand)</summary>
+<summary><strong>Project Architecture &amp; File Map</strong> (Click to expand)</summary>
 <br />
 
 ```filepath
-UniCycle_AI_Master/
+Reuni/
 │
 ├── app/                        # Application Source Code
 │   ├── routes/                 # Endpoint blueprints
 │   │   ├── admin.py            # B2B admin settings & partner invitations
 │   │   ├── auth.py             # User signup, login, OTP validation
 │   │   ├── items.py            # Marketplace browse, detail, and lifecycle
+│   │   ├── leaderboard.py      # Campus Leaderboard & Hall of Fame snapshots
 │   │   ├── messaging.py        # Secure user-to-user in-app chat
 │   │   └── partner.py          # ESG dashboards for university partners
 │   │
 │   ├── static/                 # Static Assets
-│   │   ├── css/                # Global style sheets (style.css)
-│   │   ├── img/                # Graphics, logos, and README assets
-│   │   ├── js/                 # Vanilla JS modules (no inline JS allowed)
-│   │   └── uploads/            # Local listing images (ignored in git)
+│   │   ├── css/                # CSS architecture (style.css, landing.css, leaderboard.css)
+│   │   ├── img/                # Graphics, badges, and illustrations
+│   │   ├── js/                 # Modular vanilla JS (no inline JS allowed by CSP)
+│   │   └── uploads/            # Local listing images (gitignored)
 │   │
 │   ├── templates/              # Jinja2 HTML templates
-│   ├── utils/                  # Helper utilities (email validation, SMS, etc.)
+│   ├── utils/                  # Helper utilities (email, tokens, turnstile, logo downloader)
 │   ├── config.py               # Flask application configuration classes
 │   ├── models.py               # SQLAlchemy database models
-│   ├── scheduler.py            # Nightly APScheduler cron setup
+│   ├── scheduler.py            # Automated snapshot & maintenance jobs
 │   └── __init__.py             # App factory & security header setup
 │
 ├── instance/                   # Local instance-specific files (e.g., SQLite DB)
 ├── migrations/                 # Alembic database migration scripts
-├── tests/                      # Automated test suite (pytest)
+├── tests/                      # Automated test suite (261 pytest assertions)
 │
 ├── run.py                      # Flask development server entry point
-├── seed.py                     # Demo data population utility
-├── promote_admin.py            # Admin bootstrapping CLI tool
-├── pentest.py                  # RED Team simulation penetration testing tool
+├── seed.py                     # Demo data population utility (multi-campus)
+├── pentest.py                  # Active penetration testing & security simulation suite
 ├── requirements.txt            # Python dependencies
-└── product_specification.md    # Product and feature specifications
+├── future_roadmap.md           # Architecture & future considerations backlog
+└── REUNI_DESIGN_SYSTEM.md      # Comprehensive UI/UX design tokens and patterns
 ```
 
 <br />
@@ -239,7 +280,7 @@ UniCycle_AI_Master/
 <br />
 
 <details>
-<summary>🚀 <strong>Local Setup &amp; Installation</strong> (Click to expand)</summary>
+<summary><strong>Local Setup &amp; Installation</strong> (Click to expand)</summary>
 <br />
 
 ### 1. Prerequisites
@@ -248,7 +289,7 @@ Ensure you have Python 3.10+ installed on your system.
 
 ### 2. Installation
 
-Clone the repository and set up the environment:
+Clone the repository and set up the virtual environment:
 
 ```bash
 # Create a virtual environment
@@ -266,62 +307,40 @@ pip install -r requirements.txt
 
 ### 3. Environment Configuration
 
-Create a `.env` file in the root directory. Copy and configure the following variables:
+Copy the example environment configuration:
 
-```env
-# Flask Settings
-FLASK_APP=run.py
-FLASK_ENV=development
-DEBUG=True
-SECRET_KEY=your-secure-secret-key-here
-BASE_URL=http://localhost:5000
-
-# Allowed University Domains (comma-separated)
-ALLOWED_UNIVERSITY_DOMAINS=brookes.ac.uk
-
-# Brevo SMTP/Email Configuration
-BREVO_API_KEY=your-brevo-api-key-here
-BREVO_SENDER_EMAIL=support@reuni.ac.uk
-
-# Storage Provider (local or r2)
-STORAGE_PROVIDER=local
-
-# Cloudflare R2 Settings (Required if STORAGE_PROVIDER=r2)
-CF_R2_ACCESS_KEY_ID=your-r2-access-key-id
-CF_R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
-CF_R2_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
-CF_R2_BUCKET_NAME=reuni-uploads
-CF_R2_PUBLIC_URL=https://pub-your-bucket-id.r2.dev
-
-# Cloudflare Turnstile CAPTCHA (Optional in local development; defaults to fallback test keys)
-TURNSTILE_SITE_KEY=your-turnstile-site-key
-TURNSTILE_SECRET_KEY=your-turnstile-secret-key
+```bash
+cp .env.example .env
 ```
+
+Configure `SECRET_KEY` and any preferred local database URL.
 
 ### 4. Database Setup & Running
 
-Start the development server. On startup, SQLite tables will be created automatically in the `instance/` folder:
+Seed initial data and start the local development server:
 
 ```bash
+# Seed initial demo data
+python seed.py
+
+# Run the dev server
 python run.py
 ```
 
 The server will start at [http://localhost:5000](http://localhost:5000).
-<br />
 
+<br />
 </details>
 
 <br />
 
 <details>
-<summary>🔧 <strong>Development &amp; Testing CLI Commands</strong> (Click to expand)</summary>
+<summary><strong>Development &amp; Testing CLI Commands</strong> (Click to expand)</summary>
 <br />
-
-Reuni includes command-line tools to seed mock databases, promote accounts, execute unit tests, and perform red team vulnerability testing.
 
 ### 1. Database Seeding
 
-Seed the database with mock student accounts, listings, and completed transaction histories for Oxford Brookes University:
+Seed the database with mock student accounts, listings, chat threads, and historical transaction records for Brookes, Oxford, and Cambridge:
 
 ```bash
 # Seed fresh data (will skip if data exists)
@@ -331,31 +350,20 @@ python seed.py
 python seed.py --force
 ```
 
-### 2. Administrative Bootstrapping
+### 2. Running the Test Suite
 
-Promote an existing account or create a new verified admin account. This script is guarded to **only run in debug mode** to protect production databases:
-
-```bash
-# Promote or create an admin
-python promote_admin.py admin@brookes.ac.uk --name "Yousef (Admin)"
-```
-
-_Note: If creating a new account, the script will print a secure, auto-generated password once to stdout._
-
-### 3. Penetration Testing (Red Team Simulation)
-
-Test defenses against security risks (XSS, CSRF, IDOR, brute-force lockout, and rate limiting) using the socket-based penetration testing suite. This script spins up a test server instance and executes simulated attacks:
-
-```bash
-python pentest.py
-```
-
-### 4. Running the Test Suite
-
-Run the suite of automated tests verifying auth, settings, items, and GDPR cancellation tiers:
+Run the full automated test suite verifying auth, settings, item lifecycles, and security guards across 261 test assertions:
 
 ```bash
 pytest
+```
+
+### 3. Penetration Testing (Red Team Simulation)
+
+Simulate attacks against application defenses (stored/reflected XSS, CSRF, IDOR message polling, brute-force lockout, and host header injection):
+
+```bash
+python pentest.py
 ```
 
 <br />
@@ -364,52 +372,42 @@ pytest
 <br />
 
 <details>
-<summary>🔒 <strong>Security &amp; GDPR Compliance Constraints</strong> (Click to expand)</summary>
+<summary><strong>Security &amp; GDPR Compliance Constraints</strong> (Click to expand)</summary>
 <br />
 
-All contributors must adhere strictly to these engineering constraints to prevent security regressions.
+All routes and controllers adhere strictly to these engineering constraints:
 
 ### 1. Anti-IDOR (Insecure Direct Object References)
 
 - **Verify Ownership:** Never query or mutate database items by ID alone. Always enforce ownership filters matching the active user session.
-
   ```python
-  # INCORRECT: Dangerous IDOR vulnerability
-  item = Item.query.get(item_id)
-
   # CORRECT: Enforces that the item belongs to the current user
   item = Item.query.filter_by(id=item_id, seller_id=current_user.id).first()
   ```
-
-- **Double-Sided Verification:** Both buyer and seller status must be validated before allowing access to transaction chats, phone details, or PIN verification forms.
+- **Double-Sided Verification:** Both buyer and seller status are validated before allowing access to transaction chats or PIN verification forms.
 
 ### 2. Content Security Policy (CSP) & Sandboxing
 
-- **Zero Inline JavaScript:** Writing `<script>` blocks inside templates or embedding inline handlers (e.g. `onclick=""`, `onchange=""`) is strictly forbidden. All Javascript must be written in modular files within `app/static/js/` and loaded as external scripts.
-- **Style Nonces:** If inline style sheets are absolutely necessary, they must utilize style nonces: `<style nonce="{{ csp_nonce }}">`.
-- **Safe Data Injection:** Safely pass variables from Jinja to JS using HTML data attributes (e.g. `data-user-id="{{ user.id }}"`) or using JSON script blocks:
-  ```html
-  <script type="application/json" id="config-weights">
-    {{ weights | tojson | safe }}
-  </script>
-  ```
+- **Zero Inline JavaScript:** All Javascript is modularized within `app/static/js/` and loaded as external scripts. The CSP header enforces `script-src 'self'`.
+- **Style Nonces:** Any inline styles require cryptographic style nonces (`nonce="{{ csp_nonce }}"`).
+- **Safe Data Injection:** Backend state is passed to JS via HTML data attributes or dedicated JSON script blocks.
 
 ### 3. GDPR Compliance & Privacy
 
-- **Log Hashing (No PII):** Never output emails, phone numbers, or names to standard log files.
-- **SHA-256 Email Hashing:** When logging audit activities or login attempts, hash the email address before writing to disk:
+- **Log Hashing (No PII):** Emails are hashed using SHA-256 before writing to disk:
   ```python
   hashed_email = hashlib.sha256(email.strip().lower().encode('utf-8')).hexdigest()[:16]
   ```
-- **Auto-Increment ID Logging:** Identify users, claims, and listings in logging statements strictly by their database auto-increment integer IDs.
-- **Representation Cleansing:** Model representations (`__repr__`) must never serialize sensitive properties (`email`, `phone`, `title`, or `name`).
+- **Auto-Increment ID Logging:** Entities in logs are identified strictly by their database integer IDs.
+- **Model Cleanliness:** Model `__repr__` methods never serialize sensitive properties (`email`, `phone`, `title`, or `name`).
 
 ### 4. Authentication & Password Hardening
 
-- **Generic Error Feedback:** Forms for logins, registrations, lockouts, and resets must return generic responses (e.g. _"Invalid credentials"_ or _"Verification code sent"_) to prevent user and email enumeration.
-- **Bcrypt DoS Protection:** Limit user password fields on registration and reset forms to a maximum of 128 characters to prevent CPU exhaustion.
-- **Timing-Safe Verifications:** Compare verification pins, security codes, and tokens using `secrets.compare_digest()` to eliminate side-channel timing attacks.
-- **Session Fixation Mitigation:** Run `session.clear()` immediately before authenticating a user on login.
+- **Generic Error Feedback:** Auth error messages prevent account enumeration attacks.
+- **Bcrypt / scrypt CPU Exhaustion Prevention:** Password fields are strictly capped at 128 characters.
+- **Timing-Safe Verifications:** Security pins and tokens are compared using `secrets.compare_digest()`.
+- **Session Regeneration:** `session.clear()` runs immediately prior to authenticating a session.
+
 <br />
 </details>
 
@@ -433,6 +431,16 @@ The dynamic estimation of `kg saved` is computed using WRAP/DEFRA environmental 
 <br /><br />
 
 > [!NOTE]
-> If an account is deleted under GDPR Right to Erasure, the user's personal profile statistics are zeroed, but individual sold items retain their `kg_saved` and `university_domain` properties. Global or campus-wide environmental metrics must query and sum items directly (`Item.kg_saved`) where `is_sold=True` rather than summing user profile fields to avoid undercounting.
+> If an account is deleted under GDPR Right to Erasure, the user's personal profile statistics are zeroed, but individual sold items retain their `kg_saved` and `university_domain` properties. Global or campus-wide environmental metrics query and sum items directly (`Item.kg_saved`) where `is_sold=True` rather than summing user profile fields to avoid undercounting.
 
 <br />
+
+## Future Considerations & Architecture
+
+For detailed architectural considerations, multi-campus tenancy scaling, and gamification concepts conceived during development, see [future_roadmap.md](future_roadmap.md).
+
+<br />
+
+## License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License (CC BY-NC-ND 4.0)](LICENSE).

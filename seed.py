@@ -22,7 +22,7 @@ from datetime import datetime, timezone, timedelta
 from PIL import Image as PILImage, ImageDraw, ImageFont
 
 from app import create_app, db
-from app.models import User, Item, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES, UniversityConfig, Season, WeeklySnapshot, SeasonalSnapshot
+from app.models import User, Item, Message, CancellationRecord, CATEGORY_WEIGHTS, CATEGORIES, CONDITION_CHOICES, UniversityConfig, Season, WeeklySnapshot, SeasonalSnapshot
 from app.utils.email_validation import extract_university_domain
 
 app = create_app()
@@ -1606,9 +1606,20 @@ def seed():
             users[u_data["email"]] = user
             print(f"  Created user: {u_data['email']} ({u_data['role']})")
 
-        # Flush to assign user IDs
-        db.session.flush()
-        print(f"Flushed {len(users)} users.")
+        # Commit users, configs, and seasons so connection is not left idle in transaction
+        db.session.commit()
+        print(f"Committed {len(users)} users, configs, and seasons.")
+
+        # Pre-process listing images outside active DB transaction to avoid PostgreSQL timeouts
+        print("Preparing listing images...")
+        item_images = {}
+        for i_data in SAMPLE_ITEMS:
+            item_images[i_data["title"]] = copy_seed_image(
+                i_data["image_file"],
+                i_data["category"],
+                i_data["title"],
+            )
+        print(f"Prepared {len(item_images)} listing images.")
 
         # Create items
         items_by_title = {}  # dict mapping item title -> Item object
@@ -1616,13 +1627,7 @@ def seed():
         for i_data in SAMPLE_ITEMS:
             seller = users[i_data["seller_email"]]
             kg = CATEGORY_WEIGHTS.get(i_data["category"], 1.0)
-
-            # Copy real image from seed folder to static/uploads/
-            image_filename = copy_seed_image(
-                i_data["image_file"],
-                i_data["category"],
-                i_data["title"],
-            )
+            image_filename = item_images[i_data["title"]]
 
             # Calculate timestamps
             if i_data["is_sold"]:
@@ -1659,9 +1664,9 @@ def seed():
             status = "SOLD" if i_data["is_sold"] else "active"
             print(f"  Created item [{status}]: {i_data['title']}")
 
-        # Flush to assign item IDs
-        db.session.flush()
-        print(f"Flushed {len(items_by_title)} items.")
+        # Commit items
+        db.session.commit()
+        print(f"Committed {len(items_by_title)} items.")
 
         # ── Dynamic Seeding for Leaderboard Edge Cases ──
         print("Dynamically seeding leaderboard test cases...")
@@ -1820,7 +1825,8 @@ def seed():
             )
             db.session.add(item_b)
 
-        db.session.flush()
+        db.session.commit()
+        print("Committed leaderboard edge cases.")
 
         # Create cancellation records
         for c_data in SAMPLE_CANCELLATIONS:
@@ -1840,6 +1846,61 @@ def seed():
             )
             db.session.add(record)
             print(f"  Created cancellation record: {c_data['tier']} - {c_data['item_title']}")
+
+        # Seed chat messages for demo items to demonstrate in-app messaging
+        print("Seeding sample chat conversations...")
+        sample_threads = [
+            {
+                "item_title": "MacBook Air M2 (2022) 8GB/256GB",
+                "messages": [
+                    ("j.whitfield@brookes.ac.uk", "Hi Aisha, is this still available to collect on campus?", 45),
+                    ("a.rahman@brookes.ac.uk", "Hi Jack! Yes, I can meet at the Headington campus library entrance tomorrow afternoon.", 35),
+                    ("j.whitfield@brookes.ac.uk", "That works for me! Say 2:30 PM?", 25),
+                    ("a.rahman@brookes.ac.uk", "Perfect, see you then! I'll have the original box and charger ready.", 15),
+                ],
+            },
+            {
+                "item_title": "Casio fx-991EX ClassWiz Calculator",
+                "messages": [
+                    ("p.nair@brookes.ac.uk", "Hey Callum, I urgently need this for my maths module next week. When are you free?", 60),
+                    ("c.fraser@brookes.ac.uk", "Hey Priya! I'm in the Clerici building until 4pm today if you're nearby.", 40),
+                    ("p.nair@brookes.ac.uk", "Amazing! I'll head over to the ground floor cafe in 10 minutes.", 20),
+                    ("c.fraser@brookes.ac.uk", "Sounds great, I'm wearing a green hoodie.", 15),
+                ],
+            },
+            {
+                "item_title": "IKEA KALLAX 4-Cube Shelf (White)",
+                "messages": [
+                    ("i.constantin@brookes.ac.uk", "Hi Jack, is the shelf already disassembled or will I need an Allen key?", 50),
+                    ("j.whitfield@brookes.ac.uk", "Hi Ioana, it's already completely disassembled with all the screws in a bag!", 35),
+                    ("i.constantin@brookes.ac.uk", "Awesome, thank you so much! I can swing by Harcourt Hill with a car around 5pm.", 25),
+                    ("j.whitfield@brookes.ac.uk", "Great, I'll bring it down to the visitor parking bay.", 15),
+                ],
+            },
+        ]
+
+        for thread in sample_threads:
+            item = items_by_title.get(thread["item_title"])
+            if not item or not item.buyer_id:
+                continue
+            seller_id = item.seller_id
+            buyer_id = item.buyer_id
+            for sender_email, text, mins_ago in thread["messages"]:
+                sender = users.get(sender_email)
+                if not sender:
+                    continue
+                recipient_id = buyer_id if sender.id == seller_id else seller_id
+                msg = Message(
+                    item_id=item.id,
+                    sender_id=sender.id,
+                    recipient_id=recipient_id,
+                    content=text,
+                    is_read=True,
+                    created_at=now - timedelta(minutes=mins_ago)
+                )
+                db.session.add(msg)
+        db.session.commit()
+        print("  Created sample chat message threads and committed.")
 
         # Update kg_saved_total on each user dynamically from DB sold items (Anti-drift)
         all_sold_items = Item.query.filter_by(is_sold=True).all()

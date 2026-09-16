@@ -27,25 +27,10 @@ app/static/uploads/
 *.swp
 *.swo
 *~
-
+settings.local.json
 
 # OS files
 .DS_Store
 Thumbs.db
-.aider*
-.rules
-
-/*.md
-.agents/skills
-brag-output
-settings.local.json
-
-# 2. Exceptions: Allow specific files to be tracked
-!/README.md
-!/IMPORTANT.md
-!/product_specification.md
-!/implementation_plan_leaderboard_hall-of-fame.md
-!/future_roadmap.md
-!/REUNI_DESIGN_SYSTEM.md
-/*.json
-
+*:Zone.Identifier
+*Zone.Identifier*

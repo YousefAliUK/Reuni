@@ -20,6 +20,9 @@ messaging_bp = Blueprint("messaging", __name__, url_prefix="/api")
 @limiter.limit("60 per minute", key_func=get_remote_address)  # Route-level IP spam protection
 def send_message(item_id):
     """Send a message to the other party of a claimed item."""
+    if current_app.config.get("DEMO_MODE"):
+        return jsonify({"error": "Sending messages is disabled in demo mode."}), 400
+
     item = db.get_or_404(Item, item_id)
     if item.is_deleted:
         abort(404)

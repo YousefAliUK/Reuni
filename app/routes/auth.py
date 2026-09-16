@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime, timezone, timedelta
 from html import escape as html_escape
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.emails import send_email
@@ -45,6 +45,12 @@ def resend_key_func():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
+
+    if current_app.config.get("DEMO_MODE"):
+        if request.method == "POST":
+            flash("Registration is disabled in demo mode. Please select a demo persona on the login page.", "info")
+            return redirect(url_for("auth.login"))
+        flash("Portfolio Demo Mode: Account registration is disabled. Please select a demo persona on the login page.", "info")
 
     if request.method == "POST":
         # --- Turnstile validation ---
@@ -309,7 +315,109 @@ def login():
         else:
             return redirect(url_for("index"))
 
-    return render_template("auth/login.html")
+    return render_template(
+        "auth/login.html",
+        demo_personas=DEMO_PERSONAS if current_app.config.get("DEMO_MODE") else None,
+    )
+
+
+DEMO_PERSONAS = {
+    "brookes_student": {
+        "email": "a.rahman@brookes.ac.uk",
+        "name": "Aisha Rahman",
+        "campus": "Brookes",
+        "role": "Student Marketplace",
+        "role_badge": "Brookes Student",
+    },
+    "brookes_partner": {
+        "email": "sustainability@brookes.ac.uk",
+        "name": "Sustainability Office",
+        "campus": "Brookes",
+        "role": "Estate ESG Lead",
+        "role_badge": "Brookes Partner",
+    },
+    "oxford_student": {
+        "email": "a.turing@ox.ac.uk",
+        "name": "Alan Turing",
+        "campus": "Oxford",
+        "role": "Student Exchange",
+        "role_badge": "Oxford Student",
+    },
+    "cambridge_student": {
+        "email": "i.newton@cam.ac.uk",
+        "name": "Isaac Newton",
+        "campus": "Cambridge",
+        "role": "Campus Exchange",
+        "role_badge": "Cambridge Student",
+    },
+}
+
+
+@auth_bp.route("/demo-login/<persona>", methods=["POST"])
+@limiter.limit("20 per minute", key_func=get_remote_address)
+def demo_login(persona):
+    """1-click authentication for portfolio demo personas (DEMO_MODE only)."""
+    if not current_app.config.get("DEMO_MODE"):
+        abort(404)
+
+    persona_info = DEMO_PERSONAS.get(persona)
+    if not persona_info:
+        flash("Invalid demo persona selected.", "danger")
+        return redirect(url_for("auth.login"))
+
+    user = User.query.filter_by(email=persona_info["email"]).first()
+    if not user:
+        flash("Demo persona account not found in database. Seed data may be pending.", "warning")
+        return redirect(url_for("auth.login"))
+
+    # Session regeneration to prevent session fixation attacks
+    session.clear()
+    login_user(user)
+    current_app.logger.info(f"DEMO_MODE: Switched session to demo persona {persona} (user_id={user.id})")
+
+    if user.role == "partner":
+        session["logged_in_at"] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    flash(f"Entered demo session as {persona_info['name']} ({persona_info['role_badge']}).", "success")
+
+    correct_subdomain = None
+    if user.university_domain:
+        from app import get_subdomain_map
+        uni_map = get_subdomain_map()
+        rev_map = {v: k for k, v in uni_map.items()}
+        correct_subdomain = rev_map.get(user.university_domain)
+
+    if correct_subdomain:
+        from urllib.parse import urlsplit
+        base_url = current_app.config.get("BASE_URL") or "http://localhost:5000"
+        base_parsed = urlsplit(base_url)
+        trusted_host = base_parsed.hostname.lower() if base_parsed.hostname else "localhost"
+
+        req_parsed = urlsplit(request.host_url)
+        req_host = req_parsed.hostname.lower() if req_parsed.hostname else ""
+
+        if (req_host == "localhost" or req_host.endswith(".localhost")) and (trusted_host == "localhost" or trusted_host.endswith(".localhost")):
+            base_domain = "localhost"
+        elif req_host.endswith(".onrender.com"):
+            base_domain = None
+        elif req_host == trusted_host or req_host.endswith("." + trusted_host):
+            parts = trusted_host.split('.')
+            if len(parts) >= 3 and parts[-2:] == ['ac', 'uk']:
+                base_domain = '.'.join(parts[-3:])
+            elif len(parts) >= 3 and parts[-2:] == ['co', 'uk']:
+                base_domain = '.'.join(parts[-3:])
+            else:
+                base_domain = '.'.join(parts[-2:]) if len(parts) >= 2 else trusted_host
+        else:
+            base_domain = None
+
+        if base_domain:
+            port = req_parsed.port or base_parsed.port
+            new_host = f"{correct_subdomain}.{base_domain}"
+            if port:
+                new_host = f"{new_host}:{port}"
+            return redirect(f"{request.scheme}://{new_host}/")
+
+    return redirect(url_for("index"))
 
 
 @auth_bp.route("/logout", methods=["POST"])

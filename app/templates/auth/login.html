@@ -23,6 +23,34 @@ content %}
                 </p>
             </div>
 
+            {% if config.DEMO_MODE and demo_personas %}
+            <section class="demo-showcase" aria-labelledby="demo-showcase-heading">
+                <div class="demo-showcase__header">
+                    <h2 id="demo-showcase-heading" class="demo-showcase__title">Portfolio Showcase</h2>
+                    <span class="demo-showcase__hint">1-click demo access</span>
+                </div>
+                <div class="demo-showcase__grid">
+                    {% for p_key, p_data in demo_personas.items() %}
+                    <form method="POST" action="{{ url_for('auth.demo_login', persona=p_key) }}" class="demo-showcase__form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit" class="demo-card" aria-label="Sign in as {{ p_data.name }}, {{ p_data.campus }} {{ p_data.role }}">
+                            <div class="demo-card__top">
+                                <span class="demo-card__campus">{{ p_data.campus }}</span>
+                                <span class="material-symbols-outlined demo-card__arrow" aria-hidden="true">arrow_forward</span>
+                            </div>
+                            <span class="demo-card__name">{{ p_data.name }}</span>
+                            <span class="demo-card__role">{{ p_data.role }}</span>
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <div class="auth-divider" role="separator">
+                <span>or sign in with password</span>
+            </div>
+            {% endif %}
+
             <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 

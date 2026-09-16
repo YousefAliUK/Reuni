@@ -232,6 +232,10 @@ def list_item():
 
 
     if request.method == "POST":
+        if current_app.config.get("DEMO_MODE"):
+            flash("Listing creation is disabled in demo mode.", "info")
+            return redirect(url_for("items.list_item"))
+
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "")
@@ -343,6 +347,10 @@ def edit_item(item_id):
         return redirect(url_for("items.detail", item_id=item.id))
 
     if request.method == "POST":
+        if current_app.config.get("DEMO_MODE"):
+            flash("Listing editing is disabled in demo mode.", "info")
+            return redirect(url_for("items.detail", item_id=item.id))
+
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "")
@@ -439,6 +447,10 @@ def edit_item(item_id):
 @verified_required
 def delete_item(item_id):
     """Delete a listing (only by the seller, only if not sold)."""
+    if current_app.config.get("DEMO_MODE"):
+        flash("Listing deletion is disabled in demo mode.", "info")
+        return redirect(url_for("items.detail", item_id=item_id))
+
     item = db.get_or_404(Item, item_id)
     if item.is_deleted:
         abort(404)
