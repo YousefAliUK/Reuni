@@ -21,7 +21,7 @@
   &nbsp;
   [![Flask: 3.1](https://img.shields.io/badge/Flask-3.1-black.svg?logo=flask&logoColor=white)](https://palletsprojects.com/p/flask/)
   &nbsp;
-  [![Tests: Pytest](https://img.shields.io/badge/Tests-218%20Passed-success.svg)](tests/)
+  [![Tests: Pytest](https://img.shields.io/badge/Tests-261%20Passed-success.svg)](tests/)
 </div>
 
 <br /><br />
@@ -51,6 +51,17 @@ The hosted demo operates in read-only showcase mode with automated sample data p
 
 <br />
 
+<details>
+<summary><strong>Interface &amp; Feature Walkthrough Animation</strong> (Click to expand)</summary>
+<br />
+
+<div align="center">
+  <img src="app/static/img/demo.gif" alt="Reuni Interface Walkthrough" width="340" />
+</div>
+
+<br />
+</details>
+
 <hr />
 <br /><br />
 
@@ -67,10 +78,10 @@ The hosted demo operates in read-only showcase mode with automated sample data p
         <img src="https://api.iconify.design/mdi:map-marker-outline.svg?color=%230D9488" width="28" height="28" alt="Map Pin" />
       </picture>
       <br /><br />
-      <small style="color: #0D9488; letter-spacing: 2px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">SINGLE NODE FIRST</small>
+      <small style="color: #0D9488; letter-spacing: 2px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">CAMPUS TENANCY</small>
       <br /><br />
-      <h4 align="center">Single Node Deployment</h4>
-      <p align="center">Launched exclusively at Oxford Brookes University (<code>brookes.ac.uk</code>). High density eliminates shipping logistics, packaging, and delivery emissions—all handoffs are face-to-face on campus.</p>
+      <h4 align="center">Hyper-Local Nodes</h4>
+      <p align="center">Architected for UK higher education institutions. High campus density eliminates shipping logistics, packaging, and delivery emissions—all handoffs are face-to-face on campus.</p>
       <br />
     </td>
     <td width="50%" align="center" valign="top">
@@ -181,7 +192,7 @@ The hosted demo operates in read-only showcase mode with automated sample data p
 - **Rendering Engine:** `Jinja2` &amp; `Vanilla CSS / JS`
   <br />Zero-framework, buildless frontend architecture, styled with CSS Custom Properties and zero inline JavaScript (strict CSP).
 - **Automated Verification:** `pytest` &amp; `beautifulsoup4`
-  <br />218 automated assertions validating auth flows, security headers, marketplace operations, and cancellation tiers.
+  <br />261 automated assertions validating auth flows, security headers, marketplace operations, and cancellation tiers.
 
 <br /><br />
 
@@ -346,7 +357,7 @@ python seed.py --force
 
 ### 2. Running the Test Suite
 
-Run the full automated test suite verifying auth, settings, item lifecycles, and security guards across 218 test assertions:
+Run the full automated test suite verifying auth, settings, item lifecycles, and security guards across 261 test assertions:
 
 ```bash
 pytest
