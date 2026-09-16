@@ -270,10 +270,11 @@ Reuni/
 │
 ├── instance/                   # Local instance-specific files (e.g., SQLite DB)
 ├── migrations/                 # Alembic database migration scripts
-├── tests/                      # Automated test suite (218 pytest assertions)
+├── tests/                      # Automated test suite (261 pytest assertions)
 │
 ├── run.py                      # Flask development server entry point
 ├── seed.py                     # Demo data population utility (multi-campus)
+├── pentest.py                  # Active penetration testing & security simulation suite
 ├── requirements.txt            # Python dependencies
 ├── future_roadmap.md           # Architecture & future considerations backlog
 └── REUNI_DESIGN_SYSTEM.md      # Comprehensive UI/UX design tokens and patterns
@@ -361,6 +362,14 @@ Run the full automated test suite verifying auth, settings, item lifecycles, and
 
 ```bash
 pytest
+```
+
+### 3. Penetration Testing (Red Team Simulation)
+
+Simulate attacks against application defenses (stored/reflected XSS, CSRF, IDOR message polling, brute-force lockout, and host header injection):
+
+```bash
+python pentest.py
 ```
 
 <br />
