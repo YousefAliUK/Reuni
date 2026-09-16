@@ -59,7 +59,7 @@
   <!-- Pill 3: Tests -->
   <g transform="translate(220, 2)">
     <rect width="140" height="28" rx="14" fill="url(#grad-green)" class="border-glow" />
-    <text x="70" y="18" class="pill-text">210 Tests Passed</text>
+    <text x="70" y="18" class="pill-text">265 Tests Passed</text>
   </g>
 
   <!-- Pill 4: SDG 12 -->
@@ -68,9 +68,9 @@
     <text x="55" y="18" class="pill-text">UN SDG 12</text>
   </g>
 
-  <!-- Pill 5: Private Repo -->
+  <!-- Pill 5: Public Repo -->
   <g transform="translate(490, 2)">
     <rect width="115" height="28" rx="14" fill="url(#grad-slate)" class="border-glow" />
-    <text x="57.5" y="18" class="pill-text">Private Repo</text>
+    <text x="57.5" y="18" class="pill-text">Public Repo</text>
   </g>
 </svg>
